@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>OntoGen - QMiner</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="css/navbar.css" rel="stylesheet">
+
+    <!-- Bootstrap select -->
+    <link href="css/bootstrap-select.css" rel="stylesheet">
+
+    <!-- TreeView -->
+    <link href="css/treeview.css" rel="stylesheet">
+
+    <!-- Custom OntoGen style (re)definitions -->
+    <link href="css/ontogen.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+    <script src="../../assets/js/html5shiv.js"></script>
+    <script src="../../assets/js/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+
+
+    <div class="container" id="main">
+
+      <!-- Static navbar -->
+      <div class="navbar navbar-default">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">OntoGen</a>
+        </div>
+        <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="../admin/">QMiner</a></li>
+            <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Ontology<b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li><a href="#ontonew">New</a></li>
+              <li><a href="unimplemented/">Load</a></li>
+              <li class="divider"></li>
+              <li><a href="unimplemented/">Include</a></li>
+              <li class="divider"></li>
+              <li><a href="unimplemented/">Save</a></li>
+              <li><a href="unimplemented/">Export</a></li>
+            </ul>
+            </li>
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+            <li class="active"><a href="./">Visualize Ontology</a></li>
+            <li><a href="notimplemented/">Visualize Concepts</a></li>
+            <li><a href="notimplemented/">Documents</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+      <!-- OntoView Grid: Small left side for Concepts, larger right side for Ontology -->
+      <div class="row" id="ontoview" style="display: none">
+        <div class="col-md-4"> <!-- concept columns -->
+          <!-- concept tree panel --> 
+          <div class="panel panel-default"> 
+            <div class="panel-heading">
+              <h3 class="panel-title">Concepts</h3>
+            </div>
+            <div class="panel-footer">
+              <div class="btn-group menu-control">
+                <button type="button" class="btn btn-default btn-sm">New</button>
+                <button type="button" class="btn btn-default btn-sm">Move</button>
+                <button type="button" class="btn btn-default btn-sm">Delete</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <!-- concept tree -->
+              <div class="css-treeview" id="concept-tree">
+              </div>  <!-- /concept tree -->
+            </div> <!-- /panel body -->
+            <!-- concept properties panel --> 
+            <div class="panel panel-default"> 
+              <div class="panel-heading">
+                <h3 class="panel-title">Concept Properties</h3>
+              </div>
+              <div class="panel-footer">
+                <div class="btn-group menu-control">
+                  <button type="button" class="btn btn-default btn-sm">Details</button>
+                  <button id="suggest-concepts" type="button" class="btn btn-default btn-sm">Suggestions</button>
+                  <button type="button" class="btn btn-default btn-sm">Relations</button>
+                </div>
+              </div> <!-- /panel-footer -->
+              <div class="panel-body" id="concept-properties">
+              </div> <!-- /panel body -->
+            </div> <!-- /concept properties panel -->
+          </div> 
+          <div class="col-md-8">
+            <div class="panel panel-default">
+              <div class="panel-heading">
+                <h3 class="panel-title">Ontology Details</h3>
+              </div>
+              <div class="panel-body">
+                Panel content
+              </div>
+            </div>
+          </div>
+        </div>
+      </div> <!-- /ontoview grid -->
+    </div> <!-- /container -->
+
+
+    <!-- JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <!-- Could be all concatenated together to make a single file -->
+    <script src="js/lib/underscore.min.js"></script>
+    <script src="js/lib/jquery.min.js"></script>
+    <script src="js/lib/backbone-min.js"></script>
+    <script src="js/lib/bootstrap.min.js"></script>
+    <script src="js/lib/bootstrap-select.min.js"></script>
+    <script src="js/lib/handlebars.js"></script>
+    <!-- compiled templates -->
+    <script src="js/templates.js"></script>
+    <!-- app -->
+    <script src="js/app.js"></script>
+    <!-- models -->
+    <script src="js/models/store.js"></script>
+    <script src="js/models/concept.js"></script>
+    <!-- collections -->
+    <script src="js/collections/stores.js"></script>
+    <script src="js/collections/concepts.js"></script>
+    <!-- views -->
+    <script src="js/views/ontoview.js"></script>
+    <script src="js/views/ontonew.js"></script>
+
+    <script src="js/routers/router.js"></script>
+    <!-- init -->
+    <script type="text/javascript">
+      $(function() {
+          App.init();
+          });
+</script>
+
+  </body>
+</html>
