@@ -38,3 +38,7 @@ body {
 		height: 300px;
 		margin-bottom: 15px;
 }
+
+#suggestions-container {
+  margin-top:20px;
+}

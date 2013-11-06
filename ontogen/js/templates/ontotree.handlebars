@@ -1,5 +1,9 @@
-<ul>
- <li><input type="checkbox" id="tree-item-{{id}}" />
- <label for="tree-item-{{id}}" data-conceptid={{id}}>{{name}}</label>
- {{#each children}} {{> conceptPartial}} {{/each}}
-</ul> 
+<li data-conceptid={{id}}>
+    <input type="checkbox" checked="checked" id="tree-item-{{id}}" />
+    <label for="tree-item-{{id}}">{{name}}</label>
+    {{#if children}}
+    <ul>
+      {{#each children}} {{> conceptPartial}} {{/each}}
+    </ul> 
+   {{/if}}
+ </li>

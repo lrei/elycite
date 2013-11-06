@@ -5,9 +5,12 @@ App.Views.OntologyView = Backbone.View.extend({
   template: Handlebars.templates['ontotree'],
 
    events: {
-     "click #concept-tree ul": "selectConcept",
      "click #submit-details": "submitDetails",
-     "click #suggest-concepts": "suggestConcepts",
+     "show.bs.collapse #concept-details" : "collapseHandler",
+     "show.bs.collapse #concept-suggestions" : "collapseHandler",
+     "show.bs.collapse #concept-relations" : "collapseHandler",
+     "click #suggest": "suggestConcepts",
+     "click #addSuggested": "addSuggested"
   },
 
   initialize: function() {
@@ -39,9 +42,21 @@ App.Views.OntologyView = Backbone.View.extend({
         return node;
       };
       var tree = conceptTree(root);
-      console.log(JSON.stringify(tree));
+      App.State.tree = tree;
+      // insert concept tree html
       var html = this.template(tree);
-      $("#concept-tree").html(html);
+      $("#concept-tree > #treeroot").html(html);
+      // make labels select but not check
+      var that = this;
+      $("#concept-tree label").click(function(event) {
+        that.selectConcept(event);
+        return false;
+      });
+      
+      var conceptId = root["id"];
+      if(App.State.selectedConcept) {
+        conceptId = App.State.selectedConcept;
+      }
       console.log("go renderProperties for " + root["id"]);
       this.renderProperties(root["id"]);
       $("#ontoview").show();
@@ -55,7 +70,14 @@ App.Views.OntologyView = Backbone.View.extend({
     var template = Handlebars.templates['ontoproperties'];
     concept.keywordStr = concept["keywords"].join(", ");
     var html = template(concept);
-    $("#concept-properties").html(html);
+    $("#concept-details").html(html);
+    // reset suggestion table
+    $("#suggestions-container").empty();
+  },
+
+  collapseHandler: function(event) {
+    console.log("Collapsing siblings");
+    $(event.currentTarget).siblings(".in").collapse('hide');
   },
 
   submitDetails: function(event) {
@@ -69,19 +91,47 @@ App.Views.OntologyView = Backbone.View.extend({
   },
 
   selectConcept: function(event) {
-    var conceptId = $(event.currentTarget).children().children("label").attr('data-conceptid');
+    // remove visual selection
+    $("#concept-tree label").css("background-color", "");
+    // get concept id from the label;s parent (li)
+    var conceptId = $(event.currentTarget).parent().attr('data-conceptid');
+    // set visual indicator in the list item (li)
+    $(event.currentTarget).css("background-color", "#428bca");
+
+    //event.stopPropagation(); // Stop event from firing for parent
+    console.log("View.OntologyView.selectConcept: Selected conceptId = " + conceptId);
+    
+    // Set state
+    App.State.selectedConcept = parseInt(conceptId);
     this.renderProperties(conceptId);
   },
 
   suggestConcepts: function(event) {
-    var root = App.State.concepts.where({parentId: -1})[0].toJSON();
-    var req = {parentId: parseInt(root["id"]), numConcept: 4, maxIter: 50, numWords: 10};
-    var suggested = App.API.suggestConcepts(req, false, function(data) {
-      console.log("add");
+    var numConcepts = parseInt($("#numSuggest").val());
+    var req = {parentId: App.State.selectedConcept, numConcept: numConcepts, maxIter: 50, numWords: 10};
+    App.API.suggestConcepts(req, false, function(data) {
       for(var ii = 0; ii < data.length; ii++) {
-        //delete data[ii].docs;
-        App.State.concepts.create(data[ii]);
+        data[ii].lid = ii;
+        data[ii].numDocs = data[ii].docs.length;
       }
+      App.State.suggestions = data;
+      // insert list into UI
+      var template = Handlebars.templates['suggesttable'];
+      var html = template({suggestions: App.State.suggestions});
+      $("#suggestions-container").html(html);
+    });
+
+  },
+
+  addSuggested: function(event) {
+    var selected = $("#suggestions-container input:checked").map(function() {
+      return parseInt($(this).val());
+    }).get();
+    console.log(selected);
+    
+    selected.forEach(function(entry) {
+    App.State.concepts.create(App.State.suggestions[entry]);
+    delete App.State.suggestions[entry];
     });
   }
  

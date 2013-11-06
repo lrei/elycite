@@ -86,6 +86,8 @@
             <div class="panel-body">
               <!-- concept tree -->
               <div class="css-treeview" id="concept-tree">
+                <ul id="treeroot">
+                </ul>
               </div>  <!-- /concept tree -->
             </div> <!-- /panel body -->
             <!-- concept properties panel --> 
@@ -93,30 +95,57 @@
               <div class="panel-heading">
                 <h3 class="panel-title">Concept Properties</h3>
               </div>
-              <div class="panel-footer">
+              <div class="panel-footer" id="properties">
                 <div class="btn-group menu-control">
-                  <button type="button" class="btn btn-default btn-sm">Details</button>
-                  <button id="suggest-concepts" type="button" class="btn btn-default btn-sm">Suggestions</button>
-                  <button type="button" class="btn btn-default btn-sm">Relations</button>
+                  <button type="button" class="btn btn-default btn-sm" data-toggle="collapse" data-target="#concept-details">Details</button>
+                  <button id="suggest-concepts" type="button" class="btn btn-default btn-sm" data-toggle="collapse" data-target="#concept-suggestions">Suggestions</button>
+                  <button type="button" class="btn btn-default btn-sm" data-toggle="collapse" data-target="#concept-relations">Relations</button>
+                </div>
+              <div class="panel-body" id="concept-properties">
+                <div class="collapse in" id="concept-details" data-parent="#concept-properties">
+                </div>
+                <div class="collapse" id="concept-suggestions" data-parent="#concept-properties">
+                  <h4> Suggestions </h4>
+                  <div class="form-group">
+                    <label for="suggestMethod-picker">Method: </label>
+                    <select class="selectpicker" id="suggestMethod-picker">
+                      <option>kmeans</option>
+                      <option>Category</option>
+                    </select>
+                  </div> <!-- /from group method-->
+                  <div class="form-group">
+                    <label for="numSuggest">No. Suggestions: </label>
+                    <input type="number" id="numSuggest" value="2">
+                  </div>
+                  <button class="btn btn-primary" id="suggest">Suggest</button>
+                  <div id="suggestions-container">
+                  </div>
+                </div> <!-- end of suggestions -->
+                <div class="collapse" id="concept-relations" data-parent="#concept-properties">
+                  <h4> Relations </h4>
                 </div>
               </div> <!-- /panel-footer -->
-              <div class="panel-body" id="concept-properties">
-              </div> <!-- /panel body -->
-            </div> <!-- /concept properties panel -->
-          </div> 
-          <div class="col-md-8">
-            <div class="panel panel-default">
-              <div class="panel-heading">
-                <h3 class="panel-title">Ontology Details</h3>
-              </div>
-              <div class="panel-body">
-                Panel content
-              </div>
+            </div> <!-- /panel body -->
+          </div> <!-- /concept properties panel -->
+        </div> 
+      </div> <!-- / end of sidebar -->
+
+        <! -- 
+        MAIN AREA OF ONTOLOGY 
+        -->
+        <div class="col-md-8">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h3 class="panel-title">Ontology Details</h3>
+            </div>
+            <div class="panel-body">
+              Panel content
             </div>
           </div>
         </div>
-      </div> <!-- /ontoview grid -->
-    </div> <!-- /container -->
+      </div>
+    </div> <!-- /ontoview grid -->
+  </div> <!-- /container -->
 
 
     <!-- JavaScript
