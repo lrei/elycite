@@ -1,0 +1,25 @@
+<!-- OntoLoad Modal -->
+<div class="modal fade" id="loadModal" tabindex="-1" role="dialog" aria-labelledby="loadModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title">Load Ontology</h4>
+      </div> <!-- /modal header -->
+      <div class="modal-body">
+           <div class="form-group">
+            <label for="ontoPicker">Ontology: </label>
+            <select class="selectpicker" id="ontoPicker">
+              {{#each ontologies}}
+              <option>{{name}}</option>
+              {{/each}}
+            </select>
+          </div>
+      </div> <!-- /modal body -->
+      <div class="modal-footer">
+        <button id="close" type="button" class="btn" data-dismiss="modal">Cancel</button>
+        <button id="ontoLoad" type="button" class="btn btn-primary" data-dismiss="modal">Load</button>
+      </div> <!-- /modal footer -->
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div> <!-- /LoadView Modal -->

@@ -1,12 +1,12 @@
 App.Routers.Main = Backbone.Router.extend({
   initialize: function() {
-    _.bindAll(this, 'ontoview');
   },
  
   routes: {
     ''                : 'index',
     'ontoview'        : 'ontoview',
     'ontonew'         : 'ontonew',
+    'ontoload'        : 'ontoload',
   },
  
   index: function() {
@@ -23,5 +23,11 @@ App.Routers.Main = Backbone.Router.extend({
   ontonew: function() {
     console.log("Router.ontonew: New Ontology");
     this.load_view = new App.Views.OntoNewView();
+  },
+
+  ontoload: function() {
+    console.log("Router.ontonew: Load Ontology");
+    this.load_view = new App.Views.OntoLoadView();
   }
+
 });

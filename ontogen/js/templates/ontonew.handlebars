@@ -1,5 +1,5 @@
-<!-- LoadView Modal -->
-<div class="modal fade" id="newModal" tabindex="-1" role="dialog" aria-labelledby="loadModalLabel" aria-hidden="true">
+<!-- OntoNew Modal -->
+<div class="modal fade" id="newModal" tabindex="-1" role="dialog" aria-labelledby="newModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -7,6 +7,16 @@
         <h4 class="modal-title">Load Store</h4>
       </div> <!-- /modal header -->
       <div class="modal-body">
+        <div class="alert alert-danger fade in" id="nameAlert" style="display: none">
+          <button id="modalClose" type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+          <p><strong>Invalid name for ontology!</strong> Change the name field above and try again.</p>
+        </div>
+        <form role="form">
+          <div class="form-group">
+            <label for="exampleInputEmail1">Ontology Name:</label>
+            <input type="text" class="form-control" id="inputOntoName" placeholder="onto_">
+          </div>
+        </form>
         <div class="panel-group" id="accordion">
           {{#each stores}}
           <div class="panel panel-default">

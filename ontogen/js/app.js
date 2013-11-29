@@ -26,6 +26,8 @@ App = {
   },
 
   API: {
+    root: "/ontogenapi/",
+
     getLanguageOptions: function(callback) {
       $.ajax({
         url: "/ontogenapi/languageoptions"
@@ -38,23 +40,29 @@ App = {
       });
     },
     ontoCreate: function(args, async, callback) {
+      async = async || false;
       $.ajax({
         type: "POST",
-        url: "/ontogenapi/",
+        url: App.API.root + "ontologies/",
         async: async,
         data: JSON.stringify(args),
         dataType: "json",
         processData: "false",
         contentType: 'application/json'
       }).done(function(data, callback) {
-        console.log("API.ontoCreate.done");
-        var concepts = new App.Collections.Concepts();
-        concepts.add(data); // add root
-        App.State.concepts = concepts; // replace state
+        console.log("API.ontoCreate.done link:" + data.links.concepts);
+        App.State.concepts = new App.Collections.Concepts([], {url: data.links.concepts});
+        App.State.concepts.fetch({async: async});
         if(typeof callback === 'function') {
           callback(data);
-          }
+        }
       });
+    },
+    loadOntology: function(link, async) {
+      var concepts = new App.Collections.Concepts([], {url: link});
+      var isAsync = async || false;
+      concepts.fetch({async: isAsync});
+      App.State.concepts = concepts;
     },
     suggestConcepts: function(args, async, callback) {
       $.ajax({

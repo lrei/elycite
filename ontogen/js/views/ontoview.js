@@ -5,6 +5,9 @@ App.Views.OntologyView = Backbone.View.extend({
   template: Handlebars.templates['ontotree'],
 
    events: {
+     "click #deleteconcept": "showDelete",
+     "click #keep-delete-confirm": "deleteConcept",
+     "click #delete-confirm": "deleteConceptNoTransit",
      "click #submit-details": "submitDetails",
      "show.bs.collapse #concept-details" : "collapseHandler",
      "show.bs.collapse #concept-suggestions" : "collapseHandler",
@@ -18,24 +21,32 @@ App.Views.OntologyView = Backbone.View.extend({
     _.bindAll(this, "render", "selectConcept", "submitDetails");
     if (typeof App.State.concepts === 'undefined') {
       console.log("Views.OntologyView.init: no concepts");
-      App.State.concepts = new App.Collections.Concepts();
-      App.State.concepts.fetch();
+      //App.State.concepts = new App.Collections.Concepts();
+      //App.State.concepts.fetch();
     }
-    //this.listenTo(App.State.concepts, "add", this.render);
-    this.listenTo(App.State.concepts, "sync", this.render);
+    else {
+      //this.listenTo(App.State.concepts, "add", this.render);
+      this.listenTo(App.State.concepts, "sync", this.render);
+      this.listenTo(App.State.concepts, "remove", this.render);
+    }
   },
  
   render: function() {
     console.log("Views.OtologyView.render");
-    console.log(App.State.concepts);
+    if (typeof App.State.concepts === 'undefined') {
+      console.log("Views.OntologyView.render: no concepts");
+      return;
+    }
     // build concept tree
-    var root = App.State.concepts.where({parentId: -1});
-    if(root.length != 0) {
+    var root = App.State.concepts.findWhere({parentId: -1});
+    if(typeof root != 'undefined') {
       console.log("View.OntologyView.render: Tree Building");
-      root = root[0].toJSON();
+      root = root.toJSON();
+      console.log("View.OntologyView.render: root: " + JSON.stringify(root));
       var conceptTree = function buildTree(node) {
-        var children  = App.State.concepts.where({parentId: node.id});
-        if(children.length != 0) {
+        var children  = App.State.concepts.where({parentId: node.$id});
+        if(children.length !== 0) {
+          // @TODO change this to children.map()
           node.children = _.map(children,
                                 function(m) { return buildTree(m.toJSON()); });
         }
@@ -53,13 +64,19 @@ App.Views.OntologyView = Backbone.View.extend({
         return false;
       });
       
-      var conceptId = root["id"];
+      var conceptId = root.$id;
       if(App.State.selectedConcept) {
         conceptId = App.State.selectedConcept;
       }
-      console.log("go renderProperties for " + root["id"]);
-      this.renderProperties(root["id"]);
+      console.log("go renderProperties for " + root.$id);
+      this.renderProperties(root.$id);
       $("#ontoview").show();
+      var height = $("#concept-tree").height() + 200;
+      var graph = new App.Views.OntoViz({height: height});
+      graph.render();
+    }
+    else {
+      console.log("Views.OntologyView.render: no root node");
     }
   },
 
@@ -68,7 +85,6 @@ App.Views.OntologyView = Backbone.View.extend({
     var concept = App.State.concepts.get(conceptId).toJSON();
     console.log(concept);
     var template = Handlebars.templates['ontoproperties'];
-    concept.keywordStr = concept["keywords"].join(", ");
     var html = template(concept);
     $("#concept-details").html(html);
     // reset suggestion table
@@ -96,6 +112,7 @@ App.Views.OntologyView = Backbone.View.extend({
     // get concept id from the label;s parent (li)
     var conceptId = $(event.currentTarget).parent().attr('data-conceptid');
     // set visual indicator in the list item (li)
+    // @TODO this should somehow move into the css
     $(event.currentTarget).css("background-color", "#428bca");
 
     //event.stopPropagation(); // Stop event from firing for parent
@@ -104,6 +121,32 @@ App.Views.OntologyView = Backbone.View.extend({
     // Set state
     App.State.selectedConcept = parseInt(conceptId);
     this.renderProperties(conceptId);
+  },
+
+  showDelete: function() {
+    // @TODO check if concept has relations
+    $("#delete-modal").modal({backdrop:"static"});
+  },
+
+  deleteConcept: function() {
+    // which button was clicked?
+
+    var conceptId = App.State.selectedConcept;
+    console.log("View.OntologyView.deleteConcept: Selected conceptId = " + conceptId);
+    var concept = App.State.concepts.get(conceptId);
+    // Get parentId
+    var parentId = concept.get("parentId");
+    if(parentId < 0) {
+      reuturn; // dont delete root
+    }
+    // Change Selection
+    App.State.selectedConcept = parentId;
+    // Delete concept
+    concept.destroy({wait: true});
+    // @TODO MOVE TO CALLBACK:
+    App.State.concepts.remove(conceptId);
+    // dismiss modal
+    $("#delete-modal").modal('hide');
   },
 
   suggestConcepts: function(event) {
@@ -127,12 +170,17 @@ App.Views.OntologyView = Backbone.View.extend({
     var selected = $("#suggestions-container input:checked").map(function() {
       return parseInt($(this).val());
     }).get();
-    console.log(selected);
+    if(selected.length == 0) {
+      return;
+    }
+
+    console.log("Addind concepts: + " + selected.join(", "));
     
     selected.forEach(function(entry) {
-    App.State.concepts.create(App.State.suggestions[entry]);
-    delete App.State.suggestions[entry];
+      App.State.concepts.create(App.State.suggestions[entry], {wait: true});
+      delete App.State.suggestions[entry];
     });
+    console.log("Finished adding suggested");
   }
  
 });

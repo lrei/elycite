@@ -1,0 +1,6 @@
+<table id="suggestions-table" class="table table-bordered table-responsive">
+{{#each suggestions}}
+<tr data-lid="{{lid}}"><td><input type="checkbox" value={{lid}} /></td><td>{{name}}</td><td>{{numDocs}}</td></tr>
+{{/each}}
+</table>
+<button class="btn btn-primary" id="addSuggested">Add</button>

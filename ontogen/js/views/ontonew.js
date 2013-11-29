@@ -5,7 +5,7 @@ App.Views.OntoNewView = Backbone.View.extend({
   template: Handlebars.templates['ontonew'],
 
    events: {
-     "click button.close": "removeModal",
+     "click button#modalClose": "removeModal",
      "click button#close": "removeModal",
      "click button.ontoCreate" : "createOntology"
     //'click #load-data': 'loadData'
@@ -43,7 +43,13 @@ App.Views.OntoNewView = Backbone.View.extend({
 
 
   createOntology: function(event) {
-    console.log("Views.OntoNewView.selectField");
+    console.log("Views.OntoNewView.select");
+    var ontoName = $("#inputOntoName").val().trim();
+    if (ontoName.length === 0) {
+      $("#nameAlert").show();
+      return;
+    }
+    
     // get the store id
     var storeName = $(event.currentTarget).attr('data-storeName');
     console.log(storeName);
@@ -68,8 +74,8 @@ App.Views.OntoNewView = Backbone.View.extend({
     // make the request to qminer, show loading
     // !!! Synchronous call -> modal will only be dismissed after the function
     // completes - this is so ontoview can have the new ontology loaded in
-    App.API.ontoCreate({
-      storeName: storeName, fieldName: fieldName, stemmer: stemmer,
+    App.API.ontoCreate({ontologyName: ontoName,
+      dataStore: storeName, fieldName: fieldName, stemmer: stemmer,
       maxNgramLength: maxNgramLength, minNgramFreq: minNgramFreq,
       stopwordList: stopwords
     }, false, function(data) {
