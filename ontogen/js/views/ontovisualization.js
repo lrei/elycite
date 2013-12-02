@@ -1,9 +1,18 @@
 App.Views.OntoViz = Backbone.View.extend({
   el: "#ontoviz",
 
+  template: Handlebars.templates['actionbar'],
+
   initialize: function(attrs) {
     this.options = attrs || {};
+
+    if(typeof App.State.selectedConcept === 'undefined') {
+      App.State.selectedConcept = App.State.concepts.findWhere({parentId: -1});
+    }
+
     this.listenTo(App.State.concepts, 'change', this.render);
+    this.listenTo(App.State.selectedConcept, 'change', this.renderActionBar);
+
   },
 
   render: function() {
@@ -12,11 +21,11 @@ App.Views.OntoViz = Backbone.View.extend({
     
     // transform concepts into a set of nodes
     options.nodes = App.State.concepts.map(function(m) {
-      var node = {id: m.get("id"), label: m.get("name"), reflexive: m.parentId == -1};
+      var node = {id: m.get("id"), label: m.get("name"), reflexive: m.parentId === -1};
       return node;
     });
     // last node id
-    options.lastNodeId = App.State.concepts.max(function(m) { return m.id });
+    options.lastNodeId = App.State.concepts.max(function(m) { return m.id; });
     // transform relationships into links
     var tlinks = _.map(options.nodes, function(n) {
       var children  = App.State.concepts.where({parentId: n.id});
@@ -30,14 +39,31 @@ App.Views.OntoViz = Backbone.View.extend({
     options.links = [].concat.apply([], tlinks); // flatten
     console.log(options.links);
     $(this.el).empty();
+    this.renderActionBar();
     this.frame(options);
+  },
+
+  renderActionBar: function() {
+    console.log("App.Views.OntoViz.renderActionBar");
+    if(!$('#actionbar').length) {
+      $(this.el).append( this.template(App.State.selectedConcept.toJSON()));
+    }
+    $('#actionbar').html( this.template(App.State.selectedConcept.toJSON()) );
   },
 
 frame: function(options) {
   // set up SVG for D3
   var width  = $(this.el).width();
-  height = options.height || 600;
-  colors = d3.scale.category10();
+  var height = options.height || 600;
+  var freeVerticalSpace = $(window).height() - $('#main-navbar').height() - $('#actiobar').height() - $('#main-heading').height() - 10;
+  if (height < freeVerticalSpace) {
+    height = freeVerticalSpace;
+  }
+  console.log("height: " + height);
+  var colors = d3.scale.category10();
+  self.nodeWidth = 72;
+  self.nodeHeight = 24;
+
 
   var svg = d3.select(this.el)
   .append('svg')
@@ -59,7 +85,7 @@ frame: function(options) {
     .size([width, height])
     .linkDistance(150)
     .charge(-500)
-    .on('tick', tick)
+    .on('tick', tick);
 
     // define arrow markers for graph links
     svg.append('svg:defs').append('svg:marker')
@@ -91,7 +117,7 @@ frame: function(options) {
 
   // handles to link and node element groups
   var path = svg.append('svg:g').selectAll('path'),
-      circle = svg.append('svg:g').selectAll('g');
+      rect = svg.append('svg:g').selectAll('g');
 
   // mouse event vars
   var selected_node = null,
@@ -124,7 +150,7 @@ frame: function(options) {
     return 'M' + sourceX + ',' + sourceY + 'L' + targetX + ',' + targetY;
     });
 
-    circle.attr('transform', function(d) {
+    rect.attr('transform', function(d) {
       return 'translate(' + d.x + ',' + d.y + ')';
         });
       }
@@ -145,15 +171,7 @@ frame: function(options) {
       .attr('class', 'link')
       .classed('selected', function(d) { return d === selected_link; })
       .style('marker-start', function(d) { return d.left ? 'url(#start-arrow)' : ''; })
-      .style('marker-end', function(d) { return d.right ? 'url(#end-arrow)' : ''; })
-      .on('mousedown', function(d) {
-        // select link
-        mousedown_link = d;
-        if(mousedown_link === selected_link) selected_link = null;
-        else selected_link = mousedown_link;
-        selected_node = null;
-        restart();
-      });
+      .style('marker-end', function(d) { return d.right ? 'url(#end-arrow)' : ''; });
 
     // remove old links
     path.exit().remove();
@@ -161,95 +179,37 @@ frame: function(options) {
 
     // circle (node) group
     // NB: the function arg is crucial here! nodes are known by id, not by index!
-    circle = circle.data(nodes, function(d) { return d.id; });
+    rect = rect.data(nodes, function(d) { return d.id; });
 
     // update existing nodes (reflexive & selected visual states)
-    circle.selectAll('circle')
+    rect.selectAll('rect')
       .style('fill', '#fff')
       .classed('reflexive', function(d) { return d.reflexive; });
 
-    // add new nodes
-    var g = circle.enter().append('svg:g');
 
-    g.append('svg:circle')
+    // add new nodes
+    var g = rect.enter().append('svg:g');
+
+    g.append('svg:rect')
       .attr('class', 'node')
-      .attr('r', 30)
+      .attr("rx", 4)
+      .attr("ry", 4)
+      .attr("height", self.nodeHeight)
+      .attr("width", function(d){ if(d.name) { return d.name.length*6; } return self.nodeWidth;})
+      .attr("x",function(d){if(d.name) { return -d.name.length*3; } return -(self.nodeWidth/2);})
+      .attr("y", -self.nodeHeight/2)
       .style('fill', 'transparent')
       .style('stroke', '#000')
-      .attr("cx", function(d) { return d.x = Math.max(15, Math.min(width - 15, d.x)); })
-      .attr("cy", function(d) { return d.y = Math.max(15, Math.min(height - 15, d.y)); })
       .classed('reflexive', function(d) { return d.reflexive; })
       .on('mouseover', function(d) {
-        if(!mousedown_node || d === mousedown_node) return;
-        // enlarge target node
-        d3.select(this).attr('transform', 'scale(1.1)');
+        console.log("Entering the matrix");
       })
     .on('mouseout', function(d) {
-      if(!mousedown_node || d === mousedown_node) return;
-      // unenlarge target node
-      d3.select(this).attr('transform', '');
+      console.log("Leaving the matrix");
     })
-    .on('mousedown', function(d) {
-
-      // select node
-      mousedown_node = d;
-      if(mousedown_node === selected_node) selected_node = null;
-      else selected_node = mousedown_node;
-      selected_link = null;
-
-      // reposition drag line
-      drag_line
-      .style('marker-end', 'url(#end-arrow)')
-      .classed('hidden', false)
-      .attr('d', 'M' + mousedown_node.x + ',' + mousedown_node.y + 'L' + mousedown_node.x + ',' + mousedown_node.y);
-
-    restart();
-    })
-    .on('mouseup', function(d) {
-      if(!mousedown_node) return;
-
-      // needed by FF
-      drag_line
-      .classed('hidden', true)
-      .style('marker-end', '');
-
-    // check for drag-to-self
-    mouseup_node = d;
-    if(mouseup_node === mousedown_node) { resetMouseVars(); return; }
-
-    // unenlarge target node
-    d3.select(this).attr('transform', '');
-
-    // add link to graph (update if exists)
-    // NB: links are strictly source < target; arrows separately specified by booleans
-    var source, target, direction;
-    if(mousedown_node.id < mouseup_node.id) {
-      source = mousedown_node;
-      target = mouseup_node;
-      direction = 'right';
-    } else {
-      source = mouseup_node;
-      target = mousedown_node;
-      direction = 'left';
-    }
-
-    var link;
-    link = links.filter(function(l) {
-      return (l.source === source && l.target === target);
-    })[0];
-
-    if(link) {
-      link[direction] = true;
-    } else {
-      link = {source: source, target: target, left: false, right: false};
-      link[direction] = true;
-      links.push(link);
-    }
-
-    // select new link
-    selected_link = link;
-    selected_node = null;
-    restart();
+    .on('click', function(d) {
+      console.log("Black Hawk Down");
+      App.State.selectedConcept = App.State.concepts.findWhere({parentId: d.id});
     });
 
     // show node labels
@@ -260,51 +220,14 @@ frame: function(options) {
       .text(function(d) { return d.label; });
 
     // remove old nodes
-    circle.exit().remove();
+    rect.exit().remove();
 
     // set the graph in motion
     force.start();
-      }
+    }
 
-      function mousedown() {
-        // prevent I-bar on drag
-        //d3.event.preventDefault();
-
-        // because :active only works in WebKit?
-        svg.classed('active', true);
-
-        if( mousedown_node || mousedown_link) return;
-
-      }
-
-      function mousemove() {
-        if(!mousedown_node) return;
-
-        // update drag line
-        drag_line.attr('d', 'M' + mousedown_node.x + ',' + mousedown_node.y + 'L' + d3.mouse(this)[0] + ',' + d3.mouse(this)[1]);
-
-        restart();
-      }
-
-      function mouseup() {
-        if(mousedown_node) {
-          // hide drag line
-          drag_line
-            .classed('hidden', true)
-            .style('marker-end', '');
-        }
-
-        // because :active only works in WebKit?
-        svg.classed('active', false);
-
-        // clear mouse event vars
-        resetMouseVars();
-      }
-
-      // app starts here
-      svg.on('mousedown', mousedown)
-        .on('mousemove', mousemove)
-        .on('mouseup', mouseup);
-      restart();
+  
+    // app starts here
+    restart();
 }
 });

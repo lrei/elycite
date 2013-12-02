@@ -17,8 +17,7 @@
     <!-- Bootstrap select -->
     <link href="css/bootstrap-select.css" rel="stylesheet">
 
-    <!-- TreeView -->
-    <link href="css/treeview.css" rel="stylesheet">
+    <!-- TreeView   <link href="css/treeview.css" rel="stylesheet"> -->
 
     <!-- Custom OntoGen style (re)definitions -->
     <link href="css/ontogen.css" rel="stylesheet">
@@ -36,7 +35,7 @@
     <div class="container" id="main">
 
       <!-- Static navbar -->
-      <div class="navbar navbar-default">
+      <div class="navbar navbar-default" id="main-navbar">
         <div class="navbar-header">
           <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
             <span class="icon-bar"></span>
@@ -67,102 +66,17 @@
           </ul>
         </div><!--/.nav-collapse -->
       </div>
-      <!-- OntoView Grid: 
-      Small left side for Concepts, larger right side for Ontology 
+      <!-- OntoView: 
       -->
       <div class="row" id="ontoview" style="display: none">
-        <!-- concept sidebar columns -->
-        <div class="col-md-4" id="sidebar"> 
-          <!-- concept tree panel --> 
-          <div class="panel panel-default"> 
-            <div class="panel-heading">
-              <h3 class="panel-title">Concepts</h3>
-            </div>
-            <div class="panel-footer">
-              <div class="btn-group menu-control">
-                <button type="button" id="newconcept" class="btn btn-primary btn-sm">New</button>
-                <button type="button" id="moveconcept" class="btn btn-warning btn-sm">Move</button>
-                <button type="buttonr" id="deleteconcept" class="btn btn-danger btn-sm">Delete</button>
-              </div>
-            </div>
-            <div class="panel-body">
-              <!-- concept tree -->
-              <div class="css-treeview" id="concept-tree">
-                <ul id="treeroot">
-                </ul>
-              </div>  <!-- /concept tree -->
-            </div> <!-- /panel body -->
-            <!-- concept properties panel --> 
-            <div class="panel panel-default"> 
-              <div class="panel-heading">
-                <h3 class="panel-title">Concept Properties</h3>
-              </div>
-              <div class="panel-footer" id="properties">
-                <div class="btn-group menu-control">
-                  <button type="button" class="btn btn-default btn-sm" data-toggle="collapse" data-target="#concept-details">Details</button>
-                  <button id="suggest-concepts" type="button" class="btn btn-default btn-sm" data-toggle="collapse" data-target="#concept-suggestions">Suggestions</button>
-                  <button type="button" class="btn btn-default btn-sm" data-toggle="collapse" data-target="#concept-relations">Relations</button>
-                </div>
-              <div class="panel-body" id="concept-properties">
-                <div class="collapse in" id="concept-details" data-parent="#concept-properties">
-                </div>
-                <div class="collapse" id="concept-suggestions" data-parent="#concept-properties">
-                  <h4> Suggestions </h4>
-                  <div class="form-group">
-                    <label for="suggestMethod-picker">Method: </label>
-                    <select class="selectpicker" id="suggestMethod-picker">
-                      <option>kmeans</option>
-                      <option>Category</option>
-                    </select>
-                  </div> <!-- /from group method-->
-                  <div class="form-group">
-                    <label for="numSuggest">No. Suggestions: </label>
-                    <input type="number" id="numSuggest" value="2">
-                  </div>
-                  <button class="btn btn-primary" id="suggest">Suggest</button>
-                  <div id="suggestions-container">
-                  </div>
-                </div> <!-- end of suggestions -->
-                <div class="collapse" id="concept-relations" data-parent="#concept-properties">
-                  <h4> Relations </h4>
-                </div>
-              </div> <!-- /panel-footer -->
-            </div> <!-- /panel body -->
-          </div> <!-- /concept properties panel -->
-        </div> 
-        <! --
-        DELETE MODAL
-        --> 
-        <div class="modal fade" id="delete-modal">
-          <div class="modal-dialog">
-            <div class="modal-content">
-              <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title">Delete Concept</h4>
-              </div>
-              <div class="modal-body">
-                <p class="text-warning" >Keep the transitive relations through this concept?</p>
-              </div>
-              <div class="modal-footer">
-                <button type="button" id="keep-delete-confirm" class="btn btn-danger">Yes</button>
-                <button type="button" id="delete-confirm" class="btn btn-danger">No</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-              </div>
-            </div><!-- /.modal-content -->
-          </div><!-- /.modal-dialog -->
-        </div><!-- /.modal -->
-      </div> <!-- / end of sidebar -->
-
         <! -- 
         MAIN AREA OF ONTOLOGY 
         -->
-        <div class="col-md-8">
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h3 class="panel-title">Ontology Details</h3>
-            </div>
-            <div class="panel-body" id="ontoviz">
-            </div>
+        <div class="panel panel-default">
+          <div class="panel-heading" id="main-heading">
+            <h3 class="panel-title">Ontology Details</h3>
+          </div>
+          <div class="panel-body" id="ontoviz">
           </div>
         </div>
       </div>
