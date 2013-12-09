@@ -23,6 +23,39 @@ App = {
   },
 
   Helpers: {
+    getRootConcept: function() {
+      return App.State.concepts.findWhere({parentId: -1}).get("$id");
+    },
+
+    getSelectedConcept: function() {
+      var conceptId = App.State.selectedConcept.get("selected");
+      return App.State.concepts.findWhere({$id: conceptId});
+    },
+
+    setSelectedConcept: function(cid, options) {
+      App.State.selectedConcept.set("selected", cid, options);
+    },
+
+    setSelectedConceptRoot: function(options) {
+      App.State.selectedConcept.set("selected", App.Helpers.getRootConcept(), options);
+    },
+
+    filterConcept: function(concept, concepts) {
+      // get all subconcepts
+      var filterParent = function(concept) {
+        return function(element) { return element.parentId == concept.$id; };
+      };
+      var subconcepts = concepts.filter(filterParent(concept));
+      // recursive part
+      var ssc = [];
+      for(var ii = 0; ii < subconcepts.length; ii++) {
+        ssc = ssc.concat(App.Helpers.filterConcept(subconcepts[ii], concepts));
+      }
+      subconcepts = subconcepts.concat(ssc);
+      // result
+      return subconcepts;
+    }
+
   },
 
   API: {
@@ -64,23 +97,20 @@ App = {
       concepts.fetch({async: isAsync});
       App.State.concepts = concepts;
     },
-    suggestConcepts: function(args, async, callback) {
+
+    suggestConcepts: function(concept, n, callback) {
+      var url = concept.url() + '/suggest/';
       $.ajax({
         type: "GET",
-        url: "/ontogenapi/suggest/",
-        async: async,
-        data: args,
-        dataType: "json",
-        contentType: 'application/json'
+        url: url,
+        data: {"numSuggest": n }
       }).done(function(data) {
         console.log("API.suggestConcepts.done");
-        console.log(data);
         if(typeof callback === 'function') {
-          console.log("callback");
           callback(data);
         }
       });
-
+      //return data; // if sync
     }
   }
 };

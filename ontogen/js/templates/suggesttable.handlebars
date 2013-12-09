@@ -1,6 +1,17 @@
-<table id="suggestions-table" class="table table-bordered table-responsive">
+<thead>
+  <tr>
+    <th>Name</th>
+    <th>Keywords</th>
+    <th>Docs</th>
+    <th></th>
+  </tr>
+</thead>
 {{#each suggestions}}
-<tr data-lid="{{lid}}"><td><input type="checkbox" value={{lid}} /></td><td>{{name}}</td><td>{{numDocs}}</td></tr>
+<tr data-lid="{{lid}}">
+  <td>{{name}}</td>
+  <td>{{keywords}}</td>
+  <td>{{numDocs}}</td>
+  <td><button class="btn btn-primary" id="add-suggested" data-lid="{{lid}}">Add</button></td>
+</tr>
 {{/each}}
-</table>
-<button class="btn btn-primary" id="addSuggested">Add</button>
+

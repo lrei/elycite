@@ -1,0 +1,25 @@
+<!-- Modal -->
+<div class="modal fade" id="modal-suggest" tabindex="-1" role="dialog" aria-labelledby="modal-suggest-label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="modal-suggest-label">Suggest Sub Concepts for {{name}}</h4>
+      </div>
+      <div class="modal-body" id="modal-suggest-main">
+        <form class="form-inline" role="form">
+          <div class="form-group">
+            <label for="input-number-suggestions">Number of sub concepts: </label>
+            <input type="number" class="form-control" id="input-number-suggestions" value="2">
+          </div>
+        </form>
+        <button type="button" id='suggest' class="btn btn-primary" style="margin-top:5px">Suggest</button>
+        <table id="suggestions-table" class="table table-bordered table-responsive" style="margin-top:5px">
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->

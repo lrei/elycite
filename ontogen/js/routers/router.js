@@ -16,8 +16,11 @@ App.Routers.Main = Backbone.Router.extend({
 
   ontoview: function() {
     console.log("Router.ontoview");
-    this.ontology_view = new App.Views.OntologyView();
-    this.ontology_view.render();
+    if(this.ontology_view !== undefined) {
+      this.ontology_view.remove(); // for use with !==
+    }
+    this.ontology_view = new App.Views.OntologyView();  // for use with ===
+    //this.ontology_view.render();
   },
 
   ontonew: function() {

@@ -5,6 +5,7 @@ import "test.js"
  * Config, URLs, Default Options, etc
  */
 var docsJoinName = "docs";
+var childJoinName = "childOf";
 var docsFieldName = "text";
 
   var ontoPrefix = "onto_"; // ontology storeName prefix
@@ -58,6 +59,7 @@ function RootConcept(docStore, swords, stmr) {
     stopwords: stopwords,
     stemmer: stemmer,
     parentId: -1,
+    isDeleted: false
   };
   var docs = [];
   for(var ii = 0; ii < docStore.length; ii++) {
@@ -66,6 +68,38 @@ function RootConcept(docStore, swords, stmr) {
   concept[docsJoinName] = docs;
   return concept;
 }
+
+// Checks the parent
+var checkParentId = function(store, pid, res) {
+  var parentId;
+  // gracefully handle parentId sent as string instead of number 
+  if (pid === "string") {
+    parentId = parseInt(pid);
+  }
+  else { 
+    parentId = pid;
+  }
+
+  // handle invalid parentId value
+  if(isNaN(parentId) || parentId < 0) {
+    res.setStatusCode(400);
+    res.send("Invalid parent id:" + param.parentId);
+    return null;
+  }
+  var parentConcept = store[parentId];
+  if(parentConcept === null) {
+    res.setStatusCode(404);
+    res.send("concept '" + parenttId + "' (parent) not found");
+    return null;
+  }
+  if(parentConcept.isDeleted) {
+    res.setStatusCode(410);
+    res.send("concept '" + parenttId + "' (parent) has been deleted.");
+    return null;
+  }
+
+  return parentId; // Success
+};
  
 // Language Options
 http.onRequest("languageoptions", "GET", function(req, res) {
@@ -156,15 +190,16 @@ http.onRequest("ontologies", "POST", function(req, res) {
       { "name": "name", "type": "string", "primary":false},
       { "name": "keywords", "type": "string", "primary":false},
       { "name": "stopwords", "type": "string", "primary":false},
-      { "name": "stemmer", "type": "string", "primary":false}
+      { "name": "stemmer", "type": "string", "primary":false},
+      { "name": "isDeleted", "type": "bool", "primary":false, "default":false}
     ],
     "keys": [
       {"field": "name", "type": "value"}
     ],
     "joins": [
       {"name" : docsJoinName, "type" : "index",  "store" : dataStoreName},
-      {"name": "parent", "type": "field", "inverse": "childOf", "store": ontologyName},
-      {"name": "childOf", "type": "index", "store": ontologyName, "inverse" : "parent" }
+      {"name": "parent", "type": "field", "inverse": childJoinName, "store": ontologyName},
+      {"name": childJoinName, "type": "index", "store": ontologyName, "inverse" : "parent" }
     ]
   }];
 
@@ -260,7 +295,9 @@ http.onRequest("ontologies/<ontology>/concepts/", "GET", function (req, res) {
 
   var concepts = [];
   for (var ii = 0; ii < store.length; ii++) {
-    concepts.push(store[ii]);
+    if (!store[ii].isDeleted) {
+      concepts.push(store[ii]);
+    }
   }
 
   res.send(concepts);
@@ -353,19 +390,13 @@ http.onRequest("ontologies/<ontology>/concepts/", "POST", function (req, res) {
     res.send("Missing parent.");
     return;
   }
-  var parentId = parseInt(data.parentId);
-  if(isNaN(parentId) || parentId < 0) {
-    res.setStatusCode(400);
-    res.send("Invalid parent id:" + param.parentId);
-    return;
+  var parentId = checkParentId(store, data.parentId, res);
+  if(parentId === null) {
+    return; // response has been handled
   }
-  var parentConcept = store[parentId];
-  if(parentConcept === null) {
-    res.setStatusCode(404);
-    res.send("concept '" + parenttId + "' (parent) not found");
-    return;
-  }
-  concept.parentId = {$record:parentId};
+
+  // set the join
+  concept.parent = {$record: parentId};
 
   // keywords
   concept.keywords = data.keywords || "";
@@ -376,12 +407,14 @@ http.onRequest("ontologies/<ontology>/concepts/", "POST", function (req, res) {
   // Stemmer
   concept.stemmer = data.stemmer || store[parentId].stemmer;
 
-  // docs - an array of ids
+  // docs - an array of ids from parent
   var docs = data.docs || [];
   concept[docsJoinName] = [];
   for(var ii = 0; ii < docs.length; ii++) {
     concept[docsJoinName].push({$record: docs[ii]});
   }
+
+  concept.isDeleted = false; // we just created it after all...
   
   cid = store.add(concept);
   if(cid === null) {
@@ -393,6 +426,205 @@ http.onRequest("ontologies/<ontology>/concepts/", "POST", function (req, res) {
 
   res.send(addedConcept);
 });
+
+/// Concept - EDIT
+http.onRequest("ontologies/<ontology>/concepts/<cid>", "PUT", function (req, res) {
+  console.say("OntoGen API - Concept edit PUT");
+
+  if(!req.hasOwnProperty("params")) {
+    res.setStatusCode(400);
+    res.send("Missing parameters");
+    return;
+  }
+  var params = req.params;
+  if(!params.hasOwnProperty("ontology")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: ontology name");
+    return;
+  }
+  var store = qm.store(params.ontology);
+  if(store === null) {
+    res.setStatusCode(404);
+    res.send("Ontology '" + params.ontology + "' not found");
+    return;
+  }
+  if(!params.hasOwnProperty("cid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: concept id");
+    return;
+  }
+  var conceptId = parseInt(params.cid);
+  if(isNaN(conceptId)) {
+    res.setStatusCode(400);
+    res.send("Invalid concept id:" + params.cid);
+    return;
+  }
+  var concept = store[conceptId];
+  if(concept === null) {
+    res.setStatusCode(404);
+    res.send("concept '" + conceptId + "' not found");
+    return;
+  }
+  if(!req.hasOwnProperty("jsonData")) {
+    res.setStatusCode(400);
+    res.send("Missing data.");
+    return;
+  }
+  var data = req.jsonData;
+
+  // updates a to record are made by adding a {record: $id} obbject
+  // with the properties to be changed
+  var change = {"$record": concept.$id};
+
+  // name
+  if(data.hasOwnProperty("name")) {
+    change.name = data.name;
+  }
+
+  // keywords
+  if(data.hasOwnProperty("keywords")) {
+    change.keywords = data.keywords;
+  }
+
+  // Stopwords
+  if(data.hasOwnProperty("stopwords")) {
+    change.stopwords = data.stopwords;
+  }
+
+  // Stemmer
+  if(data.hasOwnProperty("stemmer")) {
+    change.stemmer = data.stemmer;
+  }
+
+  // Change Parent ("Move")
+  if(data.hasOwnProperty("parentId")) {
+    var parentId = checkParentId(store, data.parentId, res);
+    if (parentId === null) {
+      return;
+    }
+    if (parentId !== concept.parentId) {
+      change.parent = {$record: parentId}; // this does not do anything
+      change.parentId = parentId; // warning: hope this is not breaking the join
+    }
+  }
+
+  cid = store.add(change);
+
+  if(cid === null) {
+    res.setStatusCode(500);
+    res.send("Unable to add concept");
+    return;
+  }
+  var addedConcept = store[cid];
+
+  res.send(addedConcept);
+});
+
+
+/// Concept -  GET subsconcepts
+http.onRequest("ontologies/<ontology>/concepts/<cid>/subconcepts", "GET", function (req, res) {
+  console.say("OntoGen API - GET SUB CONCETPS");
+  if(!req.hasOwnProperty("params")) {
+    res.setStatusCode(400);
+    res.send("Missing parameters");
+    return;
+  }
+  var params = req.params;
+  if(!params.hasOwnProperty("ontology")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: ontology name");
+    return;
+  }
+  var store = qm.store(params.ontology);
+  if(store === null) {
+    res.setStatusCode(404);
+    res.send("Ontology '" + params.ontology + "' not found");
+    return;
+  }
+  if(!params.hasOwnProperty("cid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: concept id");
+    return;
+  }
+  var conceptId = parseInt(params.cid);
+  if(isNaN(conceptId)) {
+    res.setStatusCode(400);
+    res.send("Invalid concept id:" + params.cid);
+    return;
+  }
+  var concept = store[conceptId];
+  if(concept === null) {
+    res.setStatusCode(404);
+    res.send("concept '" + conceptId + "' not found");
+    return;
+  }
+
+  var rSet = concept.join(childJoinName);
+  var data = [];
+  for(var ii = 0; ii < rSet.length; ii++) {
+    if(!rSet[ii].isDeleted) {
+      data.push(rSet[ii]);
+    }
+  }
+
+  res.send(data);
+});
+
+
+/// Concept - DELETE Concept (and sub-concepts)
+http.onRequest("ontologies/<ontology>/concepts/<cid>", "DELETE", function (req, res) {
+  console.say("OntoGen API - Concept DELETE");
+  if(!req.hasOwnProperty("params")) {
+    res.setStatusCode(400);
+    res.send("Missing parameters");
+    return;
+  }
+  var params = req.params;
+  if(!params.hasOwnProperty("ontology")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: ontology name");
+    return;
+  }
+  var store = qm.store(params.ontology);
+  if(store === null) {
+    res.setStatusCode(404);
+    res.send("Ontology '" + params.ontology + "' not found");
+    return;
+  }
+  if(!params.hasOwnProperty("cid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: concept id");
+    return;
+  }
+  var conceptId = parseInt(params.cid);
+  if(isNaN(conceptId)) {
+    res.setStatusCode(400);
+    res.send("Invalid concept id:" + params.cid);
+    return;
+  }
+  var concept = store[conceptId];
+  if(concept === null) {
+    res.setStatusCode(404);
+    res.send("concept '" + conceptId + "' not found");
+    return;
+  }
+
+  var recursiveDelete = function(c) {
+    var rSet = c.join(childJoinName);
+
+    var data = [];
+    for(var ii = 0; ii < rSet.length; ii++) {
+      recursiveDelete(rSet[ii]);
+    }
+    var change = {"$record": c.$id};
+    change.isDeleted = true;
+    store.add(change);
+  };
+  recursiveDelete(concept);
+
+  res.send();
+});
+
 
 /// Concept - Read Docs
 http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET", function (req, res) {
@@ -430,6 +662,11 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET", function (re
   if(concept === null) {
     res.setStatusCode(404);
     res.send("concept '" + conceptId + "' not found");
+    return;
+  }
+  if(concept.isDeleted) {
+    res.setStatusCode(410);
+    res.send("concept '" + conceptId + "' has been deleted.");
     return;
   }
 
@@ -479,6 +716,11 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/suggest/", "GET", function 
   if(concept === null) {
     res.setStatusCode(404);
     res.send("concept '" + conceptId + "' not found");
+    return;
+  }
+  if(concept.isDeleted) {
+    res.setStatusCode(410);
+    res.send("concept '" + conceptId + "' has been deleted.");
     return;
   }
 

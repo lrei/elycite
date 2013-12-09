@@ -54,42 +54,29 @@ svg {
   user-select: none;
 }
 
-svg:not(.active):not(.ctrl) {
-  cursor: crosshair;
-}
 
-path.link {
+polyline.link {
   fill: none;
   stroke: #000;
   stroke-width: 2px;
   cursor: default;
 }
 
-svg:not(.active):not(.ctrl) path.link {
-  cursor: pointer;
-}
 
-
-path.link.dragline {
-  pointer-events: none;
-}
-
-path.link.hidden {
-  stroke-width: 0;
-}
-
-circle.node {
+rect.node {
   stroke-width: 1px;
   cursor: pointer;
 }
 
-circle.node.reflexive {
+rect.node.reflexive {
   stroke: #000 !important;
   stroke-width: 1px;
 }
 
 text {
   font: 10px sans-serif;
+  text-color: #000;
+  color: #000;
   pointer-events: none;
 }
 

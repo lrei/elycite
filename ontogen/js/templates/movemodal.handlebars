@@ -1,14 +1,13 @@
 <!-- Modal -->
-<div class="modal fade" id="modal-delete" tabindex="-1" role="dialog" aria-labelledby="modal-delete-label" aria-hidden="true">
+<div class="modal fade" id="modal-move" tabindex="-1" role="dialog" aria-labelledby="modal-move-label" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h4 class="modal-title" id="modal-delete-label">Delete {{concept.name}}</h4>
+        <h4 class="modal-title" id="modal-move-label">Move {{concept.name}}</h4>
       </div>
-      <div class="modal-body" id="modal-delete-main">
-        {{#if concept.hasChildren}}
-        <div class="form-group" style="margin-top:5px">
+      <div class="modal-body" id="modal-move-main">
+        <div class="form-group">
           <label for="picker-destination">Destination: </label>
           <select class="selectpicker" id="picker-destination">
             {{#each concepts}}
@@ -16,13 +15,9 @@
             {{/each}} <!-- end of each field -->
           </select>
         </div> <!-- /from group -->
-        {{/if}}
       </div>
       <div class="modal-footer">
-        <button data-cid={{concept.$id}} type="button" id='delete-all' class="btn btn-danger" style="margin-top:5px">Delete Sub Concepts</button>
-        {{#if concept.hasChildren}}
-        <button data-cid={{concept.$id}} type="button" id='delete-move' class="btn btn-warning" style="margin-top:5px">Delete and Move Sub Concepts</button>
-        {{/if}}
+        <button data-cid={{concept.$id}} type="button" id='move-to-destination' class="btn btn-warning">Move</button>
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
     </div><!-- /.modal-content -->
