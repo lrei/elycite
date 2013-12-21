@@ -9,6 +9,7 @@ App.Views.OntologyView = Backbone.View.extend({
   suggestTemplate: Handlebars.templates['suggestmodal'],
   deleteTemplate: Handlebars.templates['deletemodal'],
   moveTemplate: Handlebars.templates['movemodal'],
+  queryTemplate: Handlebars.templates['querymodal'],
 
   events: {
      "click #change-concept": "changeConcept",
@@ -20,7 +21,10 @@ App.Views.OntologyView = Backbone.View.extend({
      "click #move-to-destination": "moveConcept",
      "click #delete-concept": "showDeleteConcept",
      "click #delete-all": "deleteConcept",
-     "click #delete-move": "deleteMoveConcept"
+     "click #delete-move": "deleteMoveConcept",
+     "click #vis-decrease": "decreaseVisualizationSize",
+     "click #vis-increase": "increaseVisualizationSize",
+     "click #query-concept": "showQueryModal"
   },
 
   initialize: function() {
@@ -74,14 +78,18 @@ App.Views.OntologyView = Backbone.View.extend({
         this.rendered = true;
       }
       this.renderActionBar();
-      if(this.graph === undefined) {
-        this.graph = new App.Views.OntoViz();
-      }
-      this.graph.render();
+      this.renderVisualization();
     }
     else {
       console.log("Views.OntologyView.render: no root node");
     }
+  },
+
+  renderVisualization: function() {
+    if(this.graph === undefined) {
+        this.graph = new App.Views.OntoViz();
+      }
+      this.graph.render();
   },
 
   renderActionBar: function() {
@@ -162,6 +170,7 @@ App.Views.OntologyView = Backbone.View.extend({
     concepts = concepts.filter(function(x) { return subconcepts.indexOf(x) < 0;});
     // has children?
     conceptjs.hasChildren = App.State.concepts.findWhere({parentId: conceptjs.$id});
+    console.log(conceptjs.hasChildren);
     // display
     $(this.el).append(this.deleteTemplate({concept:conceptjs, concepts:concepts}));
     $('#modal-delete').modal('show');
@@ -217,6 +226,10 @@ App.Views.OntologyView = Backbone.View.extend({
     // remove subconcepts from possible destinations
     concepts = concepts.filter(function(x) { return subconcepts.indexOf(x) < 0;});
 
+    // remove if exists
+    if($('#modal-move').length > 0) {
+      $('#modal-move').remove();
+    }
     // display
     $(this.el).append(this.moveTemplate({concept:conceptjs, concepts:concepts}));
     $('#modal-move').modal('show');
@@ -235,5 +248,54 @@ App.Views.OntologyView = Backbone.View.extend({
     });
   },
 
- 
+  newConcept: function() {
+    var parentId = App.Helpers.getSelectedConcept().get("$id");
+    App.State.concepts.create({name: "New Concept", parentId: parentId});
+  },
+
+  decreaseVisualizationSize: function() {
+    var width = App.State.VizOpts.get("width") - 20;
+    var height = App.State.VizOpts.get("height") - 20;
+    App.State.VizOpts.set("width", width, {silent: true});
+    App.State.VizOpts.set("height", height);
+  },
+  
+  increaseVisualizationSize: function() {
+    var width = App.State.VizOpts.get("width") + 20;
+    var height = App.State.VizOpts.get("height") + 20;
+    App.State.VizOpts.set("width", width, {silent: true});
+    App.State.VizOpts.set("height", height);
+  },
+
+  showQueryModal: function() {
+    console.log("App.Views.OntoView.showQueryModal");
+    var conceptjs = App.Helpers.getSelectedConcept().toJSON();
+    var concepts = App.State.concepts.toJSON();
+
+    // remove if exists
+    if($('#modal-query').length > 0) {
+      $('#modal-query').remove();
+    }
+    // display
+    $(this.el).append(this.queryTemplate({concept:conceptjs}));
+    $('#modal-query').modal('show');
+  },
+
+  makeQuery: function(ev) {
+    var queryText = $('#query-text').val();
+    if (queryText.length < 1) {
+      return;
+    }
+    // concept url
+    var cid = $(ev.currentTarget).data("cid");
+    var conceptUrl = App.State.concepts.findWhere({$id: cid}).url();
+    // make query and set AL, make question = true
+    var callback = function(question) {
+      // insert first question into modal
+      // make yes/no buttons
+      // make buttons for cancel/finish
+    };
+    App.API.AL(conceptUrl, true, calback);
+    
+  }
 });

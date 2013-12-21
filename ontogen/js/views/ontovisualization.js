@@ -1,54 +1,80 @@
 App.Views.OntoViz = Backbone.View.extend({
   el: "#ontoviz",
 
-initialize: function(attrs) {
-  this.options = attrs || {};
-},
+  initialize: function(attrs) {
+    this.options = attrs || {};
 
-render: function() {
-  console.log("App.Views.OntoViz.render");
-  var options = this.options;
+    if(App.State.VizOpts === undefined) {
+      var width  = $(this.el).width();
+      var height = 600;
+      var freeVerticalSpace = $(window).height() - $('#main-navbar').height();
+      freeVerticalSpace -= $('#actiobar').height();
+      freeVerticalSpace -= $('#main-heading').height();
+      freeVerticalSpace -= 10;
+      if (height < freeVerticalSpace) {
+        height = freeVerticalSpace;
+      }
+      var vo = {
+        "width":      width,
+        "height":     height,
+        "type":       "basic",
+        "isDefault":  true
+      };
+      App.State.VizOpts = new App.Models.VisualizationOptions(vo);
+    }
+    this.listenTo(App.State.VizOpts, "change", this.changeVisualization);
+  },
 
-  // transform concepts into a set of nodes
-  options.nodes = App.State.concepts.map(function(m) {
-    var node = {id: m.get("$id"), label: m.get("name"), reflexive: m.parentId === -1};
-    return node;
-  });
-  // last node id
-  options.lastNodeId = App.State.concepts.max(function(m) { return m.$id; });
+  render: function() {
+    console.log("App.Views.OntoViz.render");
+    var options = this.options || {};
 
-  // transform relationships into links
-  var tlinks = _.map(options.nodes, function(n) {
-    var children  = App.State.concepts.where({parentId: n.id});
-    return children.map(function(c) {
-      t = _.findWhere(options.nodes, {id: c.get("$id")});
-      return {target: n, source: t, left: false, right: true };
+    // transform concepts into a set of nodes
+    options.nodes = App.State.concepts.map(function(m) {
+      var node = {id: m.get("$id"), label: m.get("name"), reflexive: m.parentId === -1};
+      return node;
     });
-  });
-  console.log(tlinks);
-  options.links = [];
-  options.links = [].concat.apply([], tlinks); // flatten
-  console.log(options.links);
-  $(this.el).empty();
-  this.frame(options);
-},
+    // last node id
+    options.lastNodeId = App.State.concepts.max(function(m) { return m.$id; });
+
+    // transform relationships into links
+    var tlinks = _.map(options.nodes, function(n) {
+      var children  = App.State.concepts.where({parentId: n.id});
+      return children.map(function(c) {
+        t = _.findWhere(options.nodes, {id: c.get("$id")});
+        return {target: n, source: t, left: false, right: true };
+      });
+    });
+    console.log(tlinks);
+    options.links = [];
+    options.links = [].concat.apply([], tlinks); // flatten
+    this.options = options;
+    console.log(this.options.links);
+    this.changeVisualization();
+   },
+
+  changeVisualization: function() {
+    this.options.height = App.State.VizOpts.get("height");
+    this.options.width = App.State.VizOpts.get("width");
+    $(this.el).empty();
+    this.options.selector = this.el;
+    this.frame(this.options);
+  },
 
 
   frame: function(options) {
     // set up SVG for D3
-    var width  = $(this.el).width();
-    var height = options.height || 600;
-    var freeVerticalSpace = $(window).height() - $('#main-navbar').height() - $('#actiobar').height() - $('#main-heading').height() - 10;
-    if (height < freeVerticalSpace) {
-      height = freeVerticalSpace;
-    }
+    var height = options.height;
+    var width = options.width;
+    var selector = options.selector;
+
     console.log("height: " + height);
     var colors = d3.scale.category10();
     self.nodeWidth = 72;
     self.nodeHeight = 24;
 
 
-    var svg = d3.select(this.el)
+    var svg = d3.select(selector)
       .append('svg')
       .attr('width', width)
       .attr('height', height);

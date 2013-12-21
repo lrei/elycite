@@ -27,6 +27,7 @@ var url_for = function(what, which, where) {
         url += which + "/";
       }
       break;
+
     case "stores":
       url += "stores/";
       if(typeof which != 'undefined') {
@@ -35,18 +36,29 @@ var url_for = function(what, which, where) {
       break;
 
     case "concepts":
-      url += "ontologies/" + where + "/concepts/";
-      if(typeof which !== 'undefined' && which !== null) {
+      url += "ontologies/" + where[0] + "/concepts/";
+      if(which !== undefined && which !== null) {
         url += which + "/";
       }
       break;
+
+    case "al":
+      url += "ontologies/" + "al/" + which;
   }
+
   return url;
 
 };
 
 var ontologyNameFromStoreName = function(storeName) {
   return storeName.replace(ontoRegex, "");
+};
+
+
+var randomPosInt32 = function() {
+  var max = 2147483647;
+  var min = 0;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
 function RootConcept(docStore, swords, stmr) {
@@ -107,6 +119,7 @@ http.onRequest("languageoptions", "GET", function(req, res) {
   
   res.send(ontogen.getLanguageOptions());
 });
+
 
 /*
  * Stores
@@ -621,7 +634,8 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>", "DELETE", function (req, 
     store.add(change);
   };
   recursiveDelete(concept);
-
+  
+  res.setStatusCode(204);
   res.send();
 });
 
@@ -739,3 +753,209 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/suggest/", "GET", function 
   res.send(suggested); 
 });
 
+/*
+ * Active Learning
+ */
+/// AL - Create
+http.onRequest("al/", "GET", function (req, res) {
+  console.say("OntoGen API - AL Create - GET");
+  
+  var data = req.args;
+  console.say(JSON.stringify(data));
+  if(!data.hasOwnProperty("ontology")) { 
+    res.setStatusCode(400);
+    res.send("Missing data: ontology - ontology name");
+    return;
+  }
+  var store = qm.store(data.ontology[0]);
+  if(store === null) {
+    res.setStatusCode(404);
+    res.send("Ontology '" + params.ontology[0] + "' not found");
+    return;
+  }
+  var storeName = data.ontology[0];
+
+  if(!data.hasOwnProperty("cid")) { 
+    res.setStatusCode(400);
+    res.send("Missing data: cid - concept id");
+    return;
+  }
+  var conceptId = parseInt(data.cid[0]);
+  if(isNaN(conceptId)) {
+    res.setStatusCode(400);
+    res.send("Invalid concept id:" + data.cid[0]);
+    return;
+  }
+  var concept = store[conceptId];
+  if(concept === null) {
+    res.setStatusCode(404);
+    res.send("concept '" + conceptId + "' not found");
+    return;
+  }
+  if(concept.isDeleted) {
+    res.setStatusCode(410);
+    res.send("concept '" + conceptId + "' has been deleted.");
+    return;
+  }
+
+  if(!data.hasOwnProperty("query")) {
+    res.setStatusCode(400);
+    res.send("Missing data: query");
+    return;
+  }
+  var query = data.query[0];
+
+  var stemmer = concept.stemmer;
+  if(data.hasOwnProperty("stemmer")) {
+    stemmer = data.stemmer[0];
+  }
+  var stopwords = concept.stopwords;
+  if(data.hasOwnProperty("stopwords")) {
+    stemmer = data.stopwords[0];
+  }
+
+  var alid = randomPosInt32();
+  alid = ontogen.createAL(storeName, docsJoinName, docsFieldName, stemmer,
+                          stopwords, conceptId, query, alid);
+  if(alid < 1) {
+    // TODO: handle errors
+  }
+  var al = {id: alid, parentConcept: conceptId, links: {}};
+  al.links.self = url_for("al", alid);
+  res.send(al);
+
+});
+
+/// AL - Get Question
+http.onRequest("al/<alid>/", "GET", function (req, res) {
+  console.say("OntoGen API - AL POST");
+
+  if(!req.hasOwnProperty("params")) {
+    res.setStatusCode(400);
+    res.send("Missing parameters");
+    return;
+  }
+  var params = req.params;
+  if(!params.hasOwnProperty("alid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: active learner id (alid)");
+    return;
+  }
+  var alid = parseInt(params.alid);
+  if(isNaN(alid)) {
+    res.setStatusCode(400);
+    res.send("Invalid AL id:" + params.cid);
+    return;
+  }
+  var qid = 0;
+  if(req.args.hasOwnProperty("qid")) {
+    qid = parseInt(req.args.qid[0]);
+  }
+  var question = ontogen.getQuestionFromAL(alid, qid);
+  res.send(question);
+
+});
+
+/// AL - Answer Question
+http.onRequest("al/<alid>/", "PATCH", function (req, res) {
+  console.say("OntoGen API - AL PATCH");
+
+  if(!req.hasOwnProperty("params")) {
+    res.setStatusCode(400);
+    res.send("Missing parameters");
+    return;
+  }
+  var params = req.params;
+  
+  if(!params.hasOwnProperty("alid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: active learner id (alid)");
+    return;
+  }
+  var alid = parseInt(params.alid);
+
+  if(!req.hasOwnProperty("jsonData")) {
+    res.setStatusCode(400);
+    res.send("Missing data.");
+    return;
+  }
+  var data = req.jsonData;
+
+  if(!data.hasOwnProperty("answer")) {
+    res.setStatusCode(400);
+    res.send("Missing answer");
+    return;
+  }
+  if(!data.hasOwnProperty("docId")) {
+    res.setStatusCode(400);
+    res.send("Missing document id");
+    return;
+  }
+  var pos = data.answer;
+  var did = data.docId;
+
+  var ret =  ontogen.answerQuestionForAL(alid, did, pos);
+  // @TODO: error handling
+  res.send();
+});
+
+/// AL - Cancel
+http.onRequest("al/<alid>/", "DELETE", function (req, res) {
+  console.say("OntoGen API - AL DELETE");
+
+  if(!req.hasOwnProperty("params")) {
+    res.setStatusCode(400);
+    res.send("Missing parameters");
+    return;
+  }
+  var params = req.params;
+
+  if(!params.hasOwnProperty("alid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: active learner id (alid)");
+    return;
+  }
+  var alid = parseInt(params.alid);
+
+  ontogen.deleteAL(alid);
+  res.setStatusCode(204);
+  res.send();
+});
+
+/// AL - Finish/Get Concept
+http.onRequest("al/<alid>/", "POST", function (req, res) {
+  console.say("OntoGen API - AL <id> POST");
+
+  if(!req.hasOwnProperty("params")) {
+    res.setStatusCode(400);
+    res.send("Missing parameters");
+    return;
+  }
+  var params = req.params;
+
+  if(!params.hasOwnProperty("alid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: active learner id (alid)");
+    return;
+  }
+  var alid = parseInt(params.alid);
+
+  if(!req.hasOwnProperty("jsonData")) {
+    res.setStatusCode(400);
+    res.send("Missing data.");
+    return;
+  }
+  var data = req.jsonData;
+
+  if(!data.hasOwnProperty("name")) {
+    res.setStatusCode(400);
+    res.send("Missing name");
+    return;
+  }
+  var name = data.name;
+
+  var concept = ontogen.getConceptFromAL(name);
+
+  res.send();
+
+});

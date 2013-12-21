@@ -1,0 +1,24 @@
+<!-- Modal -->
+<div class="modal fade" id="modal-query" data-backdrop="false" tabindex="-1" role="dialog" aria-labelledby="modal-query-label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="modal-query-label">Query {{concept.name}}</h4>
+      </div>
+      <div class="modal-body" id="modal-query-main">
+        <form class="form-horizontal" role="form">
+        <div class="form-group" style="margin-top:5px">
+          <textarea id="query-text" class="form-control" rows="6"></textarea>
+        </div> <!-- /from group -->
+        <div class="form-group pull-right">
+          <button id="make-query" data-cid={{concept.$id}} type="button" class="btn btn-primary">Query</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        </div> <!-- /form group -->
+      </form>
+      </div>
+      <div id="query-modal-footer" class="modal-footer">
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
