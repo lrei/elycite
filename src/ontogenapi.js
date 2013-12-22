@@ -36,14 +36,15 @@ var url_for = function(what, which, where) {
       break;
 
     case "concepts":
-      url += "ontologies/" + where[0] + "/concepts/";
+      url += "ontologies/" + where + "/concepts/";
       if(which !== undefined && which !== null) {
         url += which + "/";
       }
       break;
 
     case "al":
-      url += "ontologies/" + "al/" + which;
+      url += "al/" + which;
+      break;
   }
 
   return url;
@@ -52,6 +53,15 @@ var url_for = function(what, which, where) {
 
 var ontologyNameFromStoreName = function(storeName) {
   return storeName.replace(ontoRegex, "");
+};
+
+var conceptFromRecord = function(rec, ontology) {
+  var c = rec;
+  c.ontology = ontology;
+  c.links = {};
+  c.links.self = url_for("concepts", c.$id, ontology);
+  c.links.ontology = url_for("ontologies", ontology);
+  return c;
 };
 
 
@@ -309,7 +319,8 @@ http.onRequest("ontologies/<ontology>/concepts/", "GET", function (req, res) {
   var concepts = [];
   for (var ii = 0; ii < store.length; ii++) {
     if (!store[ii].isDeleted) {
-      concepts.push(store[ii]);
+      var c = conceptFromRecord(store[ii], params.ontology);
+      concepts.push(c);
     }
   }
 
@@ -354,8 +365,8 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/", "GET", function (req, re
     res.send("concept '" + conceptId + "' not found");
     return;
   }
-
-  res.send(concept); 
+  var c = conceptFromRecord(concept, params.ontology);
+  res.send(c); 
 });
 
 /// Concept - Create
@@ -757,33 +768,37 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/suggest/", "GET", function 
  * Active Learning
  */
 /// AL - Create
-http.onRequest("al/", "GET", function (req, res) {
+http.onRequest("al/", "POST", function (req, res) {
   console.say("OntoGen API - AL Create - GET");
   
-  var data = req.args;
-  console.say(JSON.stringify(data));
+  if(!req.hasOwnProperty("jsonData")) { 
+    res.setStatusCode(400);
+    res.send("Missing data");
+    return;
+  } 
+  var data = req.jsonData;
   if(!data.hasOwnProperty("ontology")) { 
     res.setStatusCode(400);
     res.send("Missing data: ontology - ontology name");
     return;
   }
-  var store = qm.store(data.ontology[0]);
+  var store = qm.store(data.ontology);
   if(store === null) {
     res.setStatusCode(404);
-    res.send("Ontology '" + params.ontology[0] + "' not found");
+    res.send("Ontology '" + data.ontology + "' not found");
     return;
   }
-  var storeName = data.ontology[0];
+  var storeName = data.ontology;
 
-  if(!data.hasOwnProperty("cid")) { 
+  if(!data.hasOwnProperty("parentId")) { 
     res.setStatusCode(400);
-    res.send("Missing data: cid - concept id");
+    res.send("Missing data: parentId - parent concept id");
     return;
   }
-  var conceptId = parseInt(data.cid[0]);
+  var conceptId = parseInt(data.parentId);
   if(isNaN(conceptId)) {
     res.setStatusCode(400);
-    res.send("Invalid concept id:" + data.cid[0]);
+    res.send("Invalid concept id:" + data.parentId);
     return;
   }
   var concept = store[conceptId];
@@ -803,27 +818,34 @@ http.onRequest("al/", "GET", function (req, res) {
     res.send("Missing data: query");
     return;
   }
-  var query = data.query[0];
+  var query = data.query;
 
   var stemmer = concept.stemmer;
   if(data.hasOwnProperty("stemmer")) {
-    stemmer = data.stemmer[0];
+    stemmer = data.stemmer;
   }
   var stopwords = concept.stopwords;
   if(data.hasOwnProperty("stopwords")) {
-    stemmer = data.stopwords[0];
+    stemmer = data.stopwords;
   }
 
   var alid = randomPosInt32();
+  console.say("input alid: " + alid + "(" + typeof alid +")");
   alid = ontogen.createAL(storeName, docsJoinName, docsFieldName, stemmer,
                           stopwords, conceptId, query, alid);
   if(alid < 1) {
     // TODO: handle errors
+  
+    res.setStatusCode(500);
+    res.send();
+    return;
   }
-  var al = {id: alid, parentConcept: conceptId, links: {}};
-  al.links.self = url_for("al", alid);
-  res.send(al);
-
+  //var al = {id: alid, parentConcept: conceptId, links: {}};
+  var qid = 0;
+  var question = ontogen.getQuestionFromAL(alid, qid);
+  question.id = alid; // this uses the AL id (no client side question obj)
+  res.send(question);
+  
 });
 
 /// AL - Get Question
@@ -852,6 +874,7 @@ http.onRequest("al/<alid>/", "GET", function (req, res) {
     qid = parseInt(req.args.qid[0]);
   }
   var question = ontogen.getQuestionFromAL(alid, qid);
+  question.id = alid; // this uses the AL id (no client side question obj)
   res.send(question);
 
 });
@@ -886,17 +909,19 @@ http.onRequest("al/<alid>/", "PATCH", function (req, res) {
     res.send("Missing answer");
     return;
   }
-  if(!data.hasOwnProperty("docId")) {
+  if(!data.hasOwnProperty("questionId")) {
     res.setStatusCode(400);
-    res.send("Missing document id");
+    res.send("Missing question id");
     return;
   }
   var pos = data.answer;
-  var did = data.docId;
+  var did = data.questionId;
 
   var ret =  ontogen.answerQuestionForAL(alid, did, pos);
   // @TODO: error handling
-  res.send();
+  var question = ontogen.getQuestionFromAL(alid, 0);
+  question.id = alid; // this used the AL id
+  res.send(question);
 });
 
 /// AL - Cancel

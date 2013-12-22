@@ -1,0 +1,10 @@
+<form class="form-horizontal" role="form">
+  <div class="form-group">
+    <button data-alid={{id}} data-questionid={{questionId}} data-answer=1 type="button" class="btn btn-primary pull-left answer-question">Yes</button>
+    <button data-alid={{id}} data-questionid={{questionId}} data-answer=0 type="button" class="btn btn-default pull-left answer-question">No</button>
+    {{#if mode}}
+    <button data-alid={{id}} type="button" class="btn btn-warn pull-right finish-question">Finish</button>
+    {{/if}}
+    <button data-alid={{id}} type="button" class="btn btn-danger pull-right cancel-question">Cancel</button>
+  </div>
+</form>

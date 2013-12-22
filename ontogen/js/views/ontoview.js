@@ -10,6 +10,8 @@ App.Views.OntologyView = Backbone.View.extend({
   deleteTemplate: Handlebars.templates['deletemodal'],
   moveTemplate: Handlebars.templates['movemodal'],
   queryTemplate: Handlebars.templates['querymodal'],
+  answerButtonsTemplate: Handlebars.templates['answerbuttons'],
+  questionTemplate: Handlebars.templates['question'],
 
   events: {
      "click #change-concept": "changeConcept",
@@ -24,7 +26,9 @@ App.Views.OntologyView = Backbone.View.extend({
      "click #delete-move": "deleteMoveConcept",
      "click #vis-decrease": "decreaseVisualizationSize",
      "click #vis-increase": "increaseVisualizationSize",
-     "click #query-concept": "showQueryModal"
+     "click #query-concept": "showQueryModal",
+     "click #make-query": "makeQuery",
+     "click button.answer-question": "answerQuestion",
   },
 
   initialize: function() {
@@ -282,20 +286,49 @@ App.Views.OntologyView = Backbone.View.extend({
   },
 
   makeQuery: function(ev) {
+    console.log("App.Views.OntoView.makeQuery");
     var queryText = $('#query-text').val();
     if (queryText.length < 1) {
       return;
     }
     // concept url
     var cid = $(ev.currentTarget).data("cid");
-    var conceptUrl = App.State.concepts.findWhere({$id: cid}).url();
+    var c = App.State.concepts.findWhere({$id: cid}).toJSON();
     // make query and set AL, make question = true
-    var callback = function(question) {
-      // insert first question into modal
-      // make yes/no buttons
-      // make buttons for cancel/finish
-    };
-    App.API.AL(conceptUrl, true, calback);
-    
+    App.State.currentAL = new App.Models.AL({parentId: c.$id, 
+                                             ontology: c.ontology,
+                                             query: queryText});
+    this.listenTo(App.State.currentAL, "change", this.renderQuestion);
+    App.State.currentAL.save();
+  },
+
+  renderQuestion: function() {
+    console.log("App.Views.OntoView.renderQuestion");
+    var question = App.State.currentAL.toJSON();
+    console.log(question);
+    // set title
+    var cname = question.query.substring(0, 15);
+    /*
+    if (question.query.length > 15) {
+      cname = question.query.substring(0, 12) + "...";
+    }
+    */
+    var title = "Does this document belong to the concept " + cname;
+    $("#modal-query-label").text(title);
+    // Clear body
+    $("#modal-query-main").empty();
+    $("#modal-query-main").append(this.questionTemplate(question));
+    $("#modal-query-footer").empty();
+    $("#modal-query-footer").append(this.answerButtonsTemplate(question));
+  },
+
+  answerQuestion: function(ev) {
+    console.log("App.Views.OntoView.answerQuestion");
+    //var alid = $(ev.currentTarget).data("alid");
+    var answer = Boolean($(ev.currentTarget).data("answer"));
+    App.State.currentAL.save({answer: answer,
+                              questionId: App.State.currentAL.get("questionId")},
+                             {patch: true});
   }
+ 
 });
