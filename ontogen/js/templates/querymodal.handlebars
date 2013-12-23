@@ -3,7 +3,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <button type="button" class="close cancel-question" data-dismiss="modal" aria-hidden="true">&times;</button>
         <h4 class="modal-title" id="modal-query-label">Query {{concept.name}}</h4>
       </div>
       <div class="modal-body" id="modal-query-main">
@@ -15,7 +15,7 @@
       </div>
       <div id="modal-query-footer" class="modal-footer">
         <button id="make-query" data-cid={{concept.$id}} type="button" class="btn btn-primary">Query</button>
-        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-default cancel-question" data-dismiss="modal">Cancel</button>
       </div>
     </div><!-- /.modal-content -->
   </div><!-- /.modal-dialog -->

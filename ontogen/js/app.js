@@ -72,6 +72,7 @@ App = {
         }
       });
     },
+
     ontoCreate: function(args, async, callback) {
       async = async || false;
       $.ajax({
@@ -91,6 +92,7 @@ App = {
         }
       });
     },
+
     loadOntology: function(link, async) {
       var concepts = new App.Collections.Concepts([], {url: link});
       var isAsync = async || false;
@@ -98,6 +100,7 @@ App = {
       App.State.concepts = concepts;
     },
 
+    // @TODO move this to concept model using link url
     suggestConcepts: function(concept, n, callback) {
       var url = concept.url() + '/suggest/';
       $.ajax({

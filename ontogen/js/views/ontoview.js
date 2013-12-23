@@ -29,6 +29,8 @@ App.Views.OntologyView = Backbone.View.extend({
      "click #query-concept": "showQueryModal",
      "click #make-query": "makeQuery",
      "click button.answer-question": "answerQuestion",
+     "click button.cancel-question": "cancelAL",
+     "click button.finish-question": "finishAL",
   },
 
   initialize: function() {
@@ -329,6 +331,25 @@ App.Views.OntologyView = Backbone.View.extend({
     App.State.currentAL.save({answer: answer,
                               questionId: App.State.currentAL.get("questionId")},
                              {patch: true});
+  },
+  
+  cancelAL: function() {
+    console.log("App.Views.OntoView.cancelAL");
+    if(App.State.currentAL) {
+      App.State.currentAL.destroy();
+    }
+  },
+
+  finishAL: function() {
+    console.log("App.Views.OntoView.finishAL");
+    if(!App.State.currentAL) {
+      return;
+    }
+    var addConceptFromAL = function(data) {
+      App.State.concepts.create(data);
+      App.State.currentAL.destroy();
+    };
+    App.State.currentAL.getConcept(addConceptFromAL);
   }
  
 });

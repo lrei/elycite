@@ -844,6 +844,9 @@ http.onRequest("al/", "POST", function (req, res) {
   var qid = 0;
   var question = ontogen.getQuestionFromAL(alid, qid);
   question.id = alid; // this uses the AL id (no client side question obj)
+
+  // TODO: add links
+
   res.send(question);
   
 });
@@ -875,6 +878,14 @@ http.onRequest("al/<alid>/", "GET", function (req, res) {
   }
   var question = ontogen.getQuestionFromAL(alid, qid);
   question.id = alid; // this uses the AL id (no client side question obj)
+
+  question.links = {};
+  question.links.self = url_for("al", alid);
+  question.links.ontology = url_for("ontologies", question.ontology);
+  if(question.mode) {
+    question.links.concept = question.links.self + "/concept";
+  }
+
   res.send(question);
 
 });
@@ -921,6 +932,14 @@ http.onRequest("al/<alid>/", "PATCH", function (req, res) {
   // @TODO: error handling
   var question = ontogen.getQuestionFromAL(alid, 0);
   question.id = alid; // this used the AL id
+
+  question.links = {};
+  question.links.self = url_for("al", alid);
+  question.links.ontology = url_for("ontologies", question.ontology);
+  if(question.mode) {
+    question.links.concept = question.links.self + "/concept";
+  }
+
   res.send(question);
 });
 
@@ -947,9 +966,9 @@ http.onRequest("al/<alid>/", "DELETE", function (req, res) {
   res.send();
 });
 
-/// AL - Finish/Get Concept
-http.onRequest("al/<alid>/", "POST", function (req, res) {
-  console.say("OntoGen API - AL <id> POST");
+/// AL - Get Concept
+http.onRequest("al/<alid>/concept/", "GET", function (req, res) {
+  console.say("OntoGen API - AL <id> / concept GET");
 
   if(!req.hasOwnProperty("params")) {
     res.setStatusCode(400);
@@ -964,23 +983,8 @@ http.onRequest("al/<alid>/", "POST", function (req, res) {
     return;
   }
   var alid = parseInt(params.alid);
+  var concept = ontogen.getConceptFromAL(alid);
 
-  if(!req.hasOwnProperty("jsonData")) {
-    res.setStatusCode(400);
-    res.send("Missing data.");
-    return;
-  }
-  var data = req.jsonData;
-
-  if(!data.hasOwnProperty("name")) {
-    res.setStatusCode(400);
-    res.send("Missing name");
-    return;
-  }
-  var name = data.name;
-
-  var concept = ontogen.getConceptFromAL(name);
-
-  res.send();
+  res.send(concept);
 
 });
