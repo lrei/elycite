@@ -20,18 +20,8 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
 templates['answerbuttons'] = template(function (Handlebars,depth0,helpers,partials,data) {
   this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
-  var buffer = "", stack1, functionType="function", escapeExpression=this.escapeExpression, self=this;
+  var buffer = "", stack1, functionType="function", escapeExpression=this.escapeExpression;
 
-function program1(depth0,data) {
-  
-  var buffer = "", stack1;
-  buffer += "\n    <button data-alid=";
-  if (stack1 = helpers.id) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
-  else { stack1 = depth0.id; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
-  buffer += escapeExpression(stack1)
-    + " type=\"button\" data-dismiss=\"modal\" class=\"btn btn-warn pull-right finish-question\">Finish</button>\n    ";
-  return buffer;
-  }
 
   buffer += "<form class=\"form-horizontal\" role=\"form\">\n  <div class=\"form-group\">\n    <button data-alid=";
   if (stack1 = helpers.id) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
@@ -49,10 +39,7 @@ function program1(depth0,data) {
   if (stack1 = helpers.questionId) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.questionId; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
-    + " data-answer=0 type=\"button\" class=\"btn btn-default pull-left answer-question\">No</button>\n    ";
-  stack1 = helpers['if'].call(depth0, depth0.mode, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
-  if(stack1 || stack1 === 0) { buffer += stack1; }
-  buffer += "\n    <button data-alid=";
+    + " data-answer=0 type=\"button\" class=\"btn btn-default pull-left answer-question\">No</button>\n    <button data-alid=";
   if (stack1 = helpers.id) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.id; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
@@ -97,7 +84,7 @@ function program4(depth0,data) {
   return buffer;
   }
 
-  buffer += "<!-- Modal -->\n<div class=\"modal fade\" id=\"modal-delete\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"modal-delete-label\" aria-hidden=\"true\">\n  <div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\" id=\"modal-delete-label\">Delete "
+  buffer += "<!-- Modal -->\n<div class=\"modal fade\" id=\"modal-delete\" data-backdrop=\"false\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"modal-delete-label\" aria-hidden=\"true\">\n  <div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\" id=\"modal-delete-label\">Delete "
     + escapeExpression(((stack1 = ((stack1 = depth0.concept),stack1 == null || stack1 === false ? stack1 : stack1.name)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
     + "</h4>\n      </div>\n      <div class=\"modal-body\" id=\"modal-delete-main\">\n        ";
   stack2 = helpers['if'].call(depth0, ((stack1 = depth0.concept),stack1 == null || stack1 === false ? stack1 : stack1.hasChildren), {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
@@ -130,7 +117,7 @@ function program1(depth0,data) {
   return buffer;
   }
 
-  buffer += "<!-- Modal -->\n<div class=\"modal fade\" id=\"modal-move\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"modal-move-label\" aria-hidden=\"true\">\n  <div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\" id=\"modal-move-label\">Move "
+  buffer += "<!-- Modal -->\n<div class=\"modal fade\" id=\"modal-move\" data-backdrop=\"false\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"modal-move-label\" aria-hidden=\"true\">\n  <div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\" id=\"modal-move-label\">Move "
     + escapeExpression(((stack1 = ((stack1 = depth0.concept),stack1 == null || stack1 === false ? stack1 : stack1.name)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
     + "</h4>\n      </div>\n      <div class=\"modal-body\" id=\"modal-move-main\">\n        <div class=\"form-group\">\n          <label for=\"picker-destination\">Destination: </label>\n          <select class=\"selectpicker\" id=\"picker-destination\">\n            ";
   stack2 = helpers.each.call(depth0, depth0.concepts, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
@@ -156,7 +143,7 @@ function program1(depth0,data) {
   return buffer;
   }
 
-  buffer += "<!-- OntoLoad Modal -->\n<div class=\"modal fade\" id=\"loadModal\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"loadModalLabel\" aria-hidden=\"true\">\n  <div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\">Load Ontology</h4>\n      </div> <!-- /modal header -->\n      <div class=\"modal-body\">\n           <div class=\"form-group\">\n            <label for=\"ontoPicker\">Ontology: </label>\n            <select class=\"selectpicker\" id=\"ontoPicker\">\n              ";
+  buffer += "<!-- OntoLoad Modal -->\n<div class=\"modal fade\" id=\"loadModal\" data-backdrop=\"false\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"loadModalLabel\" aria-hidden=\"true\">\n  <div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\">Load Ontology</h4>\n      </div> <!-- /modal header -->\n      <div class=\"modal-body\">\n           <div class=\"form-group\">\n            <label for=\"ontoPicker\">Ontology: </label>\n            <select class=\"selectpicker\" id=\"ontoPicker\">\n              ";
   stack1 = helpers.each.call(depth0, depth0.ontologies, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n            </select>\n          </div>\n      </div> <!-- /modal body -->\n      <div class=\"modal-footer\">\n        <button id=\"close\" type=\"button\" class=\"btn\" data-dismiss=\"modal\">Cancel</button>\n        <button id=\"ontoLoad\" type=\"button\" class=\"btn btn-primary\" data-dismiss=\"modal\">Load</button>\n      </div> <!-- /modal footer -->\n    </div><!-- /.modal-content -->\n  </div><!-- /.modal-dialog -->\n</div> <!-- /LoadView Modal -->\n";
@@ -212,7 +199,7 @@ function program4(depth0,data) {
   return buffer;
   }
 
-  buffer += "<!-- OntoNew Modal -->\n<div class=\"modal fade\" id=\"newModal\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"newModalLabel\" aria-hidden=\"true\">\n  <div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\">Load Store</h4>\n      </div> <!-- /modal header -->\n      <div class=\"modal-body\">\n        <div class=\"alert alert-danger fade in\" id=\"nameAlert\" style=\"display: none\">\n          <button id=\"modalClose\" type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button>\n          <p><strong>Invalid name for ontology!</strong> Change the name field above and try again.</p>\n        </div>\n        <form role=\"form\">\n          <div class=\"form-group\">\n            <label for=\"exampleInputEmail1\">Ontology Name:</label>\n            <input type=\"text\" class=\"form-control\" id=\"inputOntoName\" placeholder=\"onto_\">\n          </div>\n        </form>\n        <div class=\"panel-group\" id=\"accordion\">\n          ";
+  buffer += "<!-- OntoNew Modal -->\n<div class=\"modal fade\" id=\"newModal\" data-backdrop=\"false\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"newModalLabel\" aria-hidden=\"true\">\n  <div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\">Load Store</h4>\n      </div> <!-- /modal header -->\n      <div class=\"modal-body\">\n        <div class=\"alert alert-danger fade in\" id=\"nameAlert\" style=\"display: none\">\n          <button id=\"modalClose\" type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button>\n          <p><strong>Invalid name for ontology!</strong> Change the name field above and try again.</p>\n        </div>\n        <form role=\"form\">\n          <div class=\"form-group\">\n            <label for=\"exampleInputEmail1\">Ontology Name:</label>\n            <input type=\"text\" class=\"form-control\" id=\"inputOntoName\" placeholder=\"onto_\">\n          </div>\n        </form>\n        <div class=\"panel-group\" id=\"accordion\">\n          ";
   stack1 = helpers.each.call(depth0, depth0.stores, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += " <!-- end of each store -->\n          </div> <!-- /panel (accordion) item -->\n        </div> <!-- /accordion -->\n      </div> <!-- /modal body -->\n      <div class=\"modal-footer\">\n        <button id=\"close\" type=\"button\" class=\"btn btn-danger\" data-dismiss=\"modal\">Cancel</button>\n      </div> <!-- /modal footer -->\n    </div><!-- /.modal-content -->\n  </div><!-- /.modal-dialog -->\n</div> <!-- /LoadView Modal -->\n";
@@ -314,15 +301,23 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
 function program1(depth0,data) {
   
   var buffer = "", stack1;
-  buffer += "\n<hr/>\n<h5>Current Concept Keywords</h5>\n<p>";
+  buffer += "\n<hr/>\n<h5>Current Concept</h5>\n<table class=\"table table-bordered table-responsive\">\n<thead>\n  <tr>\n    <th>Name</th>\n    <th>Keywords</th>\n    <th>Docs</th>\n    <th></th>\n  </tr>\n</thead>\n<tr>\n  <td>";
+  if (stack1 = helpers.name) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
+  else { stack1 = depth0.name; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
+  buffer += escapeExpression(stack1)
+    + "</td>\n  <td>";
   if (stack1 = helpers.keywords) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.keywords; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
-    + "<p>\n<p><b>Documents currently in concept:</b> ";
+    + "</td>\n  <td>";
   if (stack1 = helpers.count) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.count; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
-    + "</p>\n";
+    + "</td>\n  <td><button data-alid=";
+  if (stack1 = helpers.id) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
+  else { stack1 = depth0.id; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
+  buffer += escapeExpression(stack1)
+    + " type=\"button\" data-dismiss=\"modal\" class=\"btn btn-success finish-question\">Add</button></td>\n</tr>\n</table>\n";
   return buffer;
   }
 
@@ -341,7 +336,7 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
   var buffer = "", stack1, functionType="function", escapeExpression=this.escapeExpression;
 
 
-  buffer += "<!-- Modal -->\n<div class=\"modal fade\" id=\"modal-suggest\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"modal-suggest-label\" aria-hidden=\"true\">\n  <div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\" id=\"modal-suggest-label\">Suggest Sub Concepts for ";
+  buffer += "<!-- Modal -->\n<div class=\"modal fade\" id=\"modal-suggest\" data-backdrop=\"false\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"modal-suggest-label\" aria-hidden=\"true\">\n  <div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\" id=\"modal-suggest-label\">Suggest Sub Concepts for ";
   if (stack1 = helpers.name) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.name; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)

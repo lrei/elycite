@@ -26,7 +26,7 @@ App.Views.OntoLoadView = Backbone.View.extend({
     var ontologies = this.ontologies.toJSON();
     //this.$el.html(this.template(data));
     $(this.el).append( this.template({"ontologies":ontologies}) );
-    $("#loadModal").modal({backdrop:"static"});
+    $("#loadModal").modal('show');
   },
 
 

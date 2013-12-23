@@ -633,6 +633,12 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>", "DELETE", function (req, 
     return;
   }
 
+  if(concept.parentId === -1) {
+    res.setStatusCode(400);
+    res.send("Root concept can not be deleted");
+    return;
+  }
+
   var recursiveDelete = function(c) {
     var rSet = c.join(childJoinName);
 
@@ -853,7 +859,7 @@ http.onRequest("al/", "POST", function (req, res) {
 
 /// AL - Get Question
 http.onRequest("al/<alid>/", "GET", function (req, res) {
-  console.say("OntoGen API - AL POST");
+  console.say("OntoGen API - AL GET");
 
   if(!req.hasOwnProperty("params")) {
     res.setStatusCode(400);

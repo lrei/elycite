@@ -38,7 +38,7 @@ App.Views.OntoNewView = Backbone.View.extend({
     };
     //this.$el.html(this.template(data));
     $(this.el).append( this.template({"stores":stores}) );
-    $("#newModal").modal({backdrop:"static"});
+    $("#newModal").modal('show');
   },
 
 

@@ -23,6 +23,7 @@ App = {
   },
 
   Helpers: {
+    // TODO: rename to getRootConceptId
     getRootConcept: function() {
       return App.State.concepts.findWhere({parentId: -1}).get("$id");
     },

@@ -166,7 +166,11 @@ App.Views.OntologyView = Backbone.View.extend({
 
   showDeleteConcept: function() {
     console.log("App.Views.OntoView.showDeleteModal");
-    var conceptjs = App.Helpers.getSelectedConcept().toJSON();
+    var concept = App.Helpers.getSelectedConcept();
+    if(concept.isRoot()) {
+      return;
+    }
+    var conceptjs = concept.toJSON();
     var concepts = App.State.concepts.toJSON();
 
     // get a concept and his subconcepts
@@ -223,7 +227,11 @@ App.Views.OntologyView = Backbone.View.extend({
 
   showMoveConcept: function() {
     console.log("App.Views.OntoView.showMoveModal");
-    var conceptjs = App.Helpers.getSelectedConcept().toJSON();
+    var concept = App.Helpers.getSelectedConcept();
+    if(concept.isRoot()) {
+      return;
+    }
+    var conceptjs = concept.toJSON();
     var concepts = App.State.concepts.toJSON();
 
     // get a concept and his subconcepts

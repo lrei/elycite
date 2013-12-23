@@ -1,7 +1,21 @@
 {{text}}
 {{#if mode}}
 <hr/>
-<h5>Current Concept Keywords</h5>
-<p>{{keywords}}<p>
-<p><b>Documents currently in concept:</b> {{count}}</p>
+<h5>Current Concept</h5>
+<table class="table table-bordered table-responsive">
+<thead>
+  <tr>
+    <th>Name</th>
+    <th>Keywords</th>
+    <th>Docs</th>
+    <th></th>
+  </tr>
+</thead>
+<tr>
+  <td>{{name}}</td>
+  <td>{{keywords}}</td>
+  <td>{{count}}</td>
+  <td><button data-alid={{id}} type="button" data-dismiss="modal" class="btn btn-success finish-question">Add</button></td>
+</tr>
+</table>
 {{/if}}
