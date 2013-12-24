@@ -105,7 +105,7 @@ var checkParentId = function(store, pid, res) {
   // handle invalid parentId value
   if(isNaN(parentId) || parentId < 0) {
     res.setStatusCode(400);
-    res.send("Invalid parent id:" + param.parentId);
+    res.send("Invalid parent id:" + parentId);
     return null;
   }
   var parentConcept = store[parentId];
@@ -452,7 +452,7 @@ http.onRequest("ontologies/<ontology>/concepts/", "POST", function (req, res) {
 });
 
 /// Concept - EDIT
-http.onRequest("ontologies/<ontology>/concepts/<cid>", "PUT", function (req, res) {
+http.onRequest("ontologies/<ontology>/concepts/<cid>/", "PUT", function (req, res) {
   console.say("OntoGen API - Concept edit PUT");
 
   if(!req.hasOwnProperty("params")) {
@@ -520,15 +520,18 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>", "PUT", function (req, res
     change.stemmer = data.stemmer;
   }
 
-  // Change Parent ("Move")
-  if(data.hasOwnProperty("parentId")) {
-    var parentId = checkParentId(store, data.parentId, res);
-    if (parentId === null) {
-      return;
-    }
-    if (parentId !== concept.parentId) {
-      change.parent = {$record: parentId}; // this does not do anything
-      change.parentId = parentId; // warning: hope this is not breaking the join
+  // Check if concept is root, if not, possibly allow change of parent
+  if(concept.parentId != -1) { 
+    // Change Parent ("Move")
+    if(data.hasOwnProperty("parentId")) {
+      var parentId = checkParentId(store, data.parentId, res);
+      if (parentId === null) {
+        return;
+      }
+      if (parentId !== concept.parentId) {
+        change.parent = {$record: parentId}; // this does not do anything
+        change.parentId = parentId; // warning: hope this is not breaking the join
+      }
     }
   }
 
