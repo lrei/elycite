@@ -1,6 +1,5 @@
 App.Views.OntologyView = Backbone.View.extend({
   id: "ontoview",
-  className: "row",
 
   //template: Handlebars.templates['concepts-nested'],
   //template: Handlebars.templates['ontotree'],

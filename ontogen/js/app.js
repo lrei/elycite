@@ -23,11 +23,11 @@ App = {
   },
 
   Helpers: {
-    // TODO: rename to getRootConceptId
+    // TODO: rename to getRootConceptId, move to collection
     getRootConcept: function() {
       return App.State.concepts.findWhere({parentId: -1}).get("$id");
     },
-
+    // TODO add collection param, move to model selectedConcept
     getSelectedConcept: function() {
       var conceptId = App.State.selectedConcept.get("selected");
       return App.State.concepts.findWhere({$id: conceptId});
