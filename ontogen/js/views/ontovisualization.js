@@ -16,11 +16,12 @@ App.Views.OntoViz = Backbone.View.extend({
     this.options = attrs || {};
     App.State.openids = App.State.openids || [];
 
-    if(App.State.VizOpts === undefined) {
+    if(typeof App.State.VizOpts === "undefined") {
       var width  = $(this.el).width();
       var height = this.defaultHeight();
       var vo = {
-        "height":     height,
+        "height":   height,
+        "name":     App.Config.VisualizationEnum[0],
       };
       App.State.VizOpts = new App.Models.VisualizationOptions(vo);
     }
@@ -33,11 +34,23 @@ App.Views.OntoViz = Backbone.View.extend({
     this.options.width = App.State.VizOpts.get("width");
     $(this.el).empty();
     this.options.selector = this.el;
-    //this.makeBasicForceStructure();
-    //this.basicForce(this.options);
-    this.makeCollapsibleTreeStructure();
-    this.radialTree(this.options);
-    //this.collapsibleTree(this.options);
+
+    // see App.Config.VisualizationEnum
+    switch(App.State.VizOpts.get("name")) {
+      default:
+      case "Basic Force":
+        this.makeBasicForceStructure();
+        this.basicForce(this.options);
+        break;
+      case "Radial Tree":
+        this.makeCollapsibleTreeStructure();
+        this.radialTree(this.options);
+        break;
+      case "Horizontal Tree":
+        this.makeCollapsibleTreeStructure();
+        this.collapsibleTree(this.options);
+        break;
+    }
   },
 
   makeBasicForceStructure: function() {
@@ -349,9 +362,13 @@ App.Views.OntoViz = Backbone.View.extend({
 
   // based on http://bl.ocks.org/mbostock/4063550
   radialTree: function(options) {
-    var diameter = 300 * options.maxDepth;
+    var linklen = 300;
+    var diameter = linklen * options.maxDepth;
     var selector = options.selector;
+    var duration = 750;
 
+    var root = options.root;
+    
     var tree = d3.layout.tree()
         .size([360, diameter / 2 - 120])
         .separation(function(a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
@@ -365,37 +382,119 @@ App.Views.OntoViz = Backbone.View.extend({
       .append("g")
         .attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
 
-    var nodes = tree.nodes(options.root),
-        links = tree.links(nodes);
+    function collapse(d) {
+      if (d.children) {
+        d._children = d.children;
+        d._children.forEach(collapse);
+        d.children = null;
+      }
+    }
 
-    var link = svg.selectAll(".link")
-        .data(links)
-      .enter().append("path")
-        .attr("class", "link")
-        .attr("d", diagonal);
+    //root.children.forEach(collapse);
+    update(root);
 
-    var node = svg.selectAll(".node")
-        .data(nodes)
-      .enter().append("g")
-        .attr("class", "node")
-        .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; });
+    d3.select(self.frameElement).style("height", diameter - 150 + "px");
+    
+    function update(source) {
+      // Compute the new tree layout.
+      var nodes = tree.nodes(root),
+          links = tree.links(nodes);
 
-    node.append("circle")
-        .attr("r", 4.5);
+      // Update the nodes…
+      var node = svg.selectAll("g.node")
+          .data(nodes, function(d) { return d.id;});
 
-    node.append("text")
+      // Enter any new nodes at the parent's previous position.
+      var nodeEnter = node.enter().append("g")
+          .attr("class", "node")
+          .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
+          .on('click', function(d) { App.Helpers.setSelectedConcept(d.id); })
+          .on("dblclick", function(d) {
+            if (d.children) {
+              d._children = d.children;
+              d.children = null;
+            }
+            else {
+              d.children = d._children;
+              d._children = null;
+            }
+            update(d);
+          });
+
+      nodeEnter.append("circle")
+          .attr("r", 1e-6)
+          .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+      nodeEnter.append("text")
         .attr("dy", ".31em")
         .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
         .attr("transform", function(d) { return d.x < 180 ? "translate(8)" : "rotate(180)translate(-8)"; })
         .text(function(d) { return d.name; });
 
-    d3.select(self.frameElement).style("height", diameter - 150 + "px");
 
-    // set style
-    $(".node").css({cursor: "pointer"});
-    $(".node circle").css({fill: "#fff", stroke: "steelblue", "stroke-width": "1.5px"});
-    $(".node text").css({font: "10px sans-serif"});
-    $(".link").css({fill: "none", stroke: "#ccc", "stroke-width": "1.5px"});
+      // Transition nodes to their new position.
+      var nodeUpdate = node.transition()
+          .duration(duration)
+          .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; });
 
+      nodeUpdate.select("circle")
+          .attr("r", 4.5)
+          .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+      nodeUpdate.select("text")
+          .style("fill-opacity", 1);
+
+      // Transition exiting nodes to the parent's new position.
+      var nodeExit = node.exit().transition()
+          .duration(duration)
+          .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+          .remove();
+
+      nodeExit.select("circle")
+          .attr("r", 1e-6);
+
+      nodeExit.select("text")
+          .style("fill-opacity", 1e-6);
+
+      // Update the links…
+      var link = svg.selectAll("path.link")
+          .data(links, function(d) { return d.target.id; });
+
+      // Enter any new links at the parent's previous position.
+      link.enter().insert("path", "g")
+          .attr("class", "link")
+          .attr("d", function(d) {
+            var o = {x: source.x0, y: source.y0};
+            return diagonal({source: o, target: o});
+          });
+
+      // Transition links to their new position.
+      link.transition()
+          .duration(duration)
+          .attr("d", diagonal);
+
+      // Transition exiting nodes to the parent's new position.
+      link.exit().transition()
+          .duration(duration)
+          .attr("d", function(d) {
+            var o = {x: source.x, y: source.y};
+            return diagonal({source: o, target: o});
+          })
+          .remove();
+
+      // Stash the old positions for transition.
+      nodes.forEach(function(d) {
+        d.x0 = d.x;
+        d.y0 = d.y;
+      });
+
+      // set style
+      $(".node").css({cursor: "pointer"});
+      $(".node circle").css({fill: "#fff", stroke: "steelblue", "stroke-width": "1.5px"});
+      $(".node text").css({font: "10px sans-serif"});
+      $(".link").css({fill: "none", stroke: "#ccc", "stroke-width": "1.5px"});
+    }
+
+  
   }
 });

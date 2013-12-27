@@ -30,12 +30,13 @@ App.Views.OntologyView = Backbone.View.extend({
      "click button.answer-question": "answerQuestion",
      "click button.cancel-question": "cancelAL",
      "click button.finish-question": "finishAL",
+     "change #visualization-picker": "changeVisualization"
   },
 
   initialize: function() {
     console.log("Views.OntologyView.init");
     this.rendered = false;
-    if(App.State.concepts === undefined) {
+    if(typeof App.State.concepts === "undefined") {
       console.log("Views.OntologyView.init: no concepts");
       //App.State.concepts = new App.Collections.Concepts();
       //App.State.concepts.fetch(); 
@@ -49,14 +50,14 @@ App.Views.OntologyView = Backbone.View.extend({
       this.listenTo(App.State.concepts, "create", this.render);
 
       // Keep a "selected" concept, monitor for changes
-      if(App.State.selectedConcept === undefined) {
+      if(typeof App.State.selectedConcept === "undefined") {
           App.State.selectedConcept = new App.Models.Selected();
           App.Helpers.setSelectedConceptRoot();
       }
       this.listenTo(App.State.selectedConcept, "change", this.renderActionBar);
    }
 
-    if(App.State.suggestions === undefined) {
+    if(typeof App.State.suggestions === "undefined") {
       App.State.suggestions = new App.Collections.Concepts();
     }
     this.listenTo(App.State.suggestions, "add", this.renderSuggestTable);
@@ -97,13 +98,28 @@ App.Views.OntologyView = Backbone.View.extend({
       this.graph.render();
   },
 
+  changeVisualization: function(ev) {
+    var val = $(ev.currentTarget).val();
+    console.log("Change visualization to: " + val);
+    App.State.VizOpts.set({"name": val});
+  },
+
   renderActionBar: function() {
     console.log("App.Views.OntologyView.renderActionBar");
+    // prepare template data
+    var tdata = App.Helpers.getSelectedConcept().toJSON();
+    tdata.visualizations = App.Config.VisualizationEnum;
+    // render
     $('#actionbar').empty();
-    var conceptjs = App.Helpers.getSelectedConcept().toJSON();
-    $('#actionbar').html( this.actionBarTemplate(conceptjs) );
+    $('#actionbar').html( this.actionBarTemplate(tdata) );
     $('#input-name').tooltip();
     $('#input-keywords').tooltip();
+    if(typeof App.State.VizOpts !== 'undefined') {
+      console.log("Hello!!!");
+      console.log(App.State.VizOpts.get("name"));
+      $('#visualization-picker').val(App.State.VizOpts.get("name"));
+    }
+    $('#visualization-picker').selectpicker('render');
   },
 
   changeConcept: function() {

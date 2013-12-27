@@ -20,6 +20,14 @@ App = {
   },
 
   Config: {
+    // 0 is the default visualization, otherwise numbers are only used for
+    // display ordering of option (e.g. in a picker).
+    // Used in OntoView (ActionBar) and OntoVisualization
+    VisualizationEnum: [
+      "Basic Force",
+      "Horizontal Tree",
+      "Radial Tree"
+    ]
   },
 
   Helpers: {

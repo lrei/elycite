@@ -27,13 +27,14 @@ App.Views.OntoLoadView = Backbone.View.extend({
     //this.$el.html(this.template(data));
     $(this.el).append( this.template({"ontologies":ontologies}) );
     $("#loadModal").modal('show');
+    $('#onto-picker').selectpicker('render');
   },
 
 
   loadOntology: function(event) {
     console.log("Views.OntoLoadView.loadOntology");
     // get the store name
-    var ontoName = $('#ontoPicker').val();
+    var ontoName = $('#onto-picker').val();
     var ontology = this.ontologies.findWhere({name: ontoName}).toJSON();
     // !!! Synchronous call -> modal will only be dismissed after the function
     // completes - this is so ontoview can have the new ontology loaded in

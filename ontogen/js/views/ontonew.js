@@ -34,11 +34,11 @@ App.Views.OntoNewView = Backbone.View.extend({
       var store = stores[ii];
       console.log(store.storeName);
       console.log(store.langopts);
-
-    };
+    }
     //this.$el.html(this.template(data));
     $(this.el).append( this.template({"stores":stores}) );
     $("#newModal").modal('show');
+    $('.selectpicker').selectpicker('render');
   },
 
 

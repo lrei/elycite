@@ -3,8 +3,16 @@
 templates['actionbar'] = template(function (Handlebars,depth0,helpers,partials,data) {
   this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
-  var buffer = "", stack1, functionType="function", escapeExpression=this.escapeExpression;
+  var buffer = "", stack1, functionType="function", escapeExpression=this.escapeExpression, self=this;
 
+function program1(depth0,data) {
+  
+  var buffer = "";
+  buffer += "\n    <option>"
+    + escapeExpression((typeof depth0 === functionType ? depth0.apply(depth0) : depth0))
+    + "</option>\n    ";
+  return buffer;
+  }
 
   buffer += "<div class=\"row\">\n<form class=\"form-inline\" role=\"form\">\n  <div class=\"form-group col-md-3\">\n    <label class=\"sr-only\" for=\"inputName\">Name</label>\n    <input type=\"text\" class=\"form-control input-sm\" id=\"input-name\" value=\"";
   if (stack1 = helpers.name) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
@@ -14,7 +22,10 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
   if (stack1 = helpers.keywords) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.keywords; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
-    + "\" data-trigger=\"hover\" data-title=\"Keywords\">\n  </div>\n  <div class=\"form-group col-md-5\">\n  <button id=\"change-concept\" type=\"button\" class=\"btn btn-primary btn-sm\">Change</button>\n  <button id=\"suggest-keywords\" type=\"button\" class=\"btn btn-default btn-sm\">Suggest Keywords</button>\n  <button id=\"properties-concept\" type=\"button\" class=\"btn btn-default btn-sm\">Properties</button>\n  <button id=\"vis-decrease\" type=\"button\" class=\"btn btn-default btn-xs\">\n    <span class=\"glyphicon glyphicon-minus\"></span>\n  </button>\n  <button id=\"vis-increase\" type=\"button\" class=\"btn btn-default btn-xs\">\n    <span class=\"glyphicon glyphicon-plus\"></span>\n  </button>\n</div>\n</form> \n</div>\n<div class=\"row\" style=\"margin-top:10px; margin-left:0px; margin-right:0px;\">\n  <form class=\"form-inline\" role=\"form\">\n    <button id=\"new-concept\" type=\"button\" class=\"btn btn-success btn-sm\">New Sub-Concept</button>\n    <button id=\"suggest-concepts\" type=\"button\" class=\"btn btn-primary btn-sm\">Suggest Sub-Concepts</button>\n    <button id=\"query-concept\" type=\"button\" class=\"btn btn-primary btn-sm\">Sub-Concept From Query</button>\n    <button id=\"move-concept\" type=\"button\" class=\"btn btn-warning btn-sm\">Move</button>\n    <button id=\"delete-concept\" type=\"button\" class=\"btn btn-danger btn-sm\">Delete</button>\n    <button id=\"suggest-keywords\" type=\"button\" class=\"btn btn-default btn-sm\">View Documents</button>\n    <button id=\"suggest-keywords\" type=\"button\" class=\"btn btn-default btn-sm\">Visualization</button>\n  </form> \n</div>\n\n";
+    + "\" data-trigger=\"hover\" data-title=\"Keywords\">\n  </div>\n  <div class=\"form-group col-md-5\">\n  <button id=\"change-concept\" type=\"button\" class=\"btn btn-primary btn-sm\">Change</button>\n  <button id=\"suggest-keywords\" type=\"button\" class=\"btn btn-default btn-sm\">Suggest Keywords</button>\n  <button id=\"properties-concept\" type=\"button\" class=\"btn btn-default btn-sm\">Properties</button>\n  <button id=\"vis-decrease\" type=\"button\" class=\"btn btn-default btn-xs\">\n    <span class=\"glyphicon glyphicon-minus\"></span>\n  </button>\n  <button id=\"vis-increase\" type=\"button\" class=\"btn btn-default btn-xs\">\n    <span class=\"glyphicon glyphicon-plus\"></span>\n  </button>\n</div>\n</form> \n</div>\n<div class=\"row\" style=\"margin-top:10px\">\n  <form class=\"form-inline\" role=\"form\">\n    <button id=\"new-concept\" type=\"button\" class=\"btn btn-success btn-sm\">New Sub-Concept</button>\n    <button id=\"suggest-concepts\" type=\"button\" class=\"btn btn-primary btn-sm\">Suggest Sub-Concepts</button>\n    <button id=\"query-concept\" type=\"button\" class=\"btn btn-primary btn-sm\">Sub-Concept From Query</button>\n    <button id=\"move-concept\" type=\"button\" class=\"btn btn-warning btn-sm\">Move</button>\n    <button id=\"delete-concept\" type=\"button\" class=\"btn btn-danger btn-sm\">Delete</button>\n    <button id=\"view-documents\" type=\"button\" class=\"btn btn-default btn-sm\">View Documents</button>\n    <label for=\"visualization-picker\">Visualization: </label>\n    <select class=\"selectpicker\" id=\"visualization-picker\">\n    ";
+  stack1 = helpers.each.call(depth0, depth0.visualizations, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += "\n    </select>\n\n  </form> \n</div>\n\n";
   return buffer;
   });
 templates['answerbuttons'] = template(function (Handlebars,depth0,helpers,partials,data) {
@@ -143,7 +154,7 @@ function program1(depth0,data) {
   return buffer;
   }
 
-  buffer += "<!-- OntoLoad Modal -->\n<div class=\"modal fade\" id=\"loadModal\" data-backdrop=\"false\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"loadModalLabel\" aria-hidden=\"true\">\n  <div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\">Load Ontology</h4>\n      </div> <!-- /modal header -->\n      <div class=\"modal-body\">\n           <div class=\"form-group\">\n            <label for=\"ontoPicker\">Ontology: </label>\n            <select class=\"selectpicker\" id=\"ontoPicker\">\n              ";
+  buffer += "<!-- OntoLoad Modal -->\n<div class=\"modal fade\" id=\"loadModal\" data-backdrop=\"false\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"loadModalLabel\" aria-hidden=\"true\">\n  <div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\">Load Ontology</h4>\n      </div> <!-- /modal header -->\n      <div class=\"modal-body\">\n           <div class=\"form-group\">\n            <select class=\"selectpicker\" id=\"onto-picker\">\n              ";
   stack1 = helpers.each.call(depth0, depth0.ontologies, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n            </select>\n          </div>\n      </div> <!-- /modal body -->\n      <div class=\"modal-footer\">\n        <button id=\"close\" type=\"button\" class=\"btn\" data-dismiss=\"modal\">Cancel</button>\n        <button id=\"ontoLoad\" type=\"button\" class=\"btn btn-primary\" data-dismiss=\"modal\">Load</button>\n      </div> <!-- /modal footer -->\n    </div><!-- /.modal-content -->\n  </div><!-- /.modal-dialog -->\n</div> <!-- /LoadView Modal -->\n";
