@@ -11,6 +11,7 @@ App.Views.OntologyView = Backbone.View.extend({
   queryTemplate: Handlebars.templates['querymodal'],
   answerButtonsTemplate: Handlebars.templates['answerbuttons'],
   questionTemplate: Handlebars.templates['question'],
+  documentsTemplate: Handlebars.templates['docsmodal'],
 
   events: {
      "click #change-concept": "changeConcept",
@@ -30,6 +31,9 @@ App.Views.OntologyView = Backbone.View.extend({
      "click button.answer-question": "answerQuestion",
      "click button.cancel-question": "cancelAL",
      "click button.finish-question": "finishAL",
+     "click #view-documents": "viewDocuments",
+     "click a.doc-list-item": "selectDocument",
+     "dblclick a.doc-list-item": "viewDocument",
      "change #visualization-picker": "changeVisualization"
   },
 
@@ -115,8 +119,6 @@ App.Views.OntologyView = Backbone.View.extend({
     $('#input-name').tooltip();
     $('#input-keywords').tooltip();
     if(typeof App.State.VizOpts !== 'undefined') {
-      console.log("Hello!!!");
-      console.log(App.State.VizOpts.get("name"));
       $('#visualization-picker').val(App.State.VizOpts.get("name"));
     }
     $('#visualization-picker').selectpicker('render');
@@ -159,7 +161,6 @@ App.Views.OntologyView = Backbone.View.extend({
       var lid = 0;
       res.map(function(c) {
         c.numDocs = c.docs.length; 
-        c.keywords = c.keywords.join(", ");
         c.lid = lid++;
       });
       App.State.suggestions.reset(res);
@@ -373,6 +374,69 @@ App.Views.OntologyView = Backbone.View.extend({
       App.State.currentAL.destroy();
     };
     App.State.currentAL.getConcept(addConceptFromAL);
+  },
+
+  viewDocuments: function() {
+    console.log("App.Views.OntoView.viewDocuments");
+    var concept = App.Helpers.getSelectedConcept();
+    var docsUrl = concept.get("links").ontology + "documents/";
+    console.log(docsUrl);
+    // remove if exists
+    if($('#modal-docs').length > 0) {
+        $('#modal-docs').remove();
+    }
+    var self = this;
+    // Fetch initial batch of Documents if necessary
+    if(typeof App.State.Documents === "undefined") {
+      App.State.Documents = new App.Collections.Documents();
+      App.State.Documents.fetch({url: docsUrl, async: false});
+    }
+    concept.getDocs(function() {
+      var conceptjs = concept.toJSON();
+      var docsjs = App.State.Documents.toJSON();
+      // summarize (client side version)
+      var summarize = function(val) {
+        val.summary = val.text.substring(0, 30);
+        return val;
+      };
+      docsjs = docsjs.map(summarize);
+      // selected
+      var setSelected = function(val) {
+        if (concept.containsDocument(val.$id)) {
+          val.selected = true;
+        }
+        else {
+          val.selected = false;
+        }
+        return val;
+      };
+      docsjs = docsjs.map(setSelected);
+      $(self.el).append(self.documentsTemplate({concept:conceptjs,
+                                                docs:docsjs}));
+      $('#docs-modal').modal('show');
+    });
+  },
+
+  viewDocument: function(ev) {
+    ev.preventDefault();
+    console.log("view");
+    var did = $(ev.currentTarget).data("did");
+    // display
+    console.log(did);
+    // make silent request
+    var doc = App.State.Documents.get(did);
+    doc.fetch({success: function() { 
+      $('#document-details').html(JSON.stringify(doc.toJSON()));
+    console.log("got it");}});
+  },
+
+  selectDocument: function(ev) {
+    ev.preventDefault();
+    console.log("select");
+    $(ev.currentTarget).toggleClass("active");
+    var did = $(ev.currentTarget).data("did");
+    
   }
- 
+
+
 });

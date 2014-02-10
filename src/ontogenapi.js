@@ -16,6 +16,8 @@ var DEFAULT_STEMMER = "none";
 var DEFAULT_SUGGESTIONS = 2;
 var DEFAULT_ITER = 50;
 var DEFAULT_NUM_KEYWORDS = 10;
+var DOCS_SUMMARY_SIZE = 30;  // "summary" size when docs list is sent to client
+var DOCS_DEFAULT_PAGE_SIZE = 300;  // default page size in docs list
 
 // @TODO replace this with an automatic function
 var url_for = function(what, which, where) {
@@ -42,6 +44,13 @@ var url_for = function(what, which, where) {
       }
       break;
 
+    case "documents":
+      url += "ontologies/" + where + "/documents/";
+      if(which !== undefined && which !== null) {
+        url += which + "/";
+      }
+      break;
+
     case "al":
       url += "al/" + which;
       break;
@@ -55,8 +64,28 @@ var ontologyNameFromStoreName = function(storeName) {
   return storeName.replace(ontoRegex, "");
 };
 
+var docStoreNameFromOntoStore = function(store, ontology) {
+  // get document store from ontology
+  var onto = qm.getStoreList().filter(function(store) {
+    return store.storeName === ontology;
+  })[0];
+  var docStoreName = onto.joins.filter(function(join) {
+    return join.joinName === docsJoinName;
+  })[0].joinStoreName;
+  return docStoreName;
+};
+
 var conceptFromRecord = function(rec, ontology) {
-  var c = rec;
+  var c = rec.toJSON(true);
+  if(!c.hasOwnProperty("parent")) {
+    c.parentId = -1;
+  }
+  else {
+    c.parentId = c.parent.$id;
+    delete c.parent;
+  }
+  delete c.docs;
+  delete c[childJoinName];
   c.ontology = ontology;
   c.links = {};
   c.links.self = url_for("concepts", c.$id, ontology);
@@ -64,6 +93,34 @@ var conceptFromRecord = function(rec, ontology) {
   return c;
 };
 
+var documentFromRecord = function(rec, ontology, field, summary) {
+  var d = {};
+  if (field === null) {
+    d = rec.toJSON();
+  }
+  // only use one field
+  else {
+    d.$id = rec.$id;
+    // "summarize" it
+    if(summary) {
+      // dont think summary will be needed for other datatypes but
+      // if it is, they can be added here
+      if(typeof rec[field] === "string")
+        d[field] = rec[field].substring(0, DOCS_SUMMARY_SIZE);
+      else
+        d[field] = rec[field];
+    }
+    // dont "summarize" it
+    else {
+      d[field] = rec[field];
+    }
+  }
+  //d.ontology = ontology;
+  d.links = {};
+  d.links.self = url_for("documents", d.$id, ontology);
+  //d.links.ontology = url_for("ontologies", ontology);
+  return d;
+};
 
 var randomPosInt32 = function() {
   var max = 2147483647;
@@ -85,7 +142,7 @@ function RootConcept(docStore, swords, stmr) {
   };
   var docs = [];
   for(var ii = 0; ii < docStore.length; ii++) {
-    docs.push({$record: docStore[ii].$id});
+    docs.push({$id: docStore[ii].$id});
   }
   concept[docsJoinName] = docs;
   return concept;
@@ -126,8 +183,10 @@ var checkParentId = function(store, pid, res) {
 // Language Options
 http.onRequest("languageoptions", "GET", function(req, res) {
   console.say("OntoGen API - Language Options");
+
+  var LangOpts = qm.analytics.getLanguageOptions();
   
-  res.send(ontogen.getLanguageOptions());
+  res.send(LangOpts);
 });
 
 
@@ -289,7 +348,67 @@ http.onRequest("ontologies/<ontology>/", "GET", function (req, res) {
   res.send(onto);
 });
 
+/*
+ * Document
+ */
+/// Read - Get Al Documents - Summaries Only
+// @TODO add query parameter here
+//       docsFieldName will need to be changed to query parameter
+//       check if pagination should be handled by http range header
+http.onRequest("ontologies/<ontology>/documents/", "GET", function (req, res) {
+  console.say("OntoGen API - Document GET ALL");
+
+  if(!req.hasOwnProperty("params")) {
+    res.setStatusCode(400);
+    res.send("Missing parameters");
+    return;
+  }
+  var params = req.params;
+  if(!params.hasOwnProperty("ontology")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: ontology name");
+    return;
+  }
+  var store = qm.store(params.ontology);
+  if(store === null) {
+    res.setStatusCode(404);
+    res.send("Ontology '" + params.ontology + "' not found");
+    return;
+  }
+  var ontology = params.ontology;
+
+  // Args
+  var args = {};
+  if(req.hasOwnProperty("args")) {
+    args = req.args;
+  }
+  // Get Pagination Arguments
+  var page = 0;
+  if(args.hasOwnProperty('page')) {
+    page = parseInt(args.page);
+  }
+  var per_page = DOCS_DEFAULT_PAGE_SIZE;
+  if(args.hasOwnProperty('per_page')) {
+    per_page = parseInt(args.per_page);
+  }
+  var docStoreName = docStoreNameFromOntoStore(store, ontology);
+  var docStore = qm.store(docStoreName);
   
+  // Get the documents
+  var docs = [];
+  // calculate start
+  var start = page * per_page;
+  // calculate end
+  var end = page * per_page + per_page;
+  if(end > docStore.length)
+    end = docStore.length;
+  for (var ii = start; ii < end; ii++) {
+    var d = documentFromRecord(docStore[ii], ontology, docsFieldName, true);
+    docs.push(d);
+  }
+
+  res.send(docs);
+});
 
 /*
  * Concept
@@ -325,6 +444,7 @@ http.onRequest("ontologies/<ontology>/concepts/", "GET", function (req, res) {
   }
 
   res.send(concepts);
+  //res.send(concepts);
 });
 
 /// Concept - Read
@@ -420,7 +540,7 @@ http.onRequest("ontologies/<ontology>/concepts/", "POST", function (req, res) {
   }
 
   // set the join
-  concept.parent = {$record: parentId};
+  concept.parent = {$id: parentId};
 
   // keywords
   concept.keywords = data.keywords || "";
@@ -435,7 +555,7 @@ http.onRequest("ontologies/<ontology>/concepts/", "POST", function (req, res) {
   var docs = data.docs || [];
   concept[docsJoinName] = [];
   for(var ii = 0; ii < docs.length; ii++) {
-    concept[docsJoinName].push({$record: docs[ii]});
+    concept[docsJoinName].push({$id: docs[ii]});
   }
 
   concept.isDeleted = false; // we just created it after all...
@@ -446,7 +566,8 @@ http.onRequest("ontologies/<ontology>/concepts/", "POST", function (req, res) {
     res.send("Unable to add concept");
     return;
   }
-  var addedConcept = store[cid];
+  var addedConcept = conceptFromRecord(store[cid], params.ontology);
+  console.say(JSON.stringify(addedConcept));
 
   res.send(addedConcept);
 });
@@ -498,7 +619,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/", "PUT", function (req, re
 
   // updates a to record are made by adding a {record: $id} obbject
   // with the properties to be changed
-  var change = {"$record": concept.$id};
+  var change = {"$id": concept.$id};
 
   // name
   if(data.hasOwnProperty("name")) {
@@ -520,29 +641,38 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/", "PUT", function (req, re
     change.stemmer = data.stemmer;
   }
 
-  // Check if concept is root, if not, possibly allow change of parent
-  if(concept.parentId != -1) { 
-    // Change Parent ("Move")
-    if(data.hasOwnProperty("parentId")) {
-      var parentId = checkParentId(store, data.parentId, res);
-      if (parentId === null) {
-        return;
-      }
-      if (parentId !== concept.parentId) {
-        change.parent = {$record: parentId}; // this does not do anything
-        change.parentId = parentId; // warning: hope this is not breaking the join
-      }
-    }
-  }
-
-  cid = store.add(change);
-
+  var cid = store.add(change);
   if(cid === null) {
     res.setStatusCode(500);
     res.send("Unable to add concept");
     return;
   }
-  var addedConcept = store[cid];
+  concept = store[cid];
+
+  // Check if concept is root, if not, possibly allow change of parent
+  if(concept.parent.$id != -1) {
+    // Change Parent ("Move")
+    if(data.hasOwnProperty("parentId")) {
+      if (data.parentId !== concept.parent.$id) {
+        var parentId = checkParentId(store, data.parentId, res);
+        if (parentId === null) {
+          res.setStatusCode(500);
+          res.send("Invalid parent");
+          return;
+        }
+        // new parent is valid
+        console.say("change parent to " + parentId);
+        concept.delJoin('parent', store[concept.parent.$id]);
+        console.say("re-add");
+        concept.addJoin('parent', store[parentId]);
+        //console.say("st;ore!");
+        //cid = store.add(concept);
+      } // end of check if parent id is different from current parent id
+    } // end of check for parent id in data
+  } // end of is root check
+
+  console.say("get rest version");
+  var addedConcept = conceptFromRecord(store[cid], params.ontology);
 
   res.send(addedConcept);
 });
@@ -586,11 +716,11 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/subconcepts", "GET", functi
     return;
   }
 
-  var rSet = concept.join(childJoinName);
+  var rSet = concept[childJoinName];
   var data = [];
   for(var ii = 0; ii < rSet.length; ii++) {
     if(!rSet[ii].isDeleted) {
-      data.push(rSet[ii]);
+      data.push(conceptFromRecord(rSet[ii], params.ontology));
     }
   }
 
@@ -643,13 +773,13 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>", "DELETE", function (req, 
   }
 
   var recursiveDelete = function(c) {
-    var rSet = c.join(childJoinName);
+    var rSet = c[childJoinName];
 
     var data = [];
     for(var ii = 0; ii < rSet.length; ii++) {
       recursiveDelete(rSet[ii]);
     }
-    var change = {"$record": c.$id};
+    var change = {"$id": c.$id};
     change.isDeleted = true;
     store.add(change);
   };
@@ -660,7 +790,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>", "DELETE", function (req, 
 });
 
 
-/// Concept - Read Docs
+/// Concept - Read Docs - Get List of Document Ids
 http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET", function (req, res) {
   console.say("OntoGen API - Concept GET docs");
 
@@ -675,7 +805,8 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET", function (re
     res.send("Missing parameter: ontology name");
     return;
   }
-  var store = qm.store(params.ontology);
+  var storeName = params.ontology;
+  var store = qm.store(storeName);
   if(store === null) {
     res.setStatusCode(404);
     res.send("Ontology '" + params.ontology + "' not found");
@@ -703,11 +834,12 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET", function (re
     res.send("concept '" + conceptId + "' has been deleted.");
     return;
   }
-
-  var rSet = concept.join(docsJoinName);
+  var rSet = concept[docsJoinName];
   var docs = [];
   for(var ii = 0; ii < rSet.length; ii++) {
-    docs.push(rSet[ii]);
+    docs.push(rSet[ii].$id);
+    //link: url_for("documents", rSet[ii].$id, storeName)
+    //docs.push(rSet[ii]);
   }
   res.send(docs); 
 });
@@ -764,13 +896,44 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/suggest/", "GET", function 
   var stemmer = req.args.stemmer || concept.stemmer;
   var stopwords = req.args.stopwords || concept.stopwords;
 
-
-
-  var suggested = ontogen.suggestConcepts(storeName, docsJoinName, docsFieldName,
-                                          stemmer, stopwords, conceptId,
-                                          numSuggest, numIter, numKeywords);
+  // Create Feature Space
+  var docStoreName = docStoreNameFromOntoStore(store, params.ontology);
+  var docStore = qm.store(docStoreName);
+  var conceptDocs = concept[docsJoinName];
+  var ftrSpace = qm.analytics.newFeatureSpace([{type: 'text',
+                                                source: docStoreName,
+                                                field: docsFieldName,
+                                                stemmer: {type: stemmer},
+                                                stopwords: stopwords}]);
+  ftrSpace.updateRecords(conceptDocs);
+  ftrSpace.finishUpdate();
   
-  res.send(suggested); 
+  // Perform KMeans
+  var KMeansParams = {k: numSuggest, maxIterations: numIter, randomSeed:1}
+  var clusters = qm.analytics.trainKMeans(ftrSpace, conceptDocs , KMeansParams);
+
+  // Get Words
+  var get_keywords = [{name: 'keywords', type: 'keywords', field: docsFieldName}];
+  suggestions = [];
+
+  for(var ii = 0; ii < clusters.length; ii++) {
+    var keywords = clusters[ii].aggr(get_keywords[0]);
+    var docids = [];
+    for(var jj = 0; jj < clusters[ii].length; jj++) {
+      docids.push(clusters[ii][jj].$id);
+    }
+    suggestions.push({keywords: keywords, docs: docids});
+  }
+  suggestions = suggestions.map(function(s) {
+    var suggestion = {};
+    var skeywords = s.keywords.keywords.map(function(k) { return k.keyword; });
+    suggestion.name = skeywords.slice(0,3).join(", ");
+    suggestion.keywords = skeywords.slice(0, 10).join(", ");
+    suggestion.parentId = conceptId;
+    suggestion.docs = s.docs;
+    return suggestion;
+  });
+  res.send(suggestions); 
 });
 
 /*
@@ -840,6 +1003,8 @@ http.onRequest("al/", "POST", function (req, res) {
 
   var alid = randomPosInt32();
   console.say("input alid: " + alid + "(" + typeof alid +")");
+
+  /*
   alid = ontogen.createAL(storeName, docsJoinName, docsFieldName, stemmer,
                           stopwords, conceptId, query, alid);
   if(alid < 1) {
@@ -855,7 +1020,8 @@ http.onRequest("al/", "POST", function (req, res) {
   question.id = alid; // this uses the AL id (no client side question obj)
 
   // TODO: add links
-
+  */
+  var question = {};
   res.send(question);
   
 });
@@ -885,9 +1051,11 @@ http.onRequest("al/<alid>/", "GET", function (req, res) {
   if(req.args.hasOwnProperty("qid")) {
     qid = parseInt(req.args.qid[0]);
   }
+  /*
   var question = ontogen.getQuestionFromAL(alid, qid);
   question.id = alid; // this uses the AL id (no client side question obj)
-
+  */
+  var question = {};
   question.links = {};
   question.links.self = url_for("al", alid);
   question.links.ontology = url_for("ontologies", question.ontology);
@@ -936,12 +1104,13 @@ http.onRequest("al/<alid>/", "PATCH", function (req, res) {
   }
   var pos = data.answer;
   var did = data.questionId;
-
+  /*
   var ret =  ontogen.answerQuestionForAL(alid, did, pos);
   // @TODO: error handling
   var question = ontogen.getQuestionFromAL(alid, 0);
   question.id = alid; // this used the AL id
-
+  */
+  var question = {};
   question.links = {};
   question.links.self = url_for("al", alid);
   question.links.ontology = url_for("ontologies", question.ontology);
@@ -970,7 +1139,7 @@ http.onRequest("al/<alid>/", "DELETE", function (req, res) {
   }
   var alid = parseInt(params.alid);
 
-  ontogen.deleteAL(alid);
+  //ontogen.deleteAL(alid);
   res.setStatusCode(204);
   res.send();
 });
@@ -992,8 +1161,8 @@ http.onRequest("al/<alid>/concept/", "GET", function (req, res) {
     return;
   }
   var alid = parseInt(params.alid);
-  var concept = ontogen.getConceptFromAL(alid);
-
+  //var concept = ontogen.getConceptFromAL(alid);
+  var concept = {};
   res.send(concept);
 
 });

@@ -57,12 +57,23 @@
               <li class="divider"></li>
               <li><a href="unimplemented/">Export Data</a></li>
               <li><a href="unimplemented/">Export Classifier</a></li>
+              <li class="divider"></li>
+              <li><a href="#export-visualization">Export Visualization</a></li>
             </ul>
             </li>
-          </ul>
-          <ul class="nav navbar-nav navbar-right">
-            <li class="active"><a href="./">Visualize Ontology</a></li>
-            <li><a href="notimplemented/">Documents</a></li>
+            <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Export<b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li><a href="unimplemented/">OWL</a></li>
+              <li><a href="unimplemented/">Proton</a></li>
+              <li class="divider"></li>
+              <li><a href="unimplemented/">Classifier</a></li>
+              <li class="divider"></li>
+              <li><a href="#export-viz">SVG</a></li>
+              <li><a href="uninplemented">PNG</a></li>
+            </ul>
+            </li>
+
           </ul>
         </div><!--/.nav-collapse -->
       </div>
@@ -80,6 +91,7 @@
     <script src="js/lib/bootstrap-select.min.js"></script>
     <script src="js/lib/handlebars.js"></script>
     <script src="js/lib/d3.min.js"></script>
+    <script src="js/lib/FileSaver.js"></script>
     <!-- compiled templates -->
     <script src="js/templates.js"></script>
     <!-- app -->
@@ -90,11 +102,13 @@
     <script src="js/models/store.js"></script>
     <script src="js/models/ontology.js"></script>
     <script src="js/models/concept.js"></script>
+    <script src="js/models/document.js"></script>
     <script src="js/models/al.js"></script>
     <!-- collections -->
     <script src="js/collections/stores.js"></script>
     <script src="js/collections/ontologies.js"></script>
     <script src="js/collections/concepts.js"></script>
+    <script src="js/collections/documents.js"></script>
     <!-- views -->
     <script src="js/views/ontovisualization.js"></script>
     <script src="js/views/ontoview.js"></script>
