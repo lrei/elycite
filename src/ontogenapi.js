@@ -20,7 +20,7 @@ var DOCS_SUMMARY_SIZE = 30;  // "summary" size when docs list is sent to client
 var DOCS_DEFAULT_PAGE_SIZE = 300;  // default page size in docs list
 
 // @TODO replace this with an automatic function
-var url_for = function(what, which, where) {
+var url_for = function(what, which, where, inside) {
   var url = baseUrl;
   switch(what) {
     case "ontologies":
@@ -52,7 +52,7 @@ var url_for = function(what, which, where) {
       break;
 
     case "al":
-      url += "al/" + which;
+      url += "ontologies/" + where + "/concepts/" + inside + "/al/" + which + "/";
       break;
   }
 
@@ -661,12 +661,8 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/", "PUT", function (req, re
           return;
         }
         // new parent is valid
-        console.say("change parent to " + parentId);
         concept.delJoin('parent', store[concept.parent.$id]);
-        console.say("re-add");
         concept.addJoin('parent', store[parentId]);
-        //console.say("st;ore!");
-        //cid = store.add(concept);
       } // end of check if parent id is different from current parent id
     } // end of check for parent id in data
   } // end of is root check
@@ -909,7 +905,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/suggest/", "GET", function 
   ftrSpace.finishUpdate();
   
   // Perform KMeans
-  var KMeansParams = {k: numSuggest, maxIterations: numIter, randomSeed:1}
+  var KMeansParams = {k: numSuggest, maxIterations: numIter, randomSeed:1};
   var clusters = qm.analytics.trainKMeans(ftrSpace, conceptDocs , KMeansParams);
 
   // Get Words
@@ -940,37 +936,37 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/suggest/", "GET", function 
  * Active Learning
  */
 /// AL - Create
-http.onRequest("al/", "POST", function (req, res) {
-  console.say("OntoGen API - AL Create - GET");
+http.onRequest("ontologies/<ontology>/concepts/<cid>/al/", "POST", function (req, res) {
+  console.say("OntoGen API - AL Create - POST");
   
-  if(!req.hasOwnProperty("jsonData")) { 
+  if(!req.hasOwnProperty("params")) {
     res.setStatusCode(400);
-    res.send("Missing data");
-    return;
-  } 
-  var data = req.jsonData;
-  if(!data.hasOwnProperty("ontology")) { 
-    res.setStatusCode(400);
-    res.send("Missing data: ontology - ontology name");
+    res.send("Missing parameters");
     return;
   }
-  var store = qm.store(data.ontology);
+  var params = req.params;
+  if(!params.hasOwnProperty("ontology")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: ontology name");
+    return;
+  }
+  var store = qm.store(params.ontology);
   if(store === null) {
     res.setStatusCode(404);
-    res.send("Ontology '" + data.ontology + "' not found");
+    res.send("Ontology '" + params.ontology + "' not found");
     return;
   }
-  var storeName = data.ontology;
+  var storeName = params.ontology;
 
-  if(!data.hasOwnProperty("parentId")) { 
+  if(!params.hasOwnProperty("cid")) { 
     res.setStatusCode(400);
-    res.send("Missing data: parentId - parent concept id");
+    res.send("Missing parameter: concept id");
     return;
   }
-  var conceptId = parseInt(data.parentId);
+  var conceptId = parseInt(params.cid);
   if(isNaN(conceptId)) {
     res.setStatusCode(400);
-    res.send("Invalid concept id:" + data.parentId);
+    res.send("Invalid concept id:" + params.cid);
     return;
   }
   var concept = store[conceptId];
@@ -984,6 +980,13 @@ http.onRequest("al/", "POST", function (req, res) {
     res.send("concept '" + conceptId + "' has been deleted.");
     return;
   }
+
+  if(!req.hasOwnProperty("jsonData")) { 
+    res.setStatusCode(400);
+    res.send("Missing data");
+    return;
+  } 
+  var data = req.jsonData;
 
   if(!data.hasOwnProperty("query")) {
     res.setStatusCode(400);
@@ -1001,34 +1004,58 @@ http.onRequest("al/", "POST", function (req, res) {
     stemmer = data.stopwords;
   }
 
-  var alid = randomPosInt32();
-  console.say("input alid: " + alid + "(" + typeof alid +")");
+  var name = "default";
+  if(data.hasOwnProperty("name")) {
+    name = data.name;
+  }
 
-  /*
-  alid = ontogen.createAL(storeName, docsJoinName, docsFieldName, stemmer,
-                          stopwords, conceptId, query, alid);
-  if(alid < 1) {
-    // TODO: handle errors
-  
+  // Create Feature Space
+  var docStoreName = docStoreNameFromOntoStore(store, storeName);
+  var docStore = qm.store(docStoreName);
+  var conceptDocs = concept[docsJoinName];
+  var ftrSpace = qm.analytics.newFeatureSpace([{type: 'text',
+                                                source: docStoreName,
+                                                field: docsFieldName,
+                                                stemmer: {type: stemmer},
+                                                stopwords: stopwords}]);
+  ftrSpace.updateRecords(conceptDocs);
+  ftrSpace.finishUpdate();
+
+  // Transform Query
+  var queryObj = {}; queryObj[docsFieldName] = query;
+  var transformedQuery = ftrSpace.extractStrings(queryObj)[0];
+
+  var AL = qm.analytics.newActiveLearner(ftrSpace, conceptDocs, {name: name, query: transformedQuery});
+
+  if(AL === null) {
     res.setStatusCode(500);
-    res.send();
+    res.send("Unable to create active learner");
     return;
   }
-  //var al = {id: alid, parentConcept: conceptId, links: {}};
-  var qid = 0;
-  var question = ontogen.getQuestionFromAL(alid, qid);
-  question.id = alid; // this uses the AL id (no client side question obj)
 
-  // TODO: add links
-  */
-  var question = {};
+  // Get new question
+  var qid = 0;
+  var question = AL.getQuestion(qid);
+  question.id = name; // this uses the AL id (no client side question obj)
+  question.qid = qid;
+  question.links = {};
+  question.links.self = url_for("al", name, storeName, conceptId);
+
+  // Document associated with Question
+  var dId = parseInt(question.questionId);
+  var doc = conceptDocs[dId];
+  question.text = doc[docsFieldName];
+  question.name = question.keywords.split(", ").splice(0,3).join(", ").toUpperCase();
+  question.keywords = question.keywords.split(", ").slice(0, 10).join(", ").toUpperCase();
+
+  res.setStatusCode(201);
   res.send(question);
-  
+
 });
 
 /// AL - Get Question
-http.onRequest("al/<alid>/", "GET", function (req, res) {
-  console.say("OntoGen API - AL GET");
+http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "GET", function (req, res) {
+  console.say("OntoGen API - AL/name/ GET");
 
   if(!req.hasOwnProperty("params")) {
     res.setStatusCode(400);
@@ -1036,40 +1063,86 @@ http.onRequest("al/<alid>/", "GET", function (req, res) {
     return;
   }
   var params = req.params;
+  if(!params.hasOwnProperty("ontology")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: ontology name");
+    return;
+  }
+  var store = qm.store(params.ontology);
+  if(store === null) {
+    res.setStatusCode(404);
+    res.send("Ontology '" + params.ontology + "' not found");
+    return;
+  }
+  var storeName = params.ontology;
+
+  if(!params.hasOwnProperty("cid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: concept id");
+    return;
+  }
+  var conceptId = parseInt(params.cid);
+  if(isNaN(conceptId)) {
+    res.setStatusCode(400);
+    res.send("Invalid concept id:" + params.cid);
+    return;
+  }
+  var concept = store[conceptId];
+  if(concept === null) {
+    res.setStatusCode(404);
+    res.send("concept '" + conceptId + "' not found");
+    return;
+  }
+  if(concept.isDeleted) {
+    res.setStatusCode(410);
+    res.send("concept '" + conceptId + "' has been deleted.");
+    return;
+  }
+
   if(!params.hasOwnProperty("alid")) { 
     res.setStatusCode(400);
-    res.send("Missing parameter: active learner id (alid)");
+    res.send("Missing parameter: active learner id (name)");
     return;
   }
-  var alid = parseInt(params.alid);
-  if(isNaN(alid)) {
-    res.setStatusCode(400);
-    res.send("Invalid AL id:" + params.cid);
-    return;
-  }
+  var name = params.alid;
+
   var qid = 0;
   if(req.args.hasOwnProperty("qid")) {
     qid = parseInt(req.args.qid[0]);
   }
-  /*
-  var question = ontogen.getQuestionFromAL(alid, qid);
-  question.id = alid; // this uses the AL id (no client side question obj)
-  */
-  var question = {};
-  question.links = {};
-  question.links.self = url_for("al", alid);
-  question.links.ontology = url_for("ontologies", question.ontology);
-  if(question.mode) {
-    question.links.concept = question.links.self + "/concept";
+
+  // Load AL
+  var AL = qm.analytics.newActiveLearner(name);
+  if(AL === null) {
+    res.setStatusCode(404);
+    res.send("Active Learner Not Found");
+    return;
   }
+
+  var question = AL.getQuestion(qid);
+  question.id = name; // this uses the AL id (no client side question obj)
+  question.qid = qid;
+  question.links = {};
+  question.links.self = url_for("al", name, storeName, conceptId);
+
+  // Document associated with Question
+  var dId = parseInt(question.questionId);
+  var docStoreName = docStoreNameFromOntoStore(store, storeName);
+  var docStore = qm.store(docStoreName);
+  var conceptDocs = concept[docsJoinName];
+  var doc = conceptDocs[dId];
+  
+  question.text = doc[docsFieldName];
+  question.name = question.keywords.split(", ").splice(0,3).join(", ").toUpperCase();
+  question.keywords = question.keywords.split(", ").slice(0, 10).join(", ").toUpperCase();
 
   res.send(question);
 
 });
 
 /// AL - Answer Question
-http.onRequest("al/<alid>/", "PATCH", function (req, res) {
-  console.say("OntoGen API - AL PATCH");
+http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "PATCH", function (req, res) {
+  console.say("OntoGen API - AL/name/ PATCH");
 
   if(!req.hasOwnProperty("params")) {
     res.setStatusCode(400);
@@ -1077,14 +1150,49 @@ http.onRequest("al/<alid>/", "PATCH", function (req, res) {
     return;
   }
   var params = req.params;
-  
-  if(!params.hasOwnProperty("alid")) { 
+  if(!params.hasOwnProperty("ontology")) { 
     res.setStatusCode(400);
-    res.send("Missing parameter: active learner id (alid)");
+    res.send("Missing parameter: ontology name");
     return;
   }
-  var alid = parseInt(params.alid);
+  var store = qm.store(params.ontology);
+  if(store === null) {
+    res.setStatusCode(404);
+    res.send("Ontology '" + params.ontology + "' not found");
+    return;
+  }
+  var storeName = params.ontology;
 
+  if(!params.hasOwnProperty("cid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: concept id");
+    return;
+  }
+  var conceptId = parseInt(params.cid);
+  if(isNaN(conceptId)) {
+    res.setStatusCode(400);
+    res.send("Invalid concept id:" + params.cid);
+    return;
+  }
+  var concept = store[conceptId];
+  if(concept === null) {
+    res.setStatusCode(404);
+    res.send("concept '" + conceptId + "' not found");
+    return;
+  }
+  if(concept.isDeleted) {
+    res.setStatusCode(410);
+    res.send("concept '" + conceptId + "' has been deleted.");
+    return;
+  }
+
+  if(!params.hasOwnProperty("alid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: active learner id (name)");
+    return;
+  }
+  var name = params.alid;
+  
   if(!req.hasOwnProperty("jsonData")) {
     res.setStatusCode(400);
     res.send("Missing data.");
@@ -1102,28 +1210,52 @@ http.onRequest("al/<alid>/", "PATCH", function (req, res) {
     res.send("Missing question id");
     return;
   }
-  var pos = data.answer;
-  var did = data.questionId;
-  /*
-  var ret =  ontogen.answerQuestionForAL(alid, did, pos);
-  // @TODO: error handling
-  var question = ontogen.getQuestionFromAL(alid, 0);
-  question.id = alid; // this used the AL id
-  */
-  var question = {};
-  question.links = {};
-  question.links.self = url_for("al", alid);
-  question.links.ontology = url_for("ontologies", question.ontology);
-  if(question.mode) {
-    question.links.concept = question.links.self + "/concept";
+
+  var qid = 0;
+  if(req.args.hasOwnProperty("qid")) {
+    qid = parseInt(req.args.qid[0]);
   }
 
+  var pos = data.answer;
+  var did = data.questionId;
+
+  // Load AL
+  var AL = qm.analytics.newActiveLearner(name);
+  if(AL === null) {
+    res.setStatusCode(404);
+    res.send("Active Learner Not Found");
+    return;
+  }
+
+  // Answer Question
+  AL.answerQuestion(did, pos);
+
+  // Get New Question
+  qid = 0; // new qid value
+  var question = AL.getQuestion(qid);
+  question.id = name; // this uses the AL id (no client side question obj)
+  question.qid = qid;
+  question.links = {};
+  question.links.self = url_for("al", name, storeName, conceptId);
+  
+  // Document associated with Question
+  var dId = parseInt(question.questionId);
+  var docStoreName = docStoreNameFromOntoStore(store, storeName);
+  var docStore = qm.store(docStoreName);
+  var conceptDocs = concept[docsJoinName];
+  var doc = conceptDocs[dId];
+  
+  question.text = doc[docsFieldName];
+  question.name = question.keywords.split(", ").splice(0,3).join(", ").toUpperCase();
+  question.keywords = question.keywords.split(", ").slice(0, 10).join(", ").toUpperCase();
+
+  
   res.send(question);
 });
 
 /// AL - Cancel
-http.onRequest("al/<alid>/", "DELETE", function (req, res) {
-  console.say("OntoGen API - AL DELETE");
+http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "DELETE", function (req, res) {
+  console.say("OntoGen API - AL/name/ DELETE");
 
   if(!req.hasOwnProperty("params")) {
     res.setStatusCode(400);
@@ -1131,22 +1263,57 @@ http.onRequest("al/<alid>/", "DELETE", function (req, res) {
     return;
   }
   var params = req.params;
+  if(!params.hasOwnProperty("ontology")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: ontology name");
+    return;
+  }
+  var store = qm.store(params.ontology);
+  if(store === null) {
+    res.setStatusCode(404);
+    res.send("Ontology '" + params.ontology + "' not found");
+    return;
+  }
+  var storeName = params.ontology;
+
+  if(!params.hasOwnProperty("cid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: concept id");
+    return;
+  }
+  var conceptId = parseInt(params.cid);
+  if(isNaN(conceptId)) {
+    res.setStatusCode(400);
+    res.send("Invalid concept id:" + params.cid);
+    return;
+  }
+  var concept = store[conceptId];
+  if(concept === null) {
+    res.setStatusCode(404);
+    res.send("concept '" + conceptId + "' not found");
+    return;
+  }
+  if(concept.isDeleted) {
+    res.setStatusCode(410);
+    res.send("concept '" + conceptId + "' has been deleted.");
+    return;
+  }
 
   if(!params.hasOwnProperty("alid")) { 
     res.setStatusCode(400);
-    res.send("Missing parameter: active learner id (alid)");
+    res.send("Missing parameter: active learner id (name)");
     return;
   }
-  var alid = parseInt(params.alid);
+  var name = params.alid;
 
-  //ontogen.deleteAL(alid);
+  qm.analytics.delActiveLearner(name);
   res.setStatusCode(204);
   res.send();
 });
 
 /// AL - Get Concept
-http.onRequest("al/<alid>/concept/", "GET", function (req, res) {
-  console.say("OntoGen API - AL <id> / concept GET");
+http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "POST", function (req, res) {
+  console.say("OntoGen API - AL/name/ POST");
 
   if(!req.hasOwnProperty("params")) {
     res.setStatusCode(400);
@@ -1154,15 +1321,87 @@ http.onRequest("al/<alid>/concept/", "GET", function (req, res) {
     return;
   }
   var params = req.params;
+  if(!params.hasOwnProperty("ontology")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: ontology name");
+    return;
+  }
+  var store = qm.store(params.ontology);
+  if(store === null) {
+    res.setStatusCode(404);
+    res.send("Ontology '" + params.ontology + "' not found");
+    return;
+  }
+  var storeName = params.ontology;
+
+  if(!params.hasOwnProperty("cid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: concept id");
+    return;
+  }
+  var conceptId = parseInt(params.cid);
+  if(isNaN(conceptId)) {
+    res.setStatusCode(400);
+    res.send("Invalid concept id:" + params.cid);
+    return;
+  }
+  var concept = store[conceptId];
+  if(concept === null) {
+    res.setStatusCode(404);
+    res.send("concept '" + conceptId + "' not found");
+    return;
+  }
+  if(concept.isDeleted) {
+    res.setStatusCode(410);
+    res.send("concept '" + conceptId + "' has been deleted.");
+    return;
+  }
 
   if(!params.hasOwnProperty("alid")) { 
     res.setStatusCode(400);
-    res.send("Missing parameter: active learner id (alid)");
+    res.send("Missing parameter: active learner id (name)");
     return;
   }
-  var alid = parseInt(params.alid);
-  //var concept = ontogen.getConceptFromAL(alid);
-  var concept = {};
-  res.send(concept);
+  var name = params.alid;
+  if(!req.hasOwnProperty("params")) {
+    res.setStatusCode(400);
+    res.send("Missing parameters");
+    return;
+  }
+
+  // Load AL
+  var AL = qm.analytics.newActiveLearner(name);
+  if(AL === null) {
+    res.setStatusCode(404);
+    res.send("Active Learner Not Found");
+    return;
+  }
+
+  // Build concept from positive records
+  var positives = AL.getPositives();
+
+  // Associated documents
+  var docStoreName = docStoreNameFromOntoStore(store, storeName);
+  var docStore = qm.store(docStoreName);
+  var conceptDocs = concept[docsJoinName];
+
+  // Create Suggestion Object
+  var suggestion = {};
+  suggestion.docs = [];
+  for (var ii = 0; ii < positives.length; ii++) {
+    suggestion.docs.push(conceptDocs[positives[ii]].$id);
+  }
+  /* Non Working Alternative */
+  var records = docStore.recs.filterById(suggestion.docs);
+  var get_keywords = [{name: 'keywords', type: 'keywords', field: docsFieldName}];
+  var keywords = records.aggr(get_keywords[0]);
+  
+  // Get Words
+  //var keywords = AL.getQuestion(0).keywords;
+  suggestion.name = keywords.split(", ").splice(0,3).join(", ").toUpperCase();
+  suggestion.keywords = keywords.split(", ").slice(0, 10).join(", ").toUpperCase();
+  suggestion.parentId = conceptId;
+  
+  res.send(suggestion);
 
 });

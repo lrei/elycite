@@ -319,10 +319,9 @@ App.Views.OntologyView = Backbone.View.extend({
     }
     // concept url
     var cid = $(ev.currentTarget).data("cid");
-    var c = App.State.concepts.findWhere({$id: cid}).toJSON();
+    var c = App.State.concepts.findWhere({$id: cid});
     // make query and set AL, make question = true
-    App.State.currentAL = new App.Models.AL({parentId: c.$id, 
-                                             ontology: c.ontology,
+    App.State.currentAL = new App.Models.AL({concept: c, 
                                              query: queryText});
     this.listenTo(App.State.currentAL, "change", this.renderQuestion);
     App.State.currentAL.save();
