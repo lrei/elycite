@@ -1391,11 +1391,12 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "POST", functi
   for (var ii = 0; ii < positives.length; ii++) {
     suggestion.docs.push(conceptDocs[positives[ii]].$id);
   }
-  /* Non Working Alternative */
+  /* Non Working Alternative 
   var records = docStore.recs.filterById(suggestion.docs);
   var get_keywords = [{name: 'keywords', type: 'keywords', field: docsFieldName}];
   var keywords = records.aggr(get_keywords[0]);
-  
+  */
+
   // Get Words
   //var keywords = AL.getQuestion(0).keywords;
   suggestion.name = keywords.split(", ").splice(0,3).join(", ").toUpperCase();
