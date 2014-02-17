@@ -8,7 +8,7 @@ var docsJoinName = "docs";
 var childJoinName = "childOf";
 var docsFieldName = "text";
 
-  var ontoPrefix = "onto_"; // ontology storeName prefix
+var ontoPrefix = "onto_"; // ontology storeName prefix
 var ontoRegex = /^onto_/; // ontology storeName prefix regex
 var baseUrl = "/ontogenapi/";
 var DEFAULT_STOPWORDS = "none";
@@ -675,7 +675,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/", "PUT", function (req, re
 
 
 /// Concept -  GET subsconcepts
-http.onRequest("ontologies/<ontology>/concepts/<cid>/subconcepts", "GET", function (req, res) {
+http.onRequest("ontologies/<ontology>/concepts/<cid>/subconcepts/", "GET", function (req, res) {
   console.say("OntoGen API - GET SUB CONCETPS");
   if(!req.hasOwnProperty("params")) {
     res.setStatusCode(400);
@@ -725,7 +725,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/subconcepts", "GET", functi
 
 
 /// Concept - DELETE Concept (and sub-concepts)
-http.onRequest("ontologies/<ontology>/concepts/<cid>", "DELETE", function (req, res) {
+http.onRequest("ontologies/<ontology>/concepts/<cid>/", "DELETE", function (req, res) {
   console.say("OntoGen API - Concept DELETE");
   if(!req.hasOwnProperty("params")) {
     res.setStatusCode(400);
@@ -830,8 +830,10 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET", function (re
     res.send("concept '" + conceptId + "' has been deleted.");
     return;
   }
-  var rSet = concept[docsJoinName];
+
+  var rSet = concept[docsJoinName]; // concept documents
   var docs = [];
+
   for(var ii = 0; ii < rSet.length; ii++) {
     docs.push(rSet[ii].$id);
     //link: url_for("documents", rSet[ii].$id, storeName)
@@ -839,6 +841,186 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET", function (re
   }
   res.send(docs); 
 });
+
+/// Concept - Suggest keywords
+http.onRequest("ontologies/<ontology>/concepts/<cid>/suggestkeywords/", "GET", function (req, res) {
+  console.say("OntoGen API - Concept/Search");
+
+  if(!req.hasOwnProperty("params")) {
+    res.setStatusCode(400);
+    res.send("Missing parameters");
+    return;
+  }
+  var params = req.params;
+  if(!params.hasOwnProperty("ontology")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: ontology name");
+    return;
+  }
+  var storeName = params.ontology;
+  var store = qm.store(storeName);
+  if(store === null) {
+    res.setStatusCode(404);
+    res.send("Ontology '" + params.ontology + "' not found");
+    return;
+  }
+  if(!params.hasOwnProperty("cid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: concept id");
+    return;
+  }
+  var conceptId = parseInt(params.cid);
+  if(isNaN(conceptId)) {
+    res.setStatusCode(400);
+    res.send("Invalid concept id:" + params.cid);
+    return;
+  }
+  var concept = store[conceptId];
+  if(concept === null) {
+    res.setStatusCode(404);
+    res.send("concept '" + conceptId + "' not found");
+    return;
+  }
+  if(concept.isDeleted) {
+    res.setStatusCode(410);
+    res.send("concept '" + conceptId + "' has been deleted.");
+    return;
+  }
+
+  if(!req.hasOwnProperty("args")) {
+    res.setStatusCode(400);
+    res.send("Missing arguments.");
+    return;
+  }
+  var ontology = params.ontology;
+  var docStoreName = docStoreNameFromOntoStore(store, ontology);
+
+   // docs
+  var rSet = concept[docsJoinName]; // concept documents
+
+  // Not Found - send "empty" object
+  /*
+   if(rSet.length === 0) {
+    res.send({isEmpty: true});
+    return;
+  }
+  */
+  // Aggregate Keywords
+  var numKeywords = parseInt(req.args.numKeywords) || DEFAULT_NUM_KEYWORDS;
+  var get_keywords = [{name: 'keywords', type: 'keywords', field: docsFieldName}];
+  var keywords = rSet.aggr(get_keywords[0]);
+
+  // Create suggestion object
+  var suggestion = {};
+  var skeywords = keywords.keywords.map(function(k) { return k.keyword; });
+  var rkey = {keywords: skeywords.slice(0, numKeywords).join(", ")};
+
+  res.send(rkey); 
+});
+
+
+/// Concept - Search Based Concept Suggestion
+http.onRequest("ontologies/<ontology>/concepts/<cid>/search/", "GET", function (req, res) {
+  console.say("OntoGen API - Concept/Search");
+
+  if(!req.hasOwnProperty("params")) {
+    res.setStatusCode(400);
+    res.send("Missing parameters");
+    return;
+  }
+  var params = req.params;
+  if(!params.hasOwnProperty("ontology")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: ontology name");
+    return;
+  }
+  var storeName = params.ontology;
+  var store = qm.store(storeName);
+  if(store === null) {
+    res.setStatusCode(404);
+    res.send("Ontology '" + params.ontology + "' not found");
+    return;
+  }
+  if(!params.hasOwnProperty("cid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: concept id");
+    return;
+  }
+  var conceptId = parseInt(params.cid);
+  if(isNaN(conceptId)) {
+    res.setStatusCode(400);
+    res.send("Invalid concept id:" + params.cid);
+    return;
+  }
+  var concept = store[conceptId];
+  if(concept === null) {
+    res.setStatusCode(404);
+    res.send("concept '" + conceptId + "' not found");
+    return;
+  }
+  if(concept.isDeleted) {
+    res.setStatusCode(410);
+    res.send("concept '" + conceptId + "' has been deleted.");
+    return;
+  }
+
+  if(!req.hasOwnProperty("args")) {
+    res.setStatusCode(400);
+    res.send("Missing arguments.");
+    return;
+  }
+  var args = req.args;
+  if(!args.hasOwnProperty("query")) {
+    res.setStatusCode(400);
+    res.send("Missing query argument.");
+    return;
+  }
+  var ontology = params.ontology;
+  var docStoreName = docStoreNameFromOntoStore(store, ontology);
+
+  var query = {}; query.$from = docStoreName;
+  query[docsFieldName] = args.query[0];
+  console.say(JSON.stringify(query));
+
+  // doc ids for intercept
+  var rSet = concept[docsJoinName]; // concept documents
+  var docIds = [];
+  for (var jj = 0; jj < rSet.length; jj++) {
+    docIds.push(rSet[jj].$id);
+  }
+
+  // perform search
+  var result = qm.search(query); // search
+  // filter by concept docs
+  result.filterById(docIds);
+
+  var docs = [];
+  for(var ii = 0; ii < result.length; ii++) {
+    docs.push(result[ii].$id);
+    //link: url_for("documents", rSet[ii].$id, storeName)
+    //docs.push(rSet[ii]);
+  }
+  // Not Found - send "empty" object
+  if(docs.length === 0) {
+    res.send({isEmpty: true});
+    return;
+  }
+  // Aggregate Keywords
+  var get_keywords = [{name: 'keywords', type: 'keywords', field: docsFieldName}];
+  var keywords = result.aggr(get_keywords[0]);
+
+  // Create suggestion object
+  var suggestion = {};
+  var skeywords = keywords.keywords.map(function(k) { return k.keyword; });
+  suggestion.name = skeywords.slice(0,3).join(", ");
+  suggestion.keywords = skeywords.slice(0, 10).join(", ");
+  suggestion.parentId = conceptId;
+  suggestion.docs = docs;
+
+
+  res.send(suggestion); 
+});
+
 
 /// Concept - Suggest sub-concepts
 http.onRequest("ontologies/<ontology>/concepts/<cid>/suggest/", "GET", function (req, res) {
@@ -1398,7 +1580,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "POST", functi
   */
 
   // Get Words
-  //var keywords = AL.getQuestion(0).keywords;
+  var keywords = AL.getQuestion(0).keywords;
   suggestion.name = keywords.split(", ").splice(0,3).join(", ").toUpperCase();
   suggestion.keywords = keywords.split(", ").slice(0, 10).join(", ").toUpperCase();
   suggestion.parentId = conceptId;

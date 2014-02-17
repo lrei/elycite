@@ -26,6 +26,19 @@ App.Models.Concept = Backbone.Model.extend({
     });
   },
 
+  getQuerySuggestion: function(query, callback) {
+  var url = this.url() + "search/";
+    $.ajax({
+      type: "GET",
+      url: url,
+      data: {"query": query }
+    }).done(function(data) {
+      if(typeof callback === 'function') {
+        callback(data);
+      }
+    });
+  },
+
   containsDocument: function(docId) {
     return this.get("docList").indexOf(docId) > -1;
   }

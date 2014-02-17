@@ -10,6 +10,7 @@ App.Views.OntologyView = Backbone.View.extend({
   moveTemplate: Handlebars.templates['movemodal'],
   queryTemplate: Handlebars.templates['querymodal'],
   answerButtonsTemplate: Handlebars.templates['answerbuttons'],
+  queryResultButtonsTemplate: Handlebars.templates['queryresultbuttons'],
   questionTemplate: Handlebars.templates['question'],
   documentsTemplate: Handlebars.templates['docsmodal'],
 
@@ -26,11 +27,12 @@ App.Views.OntologyView = Backbone.View.extend({
      "click #delete-move": "deleteMoveConcept",
      "click #vis-decrease": "decreaseVisualizationSize",
      "click #vis-increase": "increaseVisualizationSize",
-     "click #query-concept": "showQueryModal",
+     "click #vis-download": "downloadVisualization",
+     "click button.query-concept": "showQueryModal",
      "click #make-query": "makeQuery",
      "click button.answer-question": "answerQuestion",
      "click button.cancel-question": "cancelAL",
-     "click button.finish-question": "finishAL",
+     "click button.finish-question": "finishQuery",
      "click #view-documents": "viewDocuments",
      "click a.doc-list-item": "selectDocument",
      "dblclick a.doc-list-item": "viewDocument",
@@ -186,6 +188,11 @@ App.Views.OntologyView = Backbone.View.extend({
     if(concept.isRoot()) {
       return;
     }
+    // remove if exists
+    if($('#modal-delete').length > 0) {
+      $('#modal-delete').remove();
+    }
+
     var conceptjs = concept.toJSON();
     var concepts = App.State.concepts.toJSON();
 
@@ -297,6 +304,17 @@ App.Views.OntologyView = Backbone.View.extend({
     App.State.VizOpts.set("height", height);
   },
 
+  downloadVisualization: function() {
+    var html = d3.select("svg")
+        .attr("title", "test2")
+        .attr("version", 1.1)
+        .attr("xmlns", "http://www.w3.org/2000/svg")
+        .node().parentNode.innerHTML;
+
+    var blob = new Blob([html], { type: "data:image/svg+xml" });
+    saveAs(blob, "ontology.svg");
+  },
+
   showQueryModal: function() {
     console.log("App.Views.OntoView.showQueryModal");
     var conceptjs = App.Helpers.getSelectedConcept().toJSON();
@@ -317,9 +335,29 @@ App.Views.OntologyView = Backbone.View.extend({
     if (queryText.length < 1) {
       return;
     }
-    // concept url
+    // get current concept (parent of query)
     var cid = $(ev.currentTarget).data("cid");
     var c = App.State.concepts.findWhere({$id: cid});
+    var queryType = $("#query-type").find("label.active").find("input").attr('id');
+
+    // Simple Query
+    if(queryType === "query-opt-simple") {
+      App.State.queryConcept = new App.Models.Concept();
+      App.State.queryConcept.set("query", queryText);
+      this.listenToOnce(App.State.queryConcept, "change", this.renderQueryResult);
+      this.listenToOnce(App.State.queryConcept, "destroy", this.renderNoResults);
+
+      var setQueryConcept = function(data) {
+        if(data.hasOwnProperty('isEmpty')) {
+          App.State.queryConcept.destroy();
+          return;
+        }
+        App.State.queryConcept.set(data);
+      };
+      c.getQuerySuggestion(queryText, setQueryConcept);
+      return;
+    }
+    // Active Learner Query
     // make query and set AL, make question = true
     App.State.currentAL = new App.Models.AL({concept: c, 
                                              query: queryText});
@@ -327,10 +365,37 @@ App.Views.OntologyView = Backbone.View.extend({
     App.State.currentAL.save();
   },
 
+  renderQueryResult: function() {
+    this.stopListening(App.State.queryConcept);
+    var query = App.State.queryConcept.get("query");
+    var title = "Concept for " + query;
+    $("#modal-query-label").text(title);
+    // Clear body
+    $("#modal-query-main").empty();
+    // concept suggested
+    var suggested = App.State.queryConcept.toJSON();
+    // make compatible with AL funcs
+    suggested.id = -1; suggested.mode = true;
+    suggested.count = suggested.docs.length;
+    // append body template
+    $("#modal-query-main").append(this.questionTemplate(suggested));
+    $("#modal-query-footer").empty();
+    $("#modal-query-footer").append(this.queryResultButtonsTemplate());
+  },
+
+  renderNoResults: function() {
+    this.stopListening(App.State.queryConcept);
+    $("#modal-query-main").empty();
+    var query = App.State.queryConcept.get("query");
+    $("#modal-query-label").text("No Results");
+    $("#modal-query-main").text("No results found for query: " + query);
+    $("#modal-query-footer").empty();
+    $("#modal-query-footer").append(this.queryResultButtonsTemplate());
+  },
+
   renderQuestion: function() {
     console.log("App.Views.OntoView.renderQuestion");
     var question = App.State.currentAL.toJSON();
-    console.log(question);
     // set title
     var cname = question.query.substring(0, 15);
     /*
@@ -338,7 +403,7 @@ App.Views.OntologyView = Backbone.View.extend({
       cname = question.query.substring(0, 12) + "...";
     }
     */
-    var title = "Does this document belong to the concept " + cname;
+    var title = "Does this document belong to the query " + cname;
     $("#modal-query-label").text(title);
     // Clear body
     $("#modal-query-main").empty();
@@ -361,13 +426,31 @@ App.Views.OntologyView = Backbone.View.extend({
     if(App.State.currentAL) {
       App.State.currentAL.destroy();
     }
+    if(App.State.queryConcept) {
+      App.State.queryConcept.destroy();
+    }
   },
 
-  finishAL: function() {
-    console.log("App.Views.OntoView.finishAL");
+  finishQuery: function(ev) {
+    console.log("App.Views.OntoView.finishQuery");
+    // check if simple query
+    var alid = $(ev.currentTarget).data("alid");
+    console.log("ALID = " + alid);
+    if(alid < 0 && App.State.queryConcept) {
+      console.log("Simple Query");
+      // add concept from simple query, cleanup first
+      var conceptjs = App.State.queryConcept.toJSON();
+      delete conceptjs.id; delete conceptjs.mode; delete conceptjs.query;
+      delete conceptjs.count;
+      App.State.concepts.create(conceptjs);
+      App.State.queryConcept.destroy();
+      return;
+    }
+    // make sure AL is available
     if(!App.State.currentAL) {
       return;
     }
+    // add concept from al
     var addConceptFromAL = function(data) {
       App.State.concepts.create(data);
       App.State.currentAL.destroy();
