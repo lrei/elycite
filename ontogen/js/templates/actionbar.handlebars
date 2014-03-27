@@ -1,6 +1,6 @@
 <div class="row">
 <form class="form-inline" role="form">
-  <div class="form-group col-md-3">
+  <div class="form-group col-md-3" style="padding-left:0px;">
     <label class="sr-only" for="inputName">Name</label>
     <input type="text" class="form-control input-sm" id="input-name" value="{{name}}" data-trigger="hover" data-title="Name">
   </div>
@@ -10,18 +10,11 @@
   </div>
   <div class="form-group col-md-5">
   <button id="change-concept" type="button" class="btn btn-primary btn-sm">Change</button>
-  <button id="suggest-keywords" type="button" class="btn btn-default btn-sm">Suggest Keywords</button>
+  <button id="suggest-keywords" type="button" class="btn btn-warning btn-sm">Suggest Keywords</button>
   <button id="properties-concept" type="button" class="btn btn-default btn-sm">Properties</button>
-  <button id="vis-decrease" type="button" class="btn btn-default btn-xs">
-    <span class="glyphicon glyphicon-minus"></span>
-  </button>
-  <button id="vis-increase" type="button" class="btn btn-default btn-xs">
-    <span class="glyphicon glyphicon-plus"></span>
-  </button>
-  <button id="vis-download" type="button" class="btn btn-default btn-xs">
-    <span class="glyphicon glyphicon-download"></span>
-  </button>
-
+  <button id="view-documents" type="button" class="btn btn-default btn-sm">Documents</button>
+  <button id="build-classifier" type="button" class="btn btn-success btn-sm">Build</button>
+  
 </div>
 </form> 
 </div>
@@ -32,7 +25,15 @@
     <button id="query-concept" type="button" class="btn btn-primary btn-sm query-concept">Sub-Concept From Query</button>
     <button id="move-concept" type="button" class="btn btn-warning btn-sm">Move</button>
     <button id="delete-concept" type="button" class="btn btn-danger btn-sm">Delete</button>
-    <button id="view-documents" type="button" class="btn btn-default btn-sm">View Documents</button>
+    <button id="vis-decrease" type="button" class="btn btn-default btn-xs">
+      <span class="glyphicon glyphicon-minus"></span>
+    </button>
+    <button id="vis-increase" type="button" class="btn btn-default btn-xs">
+      <span class="glyphicon glyphicon-plus"></span>
+    </button>
+    <button id="vis-download" type="button" class="btn btn-default btn-xs">
+      <span class="glyphicon glyphicon-download"></span>
+    </button>
     <label for="visualization-picker">Visualization: </label>
     <select class="selectpicker" id="visualization-picker" data-width="160px">
     {{#each visualizations}}

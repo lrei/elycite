@@ -29,7 +29,15 @@ body {
   margin-bottom: 10px;
 }
 
-
+/* navbar overrides to make it smaller */
+.navbar-nav > li > a {padding-top:5px !important; padding-bottom:5px !important;}
+.navbar {min-height:32px !important}
+.navbar-brand,
+.navbar-nav li a {
+    line-height: 40px;
+    height: 40px;
+    padding-top: 0px;
+}
 
 /* Menu-control buttons should be separated from each other */
 .menu-control > .btn {
@@ -77,4 +85,10 @@ text {
 text.id {
   text-anchor: middle;
   font-weight: normal;
+}
+
+/* Document view (docsmodal) */
+div.modal-dialog.docmodal {
+  width: 90%;
+  height: 80%;
 }

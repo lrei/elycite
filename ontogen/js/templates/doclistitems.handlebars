@@ -1,0 +1,10 @@
+{{#each docs}}
+    {{#if selected}}
+    <a href="#" class="list-group-item active doc-list-item" data-did={{$id}}>
+    {{else}}
+    <a href="#" class="list-group-item doc-list-item" data-did={{$id}}>
+    {{/if}}
+      {{summary}}
+    </a>
+{{/each}}
+

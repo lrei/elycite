@@ -13,6 +13,8 @@ App.Views.OntologyView = Backbone.View.extend({
   queryResultButtonsTemplate: Handlebars.templates['queryresultbuttons'],
   questionTemplate: Handlebars.templates['question'],
   documentsTemplate: Handlebars.templates['docsmodal'],
+  documentTemplate: Handlebars.templates['doctable'],
+  doclistItemsTemplate: Handlebars.templates['doclistitems'],
 
   events: {
      "click #change-concept": "changeConcept",
@@ -20,6 +22,7 @@ App.Views.OntologyView = Backbone.View.extend({
      "click #suggest-concepts": "showSuggestConcepts",
      "click #suggest": "suggestConcepts",
      "click #add-suggested": "addSuggested",
+     "click #suggest-keywords": "suggestKeywords",
      "click #move-concept": "showMoveConcept",
      "click #move-to-destination": "moveConcept",
      "click #delete-concept": "showDeleteConcept",
@@ -28,15 +31,17 @@ App.Views.OntologyView = Backbone.View.extend({
      "click #vis-decrease": "decreaseVisualizationSize",
      "click #vis-increase": "increaseVisualizationSize",
      "click #vis-download": "downloadVisualization",
+
      "click button.query-concept": "showQueryModal",
      "click #make-query": "makeQuery",
      "click button.answer-question": "answerQuestion",
      "click button.cancel-question": "cancelAL",
      "click button.finish-question": "finishQuery",
+
      "click #view-documents": "viewDocuments",
-     "click a.doc-list-item": "selectDocument",
-     "dblclick a.doc-list-item": "viewDocument",
-     "change #visualization-picker": "changeVisualization"
+     "dblclick a.doc-list-item": "selectDocument",
+     "click a.doc-list-item": "viewDocument",
+     "change #visualization-picker": "changeVisualization",
   },
 
   initialize: function() {
@@ -458,67 +463,136 @@ App.Views.OntologyView = Backbone.View.extend({
     App.State.currentAL.getConcept(addConceptFromAL);
   },
 
+  showDocModal: function() {
+    var concept = App.Helpers.getSelectedConcept();
+    var conceptjs = concept.toJSON();
+    var self = this;
+    concept.getDocs(function() {
+      $(self.el).append(self.documentsTemplate({concept: conceptjs}));
+      self.appendToDocList();
+      // @TODO show loading indicator
+      $('#docs-modal').modal('show');
+      
+      // bind events
+      self.listenTo(App.State.Documents, 'sync', self.appendToDocList);
+      // bind scroll event because it does not bubble, must unbind on close
+      $("#doclist").bind( "scroll", self.fetchMoreDocs);
+      // unbind on hide (close)
+      $('#docs-modal').on('hidden.bs.modal', function (e) {
+        self.stopListening(App.State.Documents);
+        $("#doclist").unbind( "scroll");
+      });
+    });
+  },
+
   viewDocuments: function() {
     console.log("App.Views.OntoView.viewDocuments");
     var concept = App.Helpers.getSelectedConcept();
     var docsUrl = concept.get("links").ontology + "documents/";
-    console.log(docsUrl);
     // remove if exists
-    if($('#modal-docs').length > 0) {
-        $('#modal-docs').remove();
+    if($('#docs-modal').length > 0) {
+        $('#docs-modal').remove();
     }
+
     var self = this;
     // Fetch initial batch of Documents if necessary
     if(typeof App.State.Documents === "undefined") {
-      App.State.Documents = new App.Collections.Documents();
-      App.State.Documents.fetch({url: docsUrl, async: false});
+      App.State.Documents = new App.Collections.Documents([], {url: docsUrl});
+      self.listenToOnce(App.State.Documents, 'add', self.showDocModal);
+      App.State.Documents.fetch();
+      return;
     }
-    concept.getDocs(function() {
-      var conceptjs = concept.toJSON();
-      var docsjs = App.State.Documents.toJSON();
-      // summarize (client side version)
-      var summarize = function(val) {
-        val.summary = val.text.substring(0, 30);
-        return val;
-      };
-      docsjs = docsjs.map(summarize);
-      // selected
-      var setSelected = function(val) {
-        if (concept.containsDocument(val.$id)) {
-          val.selected = true;
-        }
-        else {
-          val.selected = false;
-        }
-        return val;
-      };
-      docsjs = docsjs.map(setSelected);
-      $(self.el).append(self.documentsTemplate({concept:conceptjs,
-                                                docs:docsjs}));
-      $('#docs-modal').modal('show');
-    });
+    this.showDocModal();
+  },
+
+  prepareDocView: function(concept) {
+    var docsjs = App.State.Documents.toJSON();
+
+    // remove the ones that were already in there
+    var startPos = $('#doclist-items').children().length;
+    docsjs = docsjs.slice(startPos);
+
+    // summarize (client side version)
+    var summarize = function(val) {
+      val.summary = val.text.substring(0, 30);
+      return val;
+    };
+    docsjs = docsjs.map(summarize);
+
+    // set selected documents
+    var setSelected = function(val) {
+      if (concept.containsDocument(val.$id)) {
+        val.selected = true;
+      }
+      else {
+        val.selected = false;
+      }
+      return val;
+    };
+    docsjs = docsjs.map(setSelected);
+
+    return docsjs; // view object
+  },
+
+  appendToDocList: function() {
+    console.log("App.Views.OntologyView.appendToDocList");
+    var concept = App.Helpers.getSelectedConcept();
+    var docsjs = this.prepareDocView(concept);
+    $('#doclist-items').append(this.doclistItemsTemplate({docs: docsjs}));
   },
 
   viewDocument: function(ev) {
     ev.preventDefault();
-    console.log("view");
     var did = $(ev.currentTarget).data("did");
     // display
-    console.log(did);
     // make silent request
     var doc = App.State.Documents.get(did);
-    doc.fetch({success: function() { 
-      $('#document-details').html(JSON.stringify(doc.toJSON()));
-    console.log("got it");}});
+    var self = this;
+    doc.fetchFull({success: function() {
+      var docjs = doc.toJSON();
+      if('links' in docjs) {
+        delete docjs.links;
+      }
+      $('#document-details').html(self.documentTemplate({document: docjs}));
+    }});
   },
 
   selectDocument: function(ev) {
     ev.preventDefault();
-    console.log("select");
-    $(ev.currentTarget).toggleClass("active");
+    var elem = $(ev.currentTarget);
+    var setSelected = function() {
+      elem.toggleClass("active");
+    };
     var did = $(ev.currentTarget).data("did");
-    
-  }
+    var concept = App.Helpers.getSelectedConcept();
+    concept.setDoc(did, setSelected);
+  },
 
+  suggestKeywords: function() {
+    var concept = App.Helpers.getSelectedConcept();
+    var setKeywords = function(data) {
+      concept.set(data, {silent: true});
+      concept.save();
+      //$("#input-keywords").val(data.keywords);
+    };
+    concept.getKeywordsSuggestion(setKeywords);
+  },
+
+  fetchMoreDocs: function() {
+    // do nothing if all documents have been fetched
+    if(App.State.Documents.finished) {
+      return;
+    }
+    var scrollHeight = $('#doclist')[0].scrollHeight;
+    var scrollTop = $('#doclist').scrollTop();
+    var outterHeight = $('#doclist').outerHeight();
+    
+    if(scrollTop < scrollHeight - outerHeight - 20) {
+      return;
+    }
+    // otherwise fetch more
+    // @TODO loading indicator
+    App.State.Documents.nextSet();
+  },
 
 });

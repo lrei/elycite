@@ -1,0 +1,33 @@
+<!-- View Concept Documents Modal -->
+<div class="modal fade" id="docs-modal" data-backdrop="false" tabindex="-1" role="dialog" aria-labelledby="docs-modal-label" aria-hidden="true">
+  <div class="modal-dialog docmodal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title">Documents for {{concept.name}}</h4>
+      </div> <!-- /modal header -->
+      <div class="modal-body">
+        <div class="row">
+          <!-- document list -->
+          <div id="doclist" class="col-xs-4" style="max-height:500px; overflow-y:scroll;">
+            <div class="list-group" id="doclist-items"> 
+              <!-- doclist-items goes here -->
+            </div> <!-- /list group -->
+          </div> <!-- /document list -->
+          <!-- document properties -->
+          <div id="document-details" class="col-xs-8" style="max-height:500px; overflow-y:scroll;">
+          </div> <!-- /document properties -->
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            Click to view, double click to select (or deselect).
+          </div>
+        </div>
+     </div> <!-- /modal body -->
+     <div class="modal-footer">
+
+        <button id="docs-close" type="button" class="btn" data-dismiss="modal">Close</button>
+      </div> <!-- /modal footer -->
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div> <!-- /LoadView Modal -->

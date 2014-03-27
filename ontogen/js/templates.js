@@ -14,7 +14,7 @@ function program1(depth0,data) {
   return buffer;
   }
 
-  buffer += "<div class=\"row\">\n<form class=\"form-inline\" role=\"form\">\n  <div class=\"form-group col-md-3\">\n    <label class=\"sr-only\" for=\"inputName\">Name</label>\n    <input type=\"text\" class=\"form-control input-sm\" id=\"input-name\" value=\"";
+  buffer += "<div class=\"row\">\n<form class=\"form-inline\" role=\"form\">\n  <div class=\"form-group col-md-3\" style=\"padding-left:0px;\">\n    <label class=\"sr-only\" for=\"inputName\">Name</label>\n    <input type=\"text\" class=\"form-control input-sm\" id=\"input-name\" value=\"";
   if (stack1 = helpers.name) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.name; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
@@ -22,7 +22,7 @@ function program1(depth0,data) {
   if (stack1 = helpers.keywords) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.keywords; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
-    + "\" data-trigger=\"hover\" data-title=\"Keywords\">\n  </div>\n  <div class=\"form-group col-md-5\">\n  <button id=\"change-concept\" type=\"button\" class=\"btn btn-primary btn-sm\">Change</button>\n  <button id=\"suggest-keywords\" type=\"button\" class=\"btn btn-default btn-sm\">Suggest Keywords</button>\n  <button id=\"properties-concept\" type=\"button\" class=\"btn btn-default btn-sm\">Properties</button>\n  <button id=\"vis-decrease\" type=\"button\" class=\"btn btn-default btn-xs\">\n    <span class=\"glyphicon glyphicon-minus\"></span>\n  </button>\n  <button id=\"vis-increase\" type=\"button\" class=\"btn btn-default btn-xs\">\n    <span class=\"glyphicon glyphicon-plus\"></span>\n  </button>\n  <button id=\"vis-download\" type=\"button\" class=\"btn btn-default btn-xs\">\n    <span class=\"glyphicon glyphicon-download\"></span>\n  </button>\n\n</div>\n</form> \n</div>\n<div class=\"row\" style=\"margin-top:10px\">\n  <form class=\"form-inline\" role=\"form\">\n    <button id=\"new-concept\" type=\"button\" class=\"btn btn-success btn-sm\">New Sub-Concept</button>\n    <button id=\"suggest-concepts\" type=\"button\" class=\"btn btn-primary btn-sm\">Suggest Sub-Concepts</button>\n    <button id=\"query-concept\" type=\"button\" class=\"btn btn-primary btn-sm query-concept\">Sub-Concept From Query</button>\n    <button id=\"move-concept\" type=\"button\" class=\"btn btn-warning btn-sm\">Move</button>\n    <button id=\"delete-concept\" type=\"button\" class=\"btn btn-danger btn-sm\">Delete</button>\n    <button id=\"view-documents\" type=\"button\" class=\"btn btn-default btn-sm\">View Documents</button>\n    <label for=\"visualization-picker\">Visualization: </label>\n    <select class=\"selectpicker\" id=\"visualization-picker\" data-width=\"160px\">\n    ";
+    + "\" data-trigger=\"hover\" data-title=\"Keywords\">\n  </div>\n  <div class=\"form-group col-md-5\">\n  <button id=\"change-concept\" type=\"button\" class=\"btn btn-primary btn-sm\">Change</button>\n  <button id=\"suggest-keywords\" type=\"button\" class=\"btn btn-warning btn-sm\">Suggest Keywords</button>\n  <button id=\"properties-concept\" type=\"button\" class=\"btn btn-default btn-sm\">Properties</button>\n  <button id=\"view-documents\" type=\"button\" class=\"btn btn-default btn-sm\">Documents</button>\n  <button id=\"build-classifier\" type=\"button\" class=\"btn btn-success btn-sm\">Build</button>\n  \n</div>\n</form> \n</div>\n<div class=\"row\" style=\"margin-top:10px\">\n  <form class=\"form-inline\" role=\"form\">\n    <button id=\"new-concept\" type=\"button\" class=\"btn btn-success btn-sm\">New Sub-Concept</button>\n    <button id=\"suggest-concepts\" type=\"button\" class=\"btn btn-primary btn-sm\">Suggest Sub-Concepts</button>\n    <button id=\"query-concept\" type=\"button\" class=\"btn btn-primary btn-sm query-concept\">Sub-Concept From Query</button>\n    <button id=\"move-concept\" type=\"button\" class=\"btn btn-warning btn-sm\">Move</button>\n    <button id=\"delete-concept\" type=\"button\" class=\"btn btn-danger btn-sm\">Delete</button>\n    <button id=\"vis-decrease\" type=\"button\" class=\"btn btn-default btn-xs\">\n      <span class=\"glyphicon glyphicon-minus\"></span>\n    </button>\n    <button id=\"vis-increase\" type=\"button\" class=\"btn btn-default btn-xs\">\n      <span class=\"glyphicon glyphicon-plus\"></span>\n    </button>\n    <button id=\"vis-download\" type=\"button\" class=\"btn btn-default btn-xs\">\n      <span class=\"glyphicon glyphicon-download\"></span>\n    </button>\n    <label for=\"visualization-picker\">Visualization: </label>\n    <select class=\"selectpicker\" id=\"visualization-picker\" data-width=\"160px\">\n    ";
   stack1 = helpers.each.call(depth0, depth0.visualizations, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n    </select>\n\n  </form> \n</div>\n\n";
@@ -108,52 +108,82 @@ function program4(depth0,data) {
   buffer += "\n        <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\">Close</button>\n      </div>\n    </div><!-- /.modal-content -->\n  </div><!-- /.modal-dialog -->\n</div><!-- /.modal -->\n";
   return buffer;
   });
-templates['docsmodal'] = template(function (Handlebars,depth0,helpers,partials,data) {
+templates['doclistitems'] = template(function (Handlebars,depth0,helpers,partials,data) {
   this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
-  var buffer = "", stack1, stack2, functionType="function", escapeExpression=this.escapeExpression, self=this;
+  var buffer = "", stack1, functionType="function", escapeExpression=this.escapeExpression, self=this;
 
 function program1(depth0,data) {
   
   var buffer = "", stack1;
-  buffer += "\n              ";
+  buffer += "\n    ";
   stack1 = helpers['if'].call(depth0, depth0.selected, {hash:{},inverse:self.program(4, program4, data),fn:self.program(2, program2, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
-  buffer += "\n                ";
+  buffer += "\n      ";
   if (stack1 = helpers.summary) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.summary; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
-    + "\n              </a>\n              ";
+    + "\n    </a>\n";
   return buffer;
   }
 function program2(depth0,data) {
   
   var buffer = "", stack1;
-  buffer += "\n              <a href=\"#\" class=\"list-group-item active doc-list-item\" data-did=";
+  buffer += "\n    <a href=\"#\" class=\"list-group-item active doc-list-item\" data-did=";
   if (stack1 = helpers.$id) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.$id; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
-    + ">\n              ";
+    + ">\n    ";
   return buffer;
   }
 
 function program4(depth0,data) {
   
   var buffer = "", stack1;
-  buffer += "\n              <a href=\"#\" class=\"list-group-item doc-list-item\" data-did=";
+  buffer += "\n    <a href=\"#\" class=\"list-group-item doc-list-item\" data-did=";
   if (stack1 = helpers.$id) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.$id; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
-    + ">\n              ";
+    + ">\n    ";
   return buffer;
   }
 
-  buffer += "<!-- View Concept Documents Modal -->\n<div class=\"modal fade\" id=\"docs-modal\" data-backdrop=\"false\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"docs-modal-label\" aria-hidden=\"true\">\n  <div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\">Documents for "
+  stack1 = helpers.each.call(depth0, depth0.docs, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += "\n\n";
+  return buffer;
+  });
+templates['docsmodal'] = template(function (Handlebars,depth0,helpers,partials,data) {
+  this.compilerInfo = [4,'>= 1.0.0'];
+helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
+  var buffer = "", stack1, functionType="function", escapeExpression=this.escapeExpression;
+
+
+  buffer += "<!-- View Concept Documents Modal -->\n<div class=\"modal fade\" id=\"docs-modal\" data-backdrop=\"false\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"docs-modal-label\" aria-hidden=\"true\">\n  <div class=\"modal-dialog docmodal\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\">Documents for "
     + escapeExpression(((stack1 = ((stack1 = depth0.concept),stack1 == null || stack1 === false ? stack1 : stack1.name)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
-    + "</h4>\n      </div> <!-- /modal header -->\n      <div class=\"modal-body\">\n        <div class=\"row\">\n          <!-- document list -->\n          <div class=\"col-xs-6\" style=\"max-height:500px; overflow-y:scroll;\">\n            <div class=\"list-group\">\n              ";
-  stack2 = helpers.each.call(depth0, depth0.docs, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
-  if(stack2 || stack2 === 0) { buffer += stack2; }
-  buffer += "\n            </div> <!-- /list group -->\n          </div> <!-- /document list -->\n          <!-- document properties -->\n          <div id=\"document-details\" class=\"col-xs-6\" style=\"overflow-y:scroll;\">\n          </div> <!-- /document properties -->\n        </div>\n     </div> <!-- /modal body -->\n      <div class=\"modal-footer\">\n        <button id=\"close\" type=\"button\" class=\"btn\" data-dismiss=\"modal\">Close</button>\n      </div> <!-- /modal footer -->\n    </div><!-- /.modal-content -->\n  </div><!-- /.modal-dialog -->\n</div> <!-- /LoadView Modal -->\n";
+    + "</h4>\n      </div> <!-- /modal header -->\n      <div class=\"modal-body\">\n        <div class=\"row\">\n          <!-- document list -->\n          <div id=\"doclist\" class=\"col-xs-4\" style=\"max-height:500px; overflow-y:scroll;\">\n            <div class=\"list-group\" id=\"doclist-items\"> \n              <!-- doclist-items goes here -->\n            </div> <!-- /list group -->\n          </div> <!-- /document list -->\n          <!-- document properties -->\n          <div id=\"document-details\" class=\"col-xs-8\" style=\"max-height:500px; overflow-y:scroll;\">\n          </div> <!-- /document properties -->\n        </div>\n        <div class=\"panel panel-default\">\n          <div class=\"panel-body\">\n            Click to view, double click to select (or deselect).\n          </div>\n        </div>\n     </div> <!-- /modal body -->\n     <div class=\"modal-footer\">\n\n        <button id=\"docs-close\" type=\"button\" class=\"btn\" data-dismiss=\"modal\">Close</button>\n      </div> <!-- /modal footer -->\n    </div><!-- /.modal-content -->\n  </div><!-- /.modal-dialog -->\n</div> <!-- /LoadView Modal -->\n";
+  return buffer;
+  });
+templates['doctable'] = template(function (Handlebars,depth0,helpers,partials,data) {
+  this.compilerInfo = [4,'>= 1.0.0'];
+helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
+  var buffer = "", stack1, functionType="function", escapeExpression=this.escapeExpression, self=this;
+
+function program1(depth0,data) {
+  
+  var buffer = "", stack1;
+  buffer += "\n<tr>\n  <th scope=\"row\">"
+    + escapeExpression(((stack1 = ((stack1 = data),stack1 == null || stack1 === false ? stack1 : stack1.key)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
+    + "</th>\n  <td>"
+    + escapeExpression((typeof depth0 === functionType ? depth0.apply(depth0) : depth0))
+    + "</td>\n</tr>\n  ";
+  return buffer;
+  }
+
+  buffer += "<table class=\"table table-bordered table-responsive\">\n";
+  stack1 = helpers.each.call(depth0, depth0.document, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += "\n</table>\n\n";
   return buffer;
   });
 templates['exportviz'] = template(function (Handlebars,depth0,helpers,partials,data) {
