@@ -54,6 +54,9 @@ var url_for = function(what, which, where, inside) {
     case "al":
       url += "ontologies/" + where + "/concepts/" + inside + "/al/" + which + "/";
       break;
+  case "classifiers":
+      url += "ontologies/" + where + "/classifiers/" + which + "/";
+      break;
   }
 
   return url;
@@ -590,11 +593,22 @@ http.onRequest("ontologies/<ontology>/concepts/", "POST", function (req, res) {
   // keywords
   concept.keywords = data.keywords || "";
 
+  var lopts = qm.analytics.getLanguageOptions();
   // Stopwords
-  concept.stopwords = data.stopwords || store[parentId].stopwords;
+  concept.stopwords = store[parentId].stopwords;
+  if(data.hasOwnProperty("stopwords")) {
+    if(lopts.stopwords.indexOf(data.stopwords) >= 0) {
+      concept.stopwords = data.stopwords;
+    }
+  }
 
   // Stemmer
-  concept.stemmer = data.stemmer || store[parentId].stemmer;
+  concept.stemmer = store[parentId].stemmer;
+  if(data.hasOwnProperty("stemmer")) {
+    if(lopts.stemmer.indexOf(data.stemmer) >= 0) {
+      concept.stemmer = data.stemmer;
+    }
+  }
 
   // docs - an array of ids from parent
   var docs = data.docs || [];
@@ -676,14 +690,19 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/", "PUT", function (req, re
     change.keywords = data.keywords;
   }
 
+  var lopts = qm.analytics.getLanguageOptions();
   // Stopwords
   if(data.hasOwnProperty("stopwords")) {
-    change.stopwords = data.stopwords;
+    if(lopts.stopwords.indexOf(data.stopwords) >= 0) {
+      change.stopwords = data.stopwords;
+    }
   }
 
   // Stemmer
   if(data.hasOwnProperty("stemmer")) {
-    change.stemmer = data.stemmer;
+    if(lopts.stemmer.indexOf(data.stemmer) >= 0) {
+      change.stemmer = data.stemmer;
+    }
   }
 
   var cid = store.add(change);
@@ -1211,11 +1230,26 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/suggest/", "GET", function 
     return;
   }
 
+  var lopts = qm.analytics.getLanguageOptions();
+  // Stopwords
+  var stopwords = concept.stopwords;
+  if(req.args.hasOwnProperty("stopwords")) {
+    if(lopts.stopwords.indexOf(req.args.stopwords) >= 0) {
+      stopwords = req.args.stopwords;
+    }
+  }
+
+  // Stemmer
+  var stemmer = concept.stemmer;
+  if(req.args.hasOwnProperty("stemmer")) {
+    if(lopts.stemmer.indexOf(req.args.stemmer) >= 0) {
+      stemmer = req.args.stemmer;
+    }
+  }
+
   var numSuggest = parseInt(req.args.numSuggest) || DEFAULT_SUGGESTIONS;
   var numIter = parseInt(req.args.numIter) || DEFAULT_ITER;
   var numKeywords = parseInt(req.args.numKeywords) || DEFAULT_NUM_KEYWORDS;
-  var stemmer = req.args.stemmer || concept.stemmer;
-  var stopwords = req.args.stopwords || concept.stopwords;
 
   // Create Feature Space
   var docStoreName = docStoreNameFromOntoStore(store, params.ontology);
@@ -1320,13 +1354,21 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/", "POST", function (req
   }
   var query = data.query;
 
-  var stemmer = concept.stemmer;
-  if(data.hasOwnProperty("stemmer")) {
-    stemmer = data.stemmer;
-  }
+  var lopts = qm.analytics.getLanguageOptions();
+  // Stopwords
   var stopwords = concept.stopwords;
   if(data.hasOwnProperty("stopwords")) {
-    stemmer = data.stopwords;
+    if(lopts.stopwords.indexOf(data.stopwords) >= 0) {
+      stopwords = data.stopwords;
+    }
+  }
+
+  // Stemmer
+  var stemmer = concept.stemmer;
+  if(data.hasOwnProperty("stemmer")) {
+    if(lopts.stemmer.indexOf(data.stemmer) >= 0) {
+      stemmer = data.stemmer;
+    }
   }
 
   var name = "default";
@@ -1516,7 +1558,13 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "PATCH", funct
     res.send("Missing parameter: active learner id (name)");
     return;
   }
-  var name = params.alid;
+  // extremely restrictive use of names
+  var name = String(data.name);
+  if(name.match(/^[0-9a-zA-Z]+$/) === null) {
+    res.setStatusCode(400);
+    res.send("Active learner name must be alphanumeric.");
+    return;
+  }
   
   if(!req.hasOwnProperty("jsonData")) {
     res.setStatusCode(400);
@@ -1730,4 +1778,212 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "POST", functi
   
   res.send(suggestion);
 
+});
+
+/*
+ * Classifiers
+ */
+/// Classifier for Concept - Create
+http.onRequest("ontologies/<ontology>/concepts/<cid>/classifier/", "POST", function (req, res) {
+  console.say("OntoGen API - Concept Classifier - POST");
+
+  if(!req.hasOwnProperty("params")) {
+    res.setStatusCode(400);
+    res.send("Missing parameters");
+    return;
+  }
+  var params = req.params;
+  // ontology
+  if(!params.hasOwnProperty("ontology")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: ontology name");
+    return;
+  }
+  var store = qm.store(params.ontology);
+  if(store === null) {
+    res.setStatusCode(404);
+    res.send("Ontology '" + params.ontology + "' not found");
+    return;
+  }
+  // concept
+  if(!params.hasOwnProperty("cid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: concept id");
+    return;
+  }
+  var conceptId = parseInt(params.cid);
+  if(isNaN(conceptId)) {
+    res.setStatusCode(400);
+    res.send("Invalid concept id:" + params.cid);
+    return;
+  }
+  var concept = store[conceptId];
+  if(concept === null) {
+    res.setStatusCode(404);
+    res.send("concept '" + conceptId + "' not found");
+    return;
+  }
+  if(concept.isDeleted) {
+    res.setStatusCode(410);
+    res.send("concept '" + conceptId + "' has been deleted.");
+    return;
+  }
+
+  if(!req.hasOwnProperty("jsonData")) {
+    res.setStatusCode(400);
+    res.send("Missing data.");
+    return;
+  }
+  var data = req.jsonData;
+  // get the classifier name
+  if(!data.hasOwnProperty("name")) {
+    res.setStatusCode(400);
+    res.send("Missing classifier name.");
+    return;
+  }
+  // used as part of the URL so make it "safe") - extremely restrictive names
+  var name = String(data.name);
+  if(!name.match(/^[0-9a-zA-Z]+$/)) {
+    res.setStatusCode(400);
+    res.send("Classifier name must be alphanumeric.");
+    return;
+  }
+
+  var lopts = qm.analytics.getLanguageOptions();
+
+  // Stopwords
+  var stopwords = concept.stopwords;
+  if(data.hasOwnProperty("stopwords")) {
+    if(lopts.stopwords.indexOf(data.stopwords) >= 0) {
+      stopwords = data.stopwords;
+    }
+  }
+
+  // Stemmer
+  var stemmer = concept.stemmer;
+  if(data.hasOwnProperty("stemmer")) {
+    if(lopts.stemmer.indexOf(data.stemmer) >= 0) {
+      stemmer = data.stemmer;
+    }
+  }
+
+  // get the concept documents (Pos ex)
+  var posRecs = concept[docsJoinName];
+  if(posRecs.length < 1) {
+    res.setStatusCode(400);
+    res.send("No positve examples found (i.e. no documents in concept).");
+    return;
+  }
+  // get all documents NOT in concept (Neg ex)
+  var docStoreName = docStoreNameFromOntoStore(store, params.ontology);
+  var docStore = qm.store(docStoreName);
+  var negRecs = docStore.recs;
+  negRecs.filterExcludeRecs(posRecs);
+  if(negRecs.length < 1) {
+    res.setStatusCode(400);
+    res.send("No negative examples found (i.e. all documents are in concept).");
+    return;
+  }
+
+  // get svm c parameter, default is 1.0
+  var c = 1.0;
+  if(data.hasOwnProperty("c")) {
+    if(!isNaN(data.c)) {
+      c = data.c;
+    }
+  } 
+  // get the svm j parameter, default is balanced
+  var j = negRecs.length / posRecs.length;
+  if(data.hasOwnProperty("j")) {
+    if(!isNaN(data.j)) {
+      j = data.j;
+    }
+  }
+  // SvmParam
+  var SvmParam = {C:c, j:j, normalize:false};
+
+  // feature space
+  var ftrSpace = qm.analytics.newFeatureSpace([{type: 'text',
+                                                source: docStoreName,
+                                                field: docsFieldName,
+                                                stemmer: {type: stemmer},
+                                                stopwords: stopwords}]);
+  ftrSpace.updateRecords(docStore.recs); // neg + pos recs = all
+  ftrSpace.finishUpdate();
+
+  // build and store classifier
+  var cls = qm.analytics.trainSvmClassify(ftrSpace, posRecs, negRecs, SvmParam, name);
+
+  if(typeof(cls) === "undefined" || cls === null) {
+    res.setStatusCode(500);
+    res.send("Unable to build this classifer.");
+    return;
+  }
+
+  // return url for classifier
+  var msg = {name: name};
+  msg.links = {};
+  msg.links.self = url_for("classifiers", name, params.ontology);
+  res.setStatusCode(201);
+  res.send(msg);
+});
+
+/// List existing classifiers (models)
+http.onRequest("ontologies/<ontology>/classifiers/", "GET", function (req, res) {
+  console.say("OntoGen API - Classifiers  Get");
+
+});
+
+/// Classify array of documents
+http.onRequest("ontologies/<ontology>/classifiers/<mid>/", "POST", function (req, res) {
+  console.say("OntoGen API - Classify with model POST");
+
+  if(!req.hasOwnProperty("params")) {
+    res.setStatusCode(400);
+    res.send("Missing parameters");
+    return;
+  }
+  var params = req.params;
+  // ontology
+  if(!params.hasOwnProperty("ontology")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: ontology name");
+    return;
+  }
+  var store = qm.store(params.ontology);
+  if(store === null) {
+    res.setStatusCode(404);
+    res.send("Ontology '" + params.ontology + "' not found");
+    return;
+  }
+  // classifier
+  if(!params.hasOwnProperty("mid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: model id (classifier name).");
+    return;
+  }
+  var mid = params.mid;
+  var svm = qm.analytics.loadSvm(mid);
+  if(svm === null) {
+    res.setStatusCode(404);
+    res.send("Model (classifier) not found: " + mid + ".");
+    return;
+  }
+  if(!req.hasOwnProperty("jsonData")) {
+    res.setStatusCode(200);
+    res.send([]);
+    return;
+  }
+  var data = req.jsonData; // data should be an array of records in JSON format
+  var docStoreName = docStoreNameFromOntoStore(store, params.ontology);
+  var docStore = qm.store(docStoreName);
+  
+  // classify loop
+  var results = [];
+  for(var ii = 0; ii < data.length; ii++) {
+    var rec = docStore.newRec(data[ii]);
+    var r = svm.classify(rec);
+    results.push(r);
+  }
+  res.send(results);
 });
