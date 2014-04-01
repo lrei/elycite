@@ -75,7 +75,6 @@ App = {
         url: "/ontogenapi/languageoptions"
       }).done(function(data) {
         App.State.LanguageOptions = data;
-        console.log(App.State.LanguageOptions);
         if(typeof callback === 'function') {
           callback(data);
         }
@@ -122,7 +121,20 @@ App = {
           callback(data);
         }
       });
-      //return data; // if sync
+    },
+
+    // @TODO move this to concept model using link url
+    classifyConcept: function(concept, cls, callback) {
+      var url = concept.url() + '/classify/' + cls + '/';
+      $.ajax({
+        type: "GET",
+        url: url,
+      }).done(function(data) {
+        console.log("API.classifyConcept.done");
+        if(typeof callback === 'function') {
+          callback(data);
+        }
+      });
     }
-  }
+  } // End of App.API
 };

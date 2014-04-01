@@ -7,7 +7,15 @@
   </tr>
 </thead>
 {{#each suggestions}}
+{{#if positive}}
+<tr class="success" data-lid="{{lid}}">
+{{else}}
+{{#if negative}}
+<tr class="danger" data-lid="{{lid}}">
+{{else}}
 <tr data-lid="{{lid}}">
+{{/if}}
+{{/if}}
   <td>{{name}}</td>
   <td>{{keywords}}</td>
   <td>{{numDocs}}</td>

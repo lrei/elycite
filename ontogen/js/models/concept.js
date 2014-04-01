@@ -21,7 +21,9 @@ App.Models.Concept = Backbone.Model.extend({
     var self = this;
     $.getJSON(docsUrl, function(data) {
       self.set({docList: data}, {silent: true});
-      callback();
+      if(callback) {
+        callback();
+      }
     });
   },
 
@@ -60,7 +62,7 @@ App.Models.Concept = Backbone.Model.extend({
   },
 
   getQuerySuggestion: function(query, callback) {
-  var url = this.url() + "search/";
+    var url = this.url() + "search/";
     $.ajax({
       type: "GET",
       url: url,
@@ -86,5 +88,6 @@ App.Models.Concept = Backbone.Model.extend({
 
   containsDocument: function(docId) {
     return this.get("docList").indexOf(docId) > -1;
-  }
+  },
+
 });

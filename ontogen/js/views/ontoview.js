@@ -15,13 +15,12 @@ App.Views.OntologyView = Backbone.View.extend({
   documentsTemplate: Handlebars.templates['docsmodal'],
   documentTemplate: Handlebars.templates['doctable'],
   doclistItemsTemplate: Handlebars.templates['doclistitems'],
+  buildTemplate: Handlebars.templates['buildmodal'],
+  classifyTemplate: Handlebars.templates['classifymodal'],
 
   events: {
      "click #change-concept": "changeConcept",
      "click #new-concept": "newConcept",
-     "click #suggest-concepts": "showSuggestConcepts",
-     "click #suggest": "suggestConcepts",
-     "click #add-suggested": "addSuggested",
      "click #suggest-keywords": "suggestKeywords",
      "click #move-concept": "showMoveConcept",
      "click #move-to-destination": "moveConcept",
@@ -31,6 +30,10 @@ App.Views.OntologyView = Backbone.View.extend({
      "click #vis-decrease": "decreaseVisualizationSize",
      "click #vis-increase": "increaseVisualizationSize",
      "click #vis-download": "downloadVisualization",
+
+     "click #suggest-concepts": "showSuggestConcepts",
+     "click #suggest": "suggestConcepts",
+     "click #add-suggested": "addSuggested",
 
      "click button.query-concept": "showQueryModal",
      "click #make-query": "makeQuery",
@@ -42,6 +45,11 @@ App.Views.OntologyView = Backbone.View.extend({
      "dblclick a.doc-list-item": "selectDocument",
      "click a.doc-list-item": "viewDocument",
      "change #visualization-picker": "changeVisualization",
+
+     "click #build-classifier": "showBuildClassifier",
+     "click #do-build-cls": "buildClassifier",
+     "click #classify-concept": "showClassify",
+     "click #do-classify": "classifyConcept",
   },
 
   initialize: function() {
@@ -149,6 +157,9 @@ App.Views.OntologyView = Backbone.View.extend({
     var conceptjs = App.Helpers.getSelectedConcept().toJSON();
     $(this.el).append(this.suggestTemplate(conceptjs));
     $('#modal-suggest').modal('show');
+    $('#modal-suggest').on('hidden.bs.modal', function (e) {
+      $('#modal-suggest').remove();
+    });
   },
 
   renderSuggestTable: function() {
@@ -180,8 +191,6 @@ App.Views.OntologyView = Backbone.View.extend({
   addSuggested: function(ev) {
     console.log("App.Views.OntoView.addSuggested");
     var lid = parseInt($(ev.currentTarget).attr("data-lid"));
-    console.log("LID === " + lid);
-    console.log(typeof lid);
     console.log(App.State.suggestions.findWhere({lid: lid}));
     App.State.concepts.create(App.State.suggestions.findWhere({lid: lid}).toJSON());
     App.State.suggestions.remove(App.State.suggestions.findWhere({lid: lid}));
@@ -488,7 +497,7 @@ App.Views.OntologyView = Backbone.View.extend({
   viewDocuments: function() {
     console.log("App.Views.OntoView.viewDocuments");
     var concept = App.Helpers.getSelectedConcept();
-    var docsUrl = concept.get("links").ontology + "documents/";
+    var docsUrl = concept.get("links").ontology + "documents/"; // @TODO
     // remove if exists
     if($('#docs-modal').length > 0) {
         $('#docs-modal').remove();
@@ -594,5 +603,101 @@ App.Views.OntologyView = Backbone.View.extend({
     // @TODO loading indicator
     App.State.Documents.nextSet();
   },
+
+  showBuildClassifier: function() {
+    var concept = App.Helpers.getSelectedConcept();
+
+    // remove if exists
+    if($('#modal-build').length > 0) {
+      $('#modal-build').remove();
+    }
+    // display
+    var self = this;
+    var display = function() {
+      var conceptjs = App.Helpers.getSelectedConcept().toJSON();
+      conceptjs.ndocs = conceptjs.docList.length;
+      var lopts = App.State.LanguageOptions;
+      $(self.el).append(self.buildTemplate({concept:conceptjs, langopts:lopts}));
+      $('#modal-build').modal('show');
+      // set defaults
+      $('#cls-stopwordsPicker').val(conceptjs.stopwords);
+      $('#cls-stemmerPicker').val(conceptjs.stemmer);
+    };
+    concept.getDocs(display);
+  },
+
+  buildClassifier: function(ev) {
+    var cid = $(ev.currentTarget).data("cid");
+    var concept = App.State.concepts.findWhere({$id: cid});
+    var classifiersUrl = concept.get("links").ontology + "classifiers/";
+    // get options
+    var name = $("#cls-name").val() || "default";
+    name = concept.get("ontology") + "_" + name;
+    var stopwords = $('#cls-stopwordsPicker').val();
+    var stemmer =  $('#cls-stemmerPicker').val();
+    var c = parseInt($("#cls-param-c").val());
+    var j = parseFloat($("#cls-param-j").val());
+    var opts = {
+      name:name,
+      cid:concept.id,
+      c:c,
+      j:j, 
+      stemmer:stemmer,
+      stopwords:stopwords
+    };
+    var classifier = new App.Models.Classifier(opts);
+    classifier.urlRoot = classifiersUrl;
+    classifier.save();
+    this.listenToOnce(classifier, "change", this.closeBuildClassifier);
+  },
+
+  closeBuildClassifier: function() {
+    $('#modal-build').modal('hide');
+    $('#modal-build').on('hidden.bs.modal', function (e) {
+      $('#modal-build').remove();
+    });
+  },
+
+  showClassify: function() {
+    console.log("App.Views.OntoView.showClassify");
+    if($('#modal-classify').length) {
+      $('#modal-classify').remove();
+    }
+    var conceptjs = App.Helpers.getSelectedConcept().toJSON();
+    var self = this;
+    // load available classifiers
+    var clsUrl = conceptjs.links.ontology + "classifiers/";
+    var classifiers = new App.Collections.Classifiers([], {url:clsUrl});
+    this.listenToOnce(classifiers, 'add', function() {
+      $(self.el).append(self.classifyTemplate({
+        concept:conceptjs,
+        classifiers:classifiers.toJSON()
+      }));
+      $('#modal-classify').modal('show');
+      $('#modal-classify').on('hidden.bs.modal', function (e) {
+        $('#modal-classify').remove();
+      });
+    });
+    classifiers.fetch();
+  },
+
+
+  classifyConcept: function() {
+    console.log("App.Views.OntoView.classifyConcept");
+    var cls = $("#classifierPicker").val();
+
+    // callback that sets the suggestions
+    var setSuggestions = function(res) {
+      var lid = 0;
+      res.map(function(c) {
+        c.numDocs = c.docs.length; 
+        c.lid = lid++;
+      });
+      App.State.suggestions.reset(res);
+    }; // end of callback
+    
+    var concept = App.Helpers.getSelectedConcept();
+    App.API.classifyConcept(concept, cls, setSuggestions);
+  }
 
 });

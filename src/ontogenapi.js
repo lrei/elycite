@@ -125,6 +125,15 @@ var documentFromRecord = function(rec, ontology, field, summary) {
   return d;
 };
 
+
+var classifierFromName = function(name, ontology) {
+  var c = {"id": name};
+  c.links = {};
+  c.links.self = url_for("classifiers", name, ontology);
+  c.links.ontology = url_for("ontologies", ontology);
+  return c;
+};
+
 var randomPosInt32 = function() {
   var max = 2147483647;
   var min = 0;
@@ -1560,9 +1569,9 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "PATCH", funct
   }
   // extremely restrictive use of names
   var name = String(data.name);
-  if(name.match(/^[0-9a-zA-Z]+$/) === null) {
+  if(name.match(/^[0-9a-zA-Z_]+$/) === null) {
     res.setStatusCode(400);
-    res.send("Active learner name must be alphanumeric.");
+    res.send("Active learner name must be alphanumeric (underscore allowed).");
     return;
   }
   
@@ -1784,7 +1793,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "POST", functi
  * Classifiers
  */
 /// Classifier for Concept - Create
-http.onRequest("ontologies/<ontology>/concepts/<cid>/classifier/", "POST", function (req, res) {
+http.onRequest("ontologies/<ontology>/classifiers/", "POST", function (req, res) {
   console.say("OntoGen API - Concept Classifier - POST");
 
   if(!req.hasOwnProperty("params")) {
@@ -1805,13 +1814,22 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/classifier/", "POST", funct
     res.send("Ontology '" + params.ontology + "' not found");
     return;
   }
-  // concept
-  if(!params.hasOwnProperty("cid")) { 
+  var ontology = params.ontology;
+  // request data
+  if(!req.hasOwnProperty("jsonData")) {
     res.setStatusCode(400);
-    res.send("Missing parameter: concept id");
+    res.send("Missing data.");
     return;
   }
-  var conceptId = parseInt(params.cid);
+  var data = req.jsonData;
+
+  // concept
+  if(!data.hasOwnProperty("cid")) { 
+    res.setStatusCode(400);
+    res.send("Missing concept id (cid).");
+    return;
+  }
+  var conceptId = parseInt(data.cid);
   if(isNaN(conceptId)) {
     res.setStatusCode(400);
     res.send("Invalid concept id:" + params.cid);
@@ -1829,12 +1847,6 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/classifier/", "POST", funct
     return;
   }
 
-  if(!req.hasOwnProperty("jsonData")) {
-    res.setStatusCode(400);
-    res.send("Missing data.");
-    return;
-  }
-  var data = req.jsonData;
   // get the classifier name
   if(!data.hasOwnProperty("name")) {
     res.setStatusCode(400);
@@ -1843,9 +1855,9 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/classifier/", "POST", funct
   }
   // used as part of the URL so make it "safe") - extremely restrictive names
   var name = String(data.name);
-  if(!name.match(/^[0-9a-zA-Z]+$/)) {
+  if(!name.match(/^[0-9a-zA-Z_]+$/)) {
     res.setStatusCode(400);
-    res.send("Classifier name must be alphanumeric.");
+    res.send("Classifier name must be alphanumeric (underscore allowed).");
     return;
   }
 
@@ -1875,7 +1887,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/classifier/", "POST", funct
     return;
   }
   // get all documents NOT in concept (Neg ex)
-  var docStoreName = docStoreNameFromOntoStore(store, params.ontology);
+  var docStoreName = docStoreNameFromOntoStore(store, ontology);
   var docStore = qm.store(docStoreName);
   var negRecs = docStore.recs;
   negRecs.filterExcludeRecs(posRecs);
@@ -1888,14 +1900,14 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/classifier/", "POST", funct
   // get svm c parameter, default is 1.0
   var c = 1.0;
   if(data.hasOwnProperty("c")) {
-    if(!isNaN(data.c)) {
+    if(!isNaN(data.c) && data.c > 0.0) {
       c = data.c;
     }
   } 
   // get the svm j parameter, default is balanced
   var j = negRecs.length / posRecs.length;
   if(data.hasOwnProperty("j")) {
-    if(!isNaN(data.j)) {
+    if(!isNaN(data.j) && data.j > 0.0) {
       j = data.j;
     }
   }
@@ -1921,9 +1933,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/classifier/", "POST", funct
   }
 
   // return url for classifier
-  var msg = {name: name};
-  msg.links = {};
-  msg.links.self = url_for("classifiers", name, params.ontology);
+  var msg = classifierFromName(name, ontology);
   res.setStatusCode(201);
   res.send(msg);
 });
@@ -1931,7 +1941,35 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/classifier/", "POST", funct
 /// List existing classifiers (models)
 http.onRequest("ontologies/<ontology>/classifiers/", "GET", function (req, res) {
   console.say("OntoGen API - Classifiers  Get");
+  if(!req.hasOwnProperty("params")) {
+    res.setStatusCode(400);
+    res.send("Missing parameters");
+    return;
+  }
+  var params = req.params;
+  // ontology
+  if(!params.hasOwnProperty("ontology")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: ontology name");
+    return;
+  }
+  var ontology = params.ontology;
+  var store = qm.store(params.ontology);
+  if(store === null) {
+    res.setStatusCode(404);
+    res.send("Ontology '" + params.ontology + "' not found");
+    return;
+  }
 
+  // list only classifiers that begin with this ontology's name
+  var list = qm.analytics.listSvm().filter(function(name) {
+    return name.indexOf(ontology) === 0;
+  });
+  // build classifier JSON representation
+  var classifiers = list.map(function(name) {
+    return classifierFromName(name, ontology);
+  });
+  res.send(classifiers);
 });
 
 /// Classify array of documents
@@ -1987,3 +2025,120 @@ http.onRequest("ontologies/<ontology>/classifiers/<mid>/", "POST", function (req
   }
   res.send(results);
 });
+
+/// Concept -  GET subsconcepts from classifier
+http.onRequest("ontologies/<ontology>/concepts/<cid>/classify/<mid>/", "GET", function (req, res) {
+  console.say("OntoGen API - GET SUB CONCETPS FROM CLASSIFIER");
+  if(!req.hasOwnProperty("params")) {
+    res.setStatusCode(400);
+    res.send("Missing parameters");
+    return;
+  }
+  var params = req.params;
+  if(!params.hasOwnProperty("ontology")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: ontology name");
+    return;
+  }
+  var store = qm.store(params.ontology);
+  if(store === null) {
+    res.setStatusCode(404);
+    res.send("Ontology '" + params.ontology + "' not found");
+    return;
+  }
+  var ontology = params.ontology;
+  if(!params.hasOwnProperty("cid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: concept id");
+    return;
+  }
+  var conceptId = parseInt(params.cid);
+  if(isNaN(conceptId)) {
+    res.setStatusCode(400);
+    res.send("Invalid concept id:" + params.cid);
+    return;
+  }
+  var concept = store[conceptId];
+  if(concept === null) {
+    res.setStatusCode(404);
+    res.send("concept '" + conceptId + "' not found");
+    return;
+  }
+  // classifier
+  if(!params.hasOwnProperty("mid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: model id (classifier name).");
+    return;
+  }
+  var mid = params.mid;
+  var svm = qm.analytics.loadSvm(mid);
+  if(svm === null) {
+    res.setStatusCode(404);
+    res.send("Model (classifier) not found: " + mid + ".");
+    return;
+  }
+
+
+  // Threshold?
+  var threshold = parseFloat(req.args.thresh) || 0;
+
+  // Get documents for concept
+  var docStoreName = docStoreNameFromOntoStore(store, ontology);
+  var docStore = qm.store(docStoreName);
+  var conceptDocs = concept[docsJoinName];
+
+  // Classify documents
+  var posResults = [];
+  var negResults = [];
+  for(var ii = 0; ii < conceptDocs.length; ii++) {
+    var rec = conceptDocs[ii];
+    var r = svm.classify(rec);
+    if(r > threshold) {
+      posResults.push(rec.$id);
+    }
+    else {
+      negResults.push(rec.$id);
+    }
+  }
+
+  var get_keywords = [{name: 'keywords', type: 'keywords', field: docsFieldName}];
+  var keywords;
+  var suggestions = [];
+
+  if (posResults.length > 0) {
+    // Get keywords for positive concept
+    conceptDocs = concept[docsJoinName];
+    var posRecs = conceptDocs;
+    posRecs.filterById(posResults);
+    keywords = posRecs.aggr(get_keywords[0]);
+    // Prepare positive concept
+    var posConcept = {docs: posResults};
+    posConcept.keywords = keywords.keywords.map(function(k) { return k.keyword; });
+    posConcept.name = posConcept.keywords.slice(0,3).join(", ");
+    posConcept.keywords = posConcept.keywords.slice(0, 10).join(", ");
+    posConcept.parentId = conceptId;
+    posConcept.positive = true;
+    suggestions.push(posConcept);
+  }
+  if (negResults.length > 0) {
+    // Get keywords for negative concept
+    conceptDocs = concept[docsJoinName];
+    var negRecs = conceptDocs;
+    negRecs.filterById(negResults);
+    keywords = negRecs.aggr(get_keywords[0]);
+    // Prepare negative concept
+    var negConcept = {docs: negResults};
+    negConcept.keywords = keywords.keywords.map(function(k) { return k.keyword; });
+    negConcept.name = negConcept.keywords.slice(0,3).join(", ");
+    negConcept.keywords = negConcept.keywords.slice(0, 10).join(", ");
+    negConcept.parentId = conceptId;
+    negConcept.negative = true;
+    suggestions.push(negConcept);
+  }
+
+  // return both positive and negative concept
+  res.send(suggestions); 
+
+});
+
+

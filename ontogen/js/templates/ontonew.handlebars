@@ -9,11 +9,11 @@
       <div class="modal-body">
         <div class="alert alert-danger fade in" id="nameAlert" style="display: none">
           <button id="modalClose" type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-          <p><strong>Invalid name for ontology!</strong> Change the name field above and try again.</p>
+          <p><strong>Invalid name for ontology!</strong> Change the name field and try again.</p>
         </div>
         <form role="form">
           <div class="form-group">
-            <label for="exampleInputEmail1">Ontology Name:</label>
+            <label for="inputOntoName">Ontology Name:</label>
             <input type="text" class="form-control" id="inputOntoName" placeholder="onto_">
           </div>
         </form>
@@ -65,10 +65,11 @@
                         {{/each}}
                       </select>
                     </div>
+                    <!--
                     <div class="form-group">
                       <label for="customWordsFile">Load custom words: </label>
                       <input type="file" id="customWordsFile">
-                    </div>
+                    </div> -->
                     <button class="btn btn-primary ontoCreate" data-storeName="{{this.storeName}}">Select</button>
                   </div>  <!-- input group -->
                 </div> <!-- /row -->
