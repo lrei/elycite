@@ -81,6 +81,7 @@ App = {
       });
     },
 
+    // @deprecated
     ontoCreate: function(args, async, callback) {
       async = async || false;
       $.ajax({
@@ -100,12 +101,12 @@ App = {
         }
       });
     },
-
+    // @deprecated
     loadOntology: function(link, async) {
-      var concepts = new App.Collections.Concepts([], {url: link});
-      var isAsync = async || false;
-      concepts.fetch({async: isAsync});
-      App.State.concepts = concepts;
+      var concepts = new App.collections.concepts([], {url: link});
+      var isasync = async || false;
+      concepts.fetch({async: isasync});
+      App.state.concepts = concepts;
     },
 
     // @TODO move this to concept model using link url

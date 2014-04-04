@@ -63,6 +63,11 @@ var url_for = function(what, which, where, inside) {
 
 };
 
+var what = Object.prototype.toString;
+var what_is = function(x) {
+  return what.call(x);
+};
+
 var ontologyNameFromStoreName = function(storeName) {
   return storeName.replace(ontoRegex, "");
 };
@@ -220,17 +225,138 @@ http.onRequest("stores", "GET", function(req, res) {
   res.send(rdata);
 });
 
+
+http.onRequest("stores/", "POST", function(req, res) {
+  if(!req.hasOwnProperty("jsonData")) {
+    res.setStatusCode(400);
+    res.send("Missing data.");
+    return;
+  }
+  var data = req.jsonData;
+  if(!data.hasOwnProperty("storeName")) {
+    res.setStatusCode(400);
+    res.send("Missing store name.");
+    return;
+  }
+  var storeName = req.jsonData.storeName;
+
+  if(!data.hasOwnProperty("records")) {
+    res.setStatusCode(400);
+    res.send("Missing records.");
+    return;
+  }
+  var records = data.records;
+  if(what_is(records) != "[object Array]") {
+    res.setStatusCode(400);
+    res.send("Records must be an array not " + what_is(records) + ".");
+    return;
+  }
+  if(records.length === 0) {
+    res.setStatusCode(400);
+    res.send("Records array is empty.");
+    return;
+  }
+  var proto = records[0];
+  if(what_is(proto) != "[object Object]") { // yes, JSON = associative array...
+    res.setStatusCode(400);
+    res.send("Records (array elements) must be JSON not " + what_is(proto) + ".");
+    return;
+  }
+  // build datastore schema from first object
+  // Only JS native JSON serializable types are supported at the moment:
+  // Number (float), String, arrays of these, plus Boolean.
+  // all numbers are assumed to be float, JS has only Number and there 
+  // is reliable way to tell 1.0 apart from 1.In the interest of reliability
+  // Number is always assumed to be float.
+   var storeDef = [{
+    "name": storeName,
+    "fields":  []
+  }];
+  var used_keys = [];
+  for (var key in proto) {
+    var el = proto[key];
+    console.say(JSON.stringify(el));
+    switch(what_is(el)) {
+    case "[object Number]":
+      storeDef[0].fields.push({name:key, type:"float", primary:false}); 
+      used_keys.push(key);
+      break;
+    case "[object String]":
+      storeDef[0].fields.push({name:key, type:"string", primary:false});
+      used_keys.push(key);
+      break;
+    case "[object Boolean]":
+      storeDef[0].fields.push({name:key, type:"bool", primary:false});
+      used_keys.push(key);
+      break;
+    case "[object Array]":
+      if(el.length === 0) { break; } // that's too bad @warning
+      var first = el[0];
+      switch(what_is(el)) {
+        case "[object Number]":
+          used_keys.push(key);
+          storeDef[0].fields.push({name:key, type:"oftFltV", primary:false}); 
+          break;
+        case "[object String]":
+          used_keys.push(key);
+          storeDef[0].fields.push({name:key, type:"oftStrV", primary:false});
+          break;
+      } // end of array switch
+      break; // explecitly break out of array case
+    } // end of datatype switch
+  } // end of for loop for each key in object
+
+  // schema is ready, add it to database
+  qm.createStore(storeDef);
+  // Successful?
+  var store = qm.store(storeName);
+  if(store === null) {
+    res.setStatusCode(500);
+    res.send("Unable to create store.");
+    return;
+  }
+
+  // ok we have our store, now lets add the records
+  for(var ii = 0; ii < records.length; ii++) {
+    var recVal = {};
+    for(var kk = 0; kk < used_keys.length; kk++) {
+      var keyname = used_keys[kk];
+      console.say("key used: " + keyname);
+      recVal[keyname] = records[ii][keyname]; 
+    }
+    store.add(recVal);
+  }
+
+  // @TODO newsfeed, twitter
+  // newsfeed: {username, password, timestamp, max}
+  // will need a temporary resource until finished
+  // how to mark finished?
+  // for now, only allow {$id, text} stores
+  
+  var storeObj = qm.getStoreList().filter(function(store) {
+    return store.storeName === storeName;
+  })[0];
+
+  res.setStatusCode(201);
+  res.send(storeObj);
+});
+
 // Get Store info @TODO
 
 /*
  * Ontologies
  */
-// Get List of Existing Ontologies
-http.onRequest("ontologies", "GET", function(req, res) {
-  console.say("OntoGen API - GET Existing Ontologies");
+var listOntologies = function() {
   var ontologies = qm.getStoreList().filter(function(store) {
     return store.storeName.indexOf(ontoPrefix) === 0;
   });
+  return ontologies;
+};
+
+// Get List of Existing Ontologies
+http.onRequest("ontologies", "GET", function(req, res) {
+  console.say("OntoGen API - GET Existing Ontologies");
+  var ontologies = listOntologies(); 
   // build ontology objects
   var rdata = ontologies.map(function(onto) {
     onto.links = {};
@@ -363,6 +489,7 @@ http.onRequest("ontologies/<ontology>/", "GET", function (req, res) {
 /*
  * Document
  */
+
 /// Read - Get Al Documents - Summaries Only
 // @TODO add query parameter here
 //       docsFieldName will need to be changed to query parameter
@@ -1963,7 +2090,7 @@ http.onRequest("ontologies/<ontology>/classifiers/", "GET", function (req, res) 
 
   // list only classifiers that begin with this ontology's name
   var list = qm.analytics.listSvm().filter(function(name) {
-    return name.indexOf(ontology) === 0;
+    return name.indexOf(ontology + "_") === 0;
   });
   // build classifier JSON representation
   var classifiers = list.map(function(name) {
@@ -2025,6 +2152,40 @@ http.onRequest("ontologies/<ontology>/classifiers/<mid>/", "POST", function (req
   }
   res.send(results);
 });
+
+/// Classify array of documents
+http.onRequest("ontologies/<ontology>/classifiers/<mid>/", "DELETE", function (req, res) {
+  console.say("OntoGen API - DELETE Classifier");
+
+  if(!req.hasOwnProperty("params")) {
+    res.setStatusCode(400);
+    res.send("Missing parameters");
+    return;
+  }
+  var params = req.params;
+  // ontology
+  if(!params.hasOwnProperty("ontology")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: ontology name");
+    return;
+  }
+  var store = qm.store(params.ontology);
+  if(store === null) {
+    res.setStatusCode(404);
+    res.send("Ontology '" + params.ontology + "' not found");
+    return;
+  }
+  // classifier
+  if(!params.hasOwnProperty("mid")) { 
+    res.setStatusCode(400);
+    res.send("Missing parameter: model id (classifier name).");
+    return;
+  }
+  var mid = params.mid;
+  qm.analytics.delSvm(mid);
+  res.send();
+});
+
 
 /// Concept -  GET subsconcepts from classifier
 http.onRequest("ontologies/<ontology>/concepts/<cid>/classify/<mid>/", "GET", function (req, res) {
@@ -2141,4 +2302,23 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/classify/<mid>/", "GET", fu
 
 });
 
+/// List existing classifiers (models) for ALL ontologies
+http.onRequest("classifiers/", "GET", function (req, res) {
+  console.say("OntoGen API - Classifiers  Get ALL");
+  // get list of existing ontologies
+  var ontologies = listOntologies();
+  ontologies = ontologies.map(function(onto) { return onto.storeName; });
 
+  var classifiers = qm.analytics.listSvm();
+
+  var clobjs = classifiers.map(function(name) {
+    console.say("name: " + name);
+    for(var ii = 0; ii < ontologies.length; ii++) {
+      var ontology = ontologies[ii];
+      if(name.indexOf(ontology + "_") === 0) {
+        return classifierFromName(name, ontology);
+      }
+    }
+  });
+  res.send(clobjs);
+});

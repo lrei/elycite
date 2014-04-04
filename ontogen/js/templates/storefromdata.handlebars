@@ -1,0 +1,34 @@
+<div class="page-header">
+  <h1>Create Store From Dataset</h1>
+</div>
+<div class="alert alert-danger fade in" id="nameAlert" style="display: none">
+  <button id="modalClose" type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+  <p><strong>Invalid name for store!</strong> Change the name field and try again.</p>
+</div>
+<div class="alert alert-danger fade in" id="fileAlert" style="display: none">
+  <button id="modalClose" type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+  <p><strong>No files selected!</strong> Select files and try again.</p>
+</div>
+<div class="alert alert-success fade in" id="createdAlert" style="display: none">
+  <button id="modalClose" type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+  <p><strong>Store created!</strong> You can now use this store.</p>
+</div>
+
+<form class="form-horizontal" role="form">
+   <div class="form-group">
+     <label  class="col-sm-4 control-label" for="inputStoreName">Store name</label>
+     <div class="col-sm-4">
+      <input type="text" class="form-control" id="inputStoreName">
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-sm-4  control-label" for="files">Files</label>
+    <div class="col-sm-8">
+      <input type="file" id="files" name="files[]" multiple />
+    </div>
+  </div>
+</form>
+<output id="list"></output>
+<div class="col-sm-offset-4 col-sm-8">
+<button class="btn btn-primary pull-right" id="storeCreate">Create</button>
+</div>

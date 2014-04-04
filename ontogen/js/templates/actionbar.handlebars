@@ -26,17 +26,16 @@
     <button id="classify-concept" type="button" class="btn btn-primary btn-sm">Classify</button>
     <button id="move-concept" type="button" class="btn btn-warning btn-sm">Move</button>
     <button id="delete-concept" type="button" class="btn btn-danger btn-sm">Delete</button>
-    <button id="vis-decrease" type="button" class="btn btn-default btn-xs" title="decrease visualization size">
-      <span class="glyphicon glyphicon-minus"></span>
-    </button>
-    <button id="vis-increase" type="button" class="btn btn-default btn-xs" title="increase visualization size">
+    <button id="vis-increase" type="button" class="btn btn-default" title="Increase visualization size">
       <span class="glyphicon glyphicon-plus"></span>
     </button>
-    <button id="vis-download" type="button" class="btn btn-default btn-xs" title="download visualization">
+    <button id="vis-decrease" type="button" class="btn btn-default" title="decrease visualization size">
+      <span class="glyphicon glyphicon-minus"></span>
+    </button>
+    <button id="vis-download" type="button" class="btn btn-default" title="Download visualization">
       <span class="glyphicon glyphicon-download"></span>
     </button>
-    <label for="visualization-picker">Visualization: </label>
-    <select class="selectpicker" id="visualization-picker" data-width="160px">
+    <select class="selectpicker" id="visualization-picker" data-width="160px" title="Visualization style">
     {{#each visualizations}}
     <option>{{this}}</option>
     {{/each}}

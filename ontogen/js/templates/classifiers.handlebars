@@ -1,0 +1,20 @@
+<h1>List of Built Classifiers</h1>
+<table id="cls-table" class="table table-bordered table-responsive" style="margin-top:5px">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Ontology</th>
+      <th>URL</th>
+    </tr>
+  </thead>
+  {{#each classifiers}}
+  <tr>
+    <td>{{id}}</td>
+    <td>{{ontology}}</td>
+    <td>{{url}}</td>
+    <td>
+      <button id="delete-cls" type="button" class="btn btn-danger btn-sm" data-mid="{{id}}">Delete</button>
+    </td>
+  </tr>
+  {{/each}}
+</table>

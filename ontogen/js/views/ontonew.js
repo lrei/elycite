@@ -1,20 +1,17 @@
 App.Views.OntoNewView = Backbone.View.extend({
   // element to be created
   id:'newOnto',
+  className: "mainView",
 
   template: Handlebars.templates['ontonew'],
 
    events: {
-     "click button#modalClose": "removeModal",
-     "click button#close": "removeModal",
-     "click button.ontoCreate" : "createOntology"
-    //'click #load-data': 'loadData'
+     "click #ontoCreate" : "createOntology",
+     "change #storePicker": "changeStore",
   },
 
   initialize: function() {
     console.log("Views.OntoNew.init");
-    _.bindAll(this, "render", "createOntology", "removeModal" );
-
 
     if(typeof App.LanguageOptions === 'undefined') {
       App.API.getLanguageOptions();
@@ -22,25 +19,28 @@ App.Views.OntoNewView = Backbone.View.extend({
     this.stores = new App.Collections.Stores();
     this.stores.fetch();
     this.listenTo(this.stores, "add", this.render);
-    this.listenTo(this.stores, "change", this.render);
   },
  
   render: function() {
     console.log("Views.OntoNewView.render");
-     $('#main').append(this.el);
     var stores = this.stores.toJSON();
-    for(var ii = 0; ii < stores.length; ii++) {
-      stores[ii].langopts = App.State.LanguageOptions;
-      var store = stores[ii];
-      console.log(store.storeName);
-      console.log(store.langopts);
-    }
-    //this.$el.html(this.template(data));
-    $(this.el).append( this.template({"stores":stores}) );
-    $("#newModal").modal('show');
+    var lopts = App.State.LanguageOptions;
+    var fields = stores[0].fields;
+    $(this.el).appendTo('#main').html( this.template(
+          {stores:stores, fields:fields, langopts:lopts}
+    ));
     $('.selectpicker').selectpicker('render');
   },
 
+  changeStore: function(ev) {
+    var sel = $(ev.currentTarget).val();
+    var store = this.stores.findWhere({storeName: sel}).toJSON();
+    $('#fieldPicker > option').remove();
+    for(ii = 0; ii < store.fields.length; ii++) {
+      $('#fieldPicker').append("<option>" + store.fields[ii].fieldName + "</option>");
+    }
+    $('#fieldPicker').selectpicker('refresh');
+  },
 
   createOntology: function(event) {
     console.log("Views.OntoNewView.select");
@@ -51,47 +51,53 @@ App.Views.OntoNewView = Backbone.View.extend({
     }
     
     // get the store id
-    var storeName = $(event.currentTarget).attr('data-storeName');
+    var storeName = $("#storePicker").val();
     console.log(storeName);
   
-    var fieldName = $(event.currentTarget).parent().children().children("#fieldPicker-"+storeName).val();
+    var fieldName = $("#fieldPicker").val();
     console.log(fieldName);
 
     // get the params
-    var stemmer = $(event.currentTarget).parent().children().children("#stemmerPicker").val();
+    var stemmer = $("#stemmerPicker").val();
     console.log(stemmer);
-    var maxNgramLength = $(event.currentTarget).parent().children().children("#maxNgramLength").val();
+    var maxNgramLength = $("#maxNgramLength").val();
     console.log(maxNgramLength);
-    var minNgramFreq = $(event.currentTarget).parent().children().children("#minNgramFreq").val();
+    var minNgramFreq = $("#minNgramFreq").val();
     console.log(minNgramFreq);
-    var stopwords = $(event.currentTarget).parent().children().children("#stopwordsPicker").val();
+    var stopwords = $("#stopwordsPicker").val();
     console.log(stopwords);
-    var customWordsFile = $(event.currentTarget).parent().children().children("#customWordsFile").val();
-    console.log(customWordsFile);
+    //var customWordsFile = $(event.currentTarget).parent().children().children("#customWordsFile").val();
+    //console.log(customWordsFile);
 
-    // Set global state?
-
-    // make the request to qminer, show loading
-    // !!! Synchronous call -> modal will only be dismissed after the function
-    // completes - this is so ontoview can have the new ontology loaded in
-    App.API.ontoCreate({ontologyName: ontoName,
-      dataStore: storeName, fieldName: fieldName, stemmer: stemmer,
-      maxNgramLength: maxNgramLength, minNgramFreq: minNgramFreq,
+    var opts = {
+      ontologyName: ontoName,
+      dataStore: storeName, 
+      fieldName: fieldName, 
+      stemmer: stemmer,
+      maxNgramLength: maxNgramLength, 
+      minNgramFreq: minNgramFreq,
       stopwordList: stopwords
-    }, false, function(data) {
-      console.log(data);
-    });
+    };
+    this.ontologies = new App.Collections.Ontologies();
+    this.ontology = this.ontologies.create(opts, {wait:true});
+    this.listenToOnce(this.ontologies, "add", this.loadNew);
     // remove the modal
-    this.removeModal();
+    //this.removeModal();
   },
 
-  removeModal: function() {
-    console.log("View.OntoNewView.removeModal");
-    $("#newModal").modal('hide');
-    $('#newModal').on('hidden.bs.modal', function () {
-      this.remove();
-      window.history.back();
-    })
+  loadNew: function(model, collection, options) {
+    console.log("View.OntoNewView.loadNew");
+    var ontojs = model.toJSON();
+    App.State.concepts = new App.Collections.Concepts([], {url: ontojs.links.concepts});
+    this.listenToOnce(App.State.concepts, "add", this.doneLoading);
+    App.State.concepts.fetch();
+  },
+
+  doneLoading: function() {
+    console.log("View.OntoNewView.doneLoading");
+    this.router = new App.Routers.Main();
+    this.router.navigate("ontoview", {trigger: true});
+    this.remove();
   }
 
 });

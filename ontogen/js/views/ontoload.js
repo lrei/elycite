@@ -36,20 +36,22 @@ App.Views.OntoLoadView = Backbone.View.extend({
     // get the store name
     var ontoName = $('#onto-picker').val();
     var ontology = this.ontologies.findWhere({name: ontoName}).toJSON();
-    // !!! Synchronous call -> modal will only be dismissed after the function
-    // completes - this is so ontoview can have the new ontology loaded in
-    App.API.loadOntology(ontology.links.concepts);
     
-    // remove the modal
-    this.removeModal();
+    App.State.concepts = new App.Collections.Concepts([], {url: ontology.links.concepts});
+    this.listenToOnce(App.State.concepts, "add", this.removeModal);
+    App.State.concepts.fetch();
+
   },
 
   removeModal: function() {
     console.log("View.OntoLoadView.removeModal");
     $("#loadModal").modal('hide');
+    var self = this;
     $('#loadModal').on('hidden.bs.modal', function () {
-      this.remove();
-      window.history.back();
+      $('#loadModal').remove();
+      self.router = new App.Routers.Main();
+      self.router.navigate("ontoview", {trigger: true});
+      self.remove();
     });
   }
 

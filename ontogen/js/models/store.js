@@ -1,3 +1,5 @@
 App.Models.Store = Backbone.Model.extend({
- idAttribute: 'storeId',
+  idAttribute: 'storeId',
+  urlRoot: '/ontogenapi/stores/',
+
 });

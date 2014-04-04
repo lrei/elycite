@@ -22,7 +22,7 @@ function program1(depth0,data) {
   if (stack1 = helpers.keywords) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.keywords; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
-    + "\" data-trigger=\"hover\" data-title=\"Keywords\">\n  </div>\n  <div class=\"form-group col-md-5\">\n  <button id=\"change-concept\" type=\"button\" class=\"btn btn-primary btn-sm\">Change</button>\n  <button id=\"suggest-keywords\" type=\"button\" class=\"btn btn-warning btn-sm\">Suggest Keywords</button>\n  <!--  <button id=\"properties-concept\" type=\"button\" class=\"btn btn-default btn-sm\">Properties</button> -->\n  <button id=\"view-documents\" type=\"button\" class=\"btn btn-default btn-sm\">Documents</button>\n  <button id=\"build-classifier\" type=\"button\" class=\"btn btn-success btn-sm\">Build</button>\n  \n</div>\n</form> \n</div>\n<div class=\"row\" style=\"margin-top:10px\">\n  <form class=\"form-inline\" role=\"form\">\n    <button id=\"new-concept\" type=\"button\" class=\"btn btn-success btn-sm\">New Sub-Concept</button>\n    <button id=\"suggest-concepts\" type=\"button\" class=\"btn btn-primary btn-sm\">Suggest Sub-Concepts</button>\n    <button id=\"query-concept\" type=\"button\" class=\"btn btn-primary btn-sm query-concept\">Sub-Concept From Query</button>\n    <button id=\"classify-concept\" type=\"button\" class=\"btn btn-primary btn-sm\">Classify</button>\n    <button id=\"move-concept\" type=\"button\" class=\"btn btn-warning btn-sm\">Move</button>\n    <button id=\"delete-concept\" type=\"button\" class=\"btn btn-danger btn-sm\">Delete</button>\n    <button id=\"vis-decrease\" type=\"button\" class=\"btn btn-default btn-xs\" title=\"decrease visualization size\">\n      <span class=\"glyphicon glyphicon-minus\"></span>\n    </button>\n    <button id=\"vis-increase\" type=\"button\" class=\"btn btn-default btn-xs\" title=\"increase visualization size\">\n      <span class=\"glyphicon glyphicon-plus\"></span>\n    </button>\n    <button id=\"vis-download\" type=\"button\" class=\"btn btn-default btn-xs\" title=\"download visualization\">\n      <span class=\"glyphicon glyphicon-download\"></span>\n    </button>\n    <label for=\"visualization-picker\">Visualization: </label>\n    <select class=\"selectpicker\" id=\"visualization-picker\" data-width=\"160px\">\n    ";
+    + "\" data-trigger=\"hover\" data-title=\"Keywords\">\n  </div>\n  <div class=\"form-group col-md-5\">\n  <button id=\"change-concept\" type=\"button\" class=\"btn btn-primary btn-sm\">Change</button>\n  <button id=\"suggest-keywords\" type=\"button\" class=\"btn btn-warning btn-sm\">Suggest Keywords</button>\n  <!--  <button id=\"properties-concept\" type=\"button\" class=\"btn btn-default btn-sm\">Properties</button> -->\n  <button id=\"view-documents\" type=\"button\" class=\"btn btn-default btn-sm\">Documents</button>\n  <button id=\"build-classifier\" type=\"button\" class=\"btn btn-success btn-sm\">Build</button>\n  \n</div>\n</form> \n</div>\n<div class=\"row\" style=\"margin-top:10px\">\n  <form class=\"form-inline\" role=\"form\">\n    <button id=\"new-concept\" type=\"button\" class=\"btn btn-success btn-sm\">New Sub-Concept</button>\n    <button id=\"suggest-concepts\" type=\"button\" class=\"btn btn-primary btn-sm\">Suggest Sub-Concepts</button>\n    <button id=\"query-concept\" type=\"button\" class=\"btn btn-primary btn-sm query-concept\">Sub-Concept From Query</button>\n    <button id=\"classify-concept\" type=\"button\" class=\"btn btn-primary btn-sm\">Classify</button>\n    <button id=\"move-concept\" type=\"button\" class=\"btn btn-warning btn-sm\">Move</button>\n    <button id=\"delete-concept\" type=\"button\" class=\"btn btn-danger btn-sm\">Delete</button>\n    <button id=\"vis-increase\" type=\"button\" class=\"btn btn-default\" title=\"Increase visualization size\">\n      <span class=\"glyphicon glyphicon-plus\"></span>\n    </button>\n    <button id=\"vis-decrease\" type=\"button\" class=\"btn btn-default\" title=\"decrease visualization size\">\n      <span class=\"glyphicon glyphicon-minus\"></span>\n    </button>\n    <button id=\"vis-download\" type=\"button\" class=\"btn btn-default\" title=\"Download visualization\">\n      <span class=\"glyphicon glyphicon-download\"></span>\n    </button>\n    <select class=\"selectpicker\" id=\"visualization-picker\" data-width=\"160px\" title=\"Visualization style\">\n    ";
   stack1 = helpers.each.call(depth0, depth0.visualizations, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n    </select>\n\n  </form> \n</div>\n\n";
@@ -92,6 +92,40 @@ function program1(depth0,data) {
   buffer += "\n                      </select>\n                    </div>\n                    <form class=\"form-inline\" role=\"form\">\n                      <div class=\"form-group\">\n                        <div class=\"input-group\">\n                          <span class=\"input-group-addon\">C</span>\n                          <input type=\"number\" class=\"form-control\" id=\"cls-param-c\" value=\"1.0\">\n                        </div>\n                        <div class=\"input-group\">\n                          <span class=\"input-group-addon\">J</span>\n                          <input type=\"number\" class=\"form-control\" id=\"cls-param-j\" value=\"0.0\" title=\"default 0 means auto-balance.\">\n                        </div>\n                      </div>\n                    </form>\n                  </div>  <!-- input group -->\n                </div> <!-- /row -->\n              </div> <!--/panel body -->\n            </div> <!-- /collapse --> \n          </div> <!-- /panel (accordion) item -->\n        </div> <!-- /accordion -->\n      </div> <!-- /model body -->\n      <div id=\"modal-build-footer\" class=\"modal-footer\">\n        <button id=\"do-build-cls\" data-cid="
     + escapeExpression(((stack1 = ((stack1 = depth0.concept),stack1 == null || stack1 === false ? stack1 : stack1.$id)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
     + " type=\"button\" class=\"btn btn-primary\">Build</button>\n        <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\">Cancel</button>\n      </div>\n    </div><!-- /.modal-content -->\n  </div><!-- /.modal-dialog -->\n</div><!-- /.modal -->\n";
+  return buffer;
+  });
+templates['classifiers'] = template(function (Handlebars,depth0,helpers,partials,data) {
+  this.compilerInfo = [4,'>= 1.0.0'];
+helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
+  var buffer = "", stack1, functionType="function", escapeExpression=this.escapeExpression, self=this;
+
+function program1(depth0,data) {
+  
+  var buffer = "", stack1;
+  buffer += "\n  <tr>\n    <td>";
+  if (stack1 = helpers.id) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
+  else { stack1 = depth0.id; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
+  buffer += escapeExpression(stack1)
+    + "</td>\n    <td>";
+  if (stack1 = helpers.ontology) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
+  else { stack1 = depth0.ontology; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
+  buffer += escapeExpression(stack1)
+    + "</td>\n    <td>";
+  if (stack1 = helpers.url) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
+  else { stack1 = depth0.url; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
+  buffer += escapeExpression(stack1)
+    + "</td>\n    <td>\n      <button id=\"delete-cls\" type=\"button\" class=\"btn btn-danger btn-sm\" data-mid=\"";
+  if (stack1 = helpers.id) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
+  else { stack1 = depth0.id; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
+  buffer += escapeExpression(stack1)
+    + "\">Delete</button>\n    </td>\n  </tr>\n  ";
+  return buffer;
+  }
+
+  buffer += "<h1>List of Built Classifiers</h1>\n<table id=\"cls-table\" class=\"table table-bordered table-responsive\" style=\"margin-top:5px\">\n  <thead>\n    <tr>\n      <th>Name</th>\n      <th>Ontology</th>\n      <th>URL</th>\n    </tr>\n  </thead>\n  ";
+  stack1 = helpers.each.call(depth0, depth0.classifiers, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += "\n</table>\n";
   return buffer;
   });
 templates['classifymodal'] = template(function (Handlebars,depth0,helpers,partials,data) {
@@ -255,6 +289,40 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
 
   return "<!-- Export Visualization Modal -->\n<div class=\"modal fade\" id=\"exportviz-modal\" data-backdrop=\"false\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"exportviz-modal-label\" aria-hidden=\"true\">\n  <div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\">Export Visualization</h4>\n      </div> <!-- /modal header -->\n      <div class=\"modal-body\">\n        <div class=\"form-group\">\n          <label for=\"input-viz-filename\">File Name: </label>\n          <input type=\"text\" class=\"form-control\" id=\"input-viz-filename\" value=\"ontology\">\n        </div>\n      </div> <!-- /modal body -->\n      <div class=\"modal-footer\">\n        <button id=\"close\" type=\"button\" class=\"btn\" data-dismiss=\"modal\">Cancel</button>\n        <button id=\"save\" type=\"button\" class=\"btn btn-primary\" data-dismiss=\"modal\">Save</button>\n      </div> <!-- /modal footer -->\n    </div><!-- /.modal-content -->\n  </div><!-- /.modal-dialog -->\n</div> <!-- /LoadView Modal -->\n";
   });
+templates['filelist'] = template(function (Handlebars,depth0,helpers,partials,data) {
+  this.compilerInfo = [4,'>= 1.0.0'];
+helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
+  var buffer = "", stack1, functionType="function", escapeExpression=this.escapeExpression, self=this;
+
+function program1(depth0,data) {
+  
+  var buffer = "", stack1;
+  buffer += "\n<li><strong>";
+  if (stack1 = helpers.name) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
+  else { stack1 = depth0.name; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
+  buffer += escapeExpression(stack1)
+    + "</strong> ";
+  if (stack1 = helpers.type) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
+  else { stack1 = depth0.type; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
+  buffer += escapeExpression(stack1)
+    + " - ";
+  if (stack1 = helpers.size) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
+  else { stack1 = depth0.size; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
+  buffer += escapeExpression(stack1)
+    + " bytes, last modified: ";
+  if (stack1 = helpers.lastModified) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
+  else { stack1 = depth0.lastModified; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
+  buffer += escapeExpression(stack1)
+    + "</li>\n";
+  return buffer;
+  }
+
+  buffer += "<ul>\n";
+  stack1 = helpers.each.call(depth0, depth0.files, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += "\n</ul>\n";
+  return buffer;
+  });
 templates['movemodal'] = template(function (Handlebars,depth0,helpers,partials,data) {
   this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
@@ -310,57 +378,48 @@ function program1(depth0,data) {
 templates['ontonew'] = template(function (Handlebars,depth0,helpers,partials,data) {
   this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
-  var buffer = "", stack1, functionType="function", escapeExpression=this.escapeExpression, self=this;
+  var buffer = "", stack1, stack2, functionType="function", escapeExpression=this.escapeExpression, self=this;
 
 function program1(depth0,data) {
   
-  var buffer = "", stack1, stack2;
-  buffer += "\n          <div class=\"panel panel-default\">\n            <div class=\"panel-heading\">\n              <h4 class=\"panel-title\">\n                <a class=\"accordion-toggle\" data-toggle=\"collapse\" data-parent=\"#accordion\" href=\"#collapse"
-    + escapeExpression(((stack1 = depth0.storeId),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
-    + "\">\n                  "
+  var buffer = "", stack1;
+  buffer += "\n          <option>"
     + escapeExpression(((stack1 = depth0.storeName),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
-    + "\n                </a>\n              </h4>\n            </div> <!-- /panel heading -->\n            <div id=\"collapse"
-    + escapeExpression(((stack1 = depth0.storeId),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
-    + "\" class=\"panel-collapse collapse\">\n              <div class=\"panel-body\">\n                <!-- Create ontology Form -->\n                <div class=\"row\">\n                  <div class=\"input-group\">\n                    <div class=\"form-group\">\n                      <label for=\"fieldPicker-"
-    + escapeExpression(((stack1 = depth0.storeName),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
-    + "\">Field: </label>\n                      <select class=\"selectpicker\" id=\"fieldPicker-"
-    + escapeExpression(((stack1 = depth0.storeName),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
-    + "\">\n                        ";
-  stack2 = helpers.each.call(depth0, depth0.fields, {hash:{},inverse:self.noop,fn:self.program(2, program2, data),data:data});
-  if(stack2 || stack2 === 0) { buffer += stack2; }
-  buffer += " <!-- end of each field -->\n                      </select>\n                    </div> <!-- /from group -->\n\n                    <div class=\"form-group\">\n                      <label for=\"stemmerPicker\">Stemmer: </label>\n                      <select class=\"selectpicker\" id=\"stemmerPicker\">\n                        ";
-  stack2 = helpers.each.call(depth0, ((stack1 = depth0.langopts),stack1 == null || stack1 === false ? stack1 : stack1.stemmer), {hash:{},inverse:self.noop,fn:self.program(4, program4, data),data:data});
-  if(stack2 || stack2 === 0) { buffer += stack2; }
-  buffer += "\n                      </select>\n                    </div>\n                    <div class=\"form-group\">\n                      <label for=\"maxNgramLength\">Max n-gram length: </label>\n                      <input type=\"number\" id=\"maxNgramLength\" value=\"3\">\n                    </div>\n                    <div class=\"form-group\">\n                      <label for=\"minNgramFreq\">Min n-gram frequency: </label>\n                      <input type=\"number\" id=\"minNgramFreq\" value=5>\n                    </div>\n                    <div class=\"form-group\">\n                      <label for=\"stopwordsPicker\">Stopword list: </label>\n                      <select class=\"selectpicker\" id=\"stopwordsPicker\">\n                        ";
-  stack2 = helpers.each.call(depth0, ((stack1 = depth0.langopts),stack1 == null || stack1 === false ? stack1 : stack1.stopwords), {hash:{},inverse:self.noop,fn:self.program(4, program4, data),data:data});
-  if(stack2 || stack2 === 0) { buffer += stack2; }
-  buffer += "\n                      </select>\n                    </div>\n                    <!--\n                    <div class=\"form-group\">\n                      <label for=\"customWordsFile\">Load custom words: </label>\n                      <input type=\"file\" id=\"customWordsFile\">\n                    </div> -->\n                    <button class=\"btn btn-primary ontoCreate\" data-storeName=\""
-    + escapeExpression(((stack1 = depth0.storeName),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
-    + "\">Select</button>\n                  </div>  <!-- input group -->\n                </div> <!-- /row -->\n                <!-- / End of create ontology form -->\n              </div> <!--/panel body -->\n            </div> <!-- /collapse --> \n            ";
+    + "</option>\n          ";
   return buffer;
   }
-function program2(depth0,data) {
+
+function program3(depth0,data) {
   
   var buffer = "", stack1;
-  buffer += "\n                        <option>"
+  buffer += "\n          <option>"
     + escapeExpression(((stack1 = depth0.fieldName),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
-    + "</option>\n                        ";
+    + "</option>\n          ";
   return buffer;
   }
 
-function program4(depth0,data) {
+function program5(depth0,data) {
   
   var buffer = "";
-  buffer += "\n                        <option>"
+  buffer += "\n        <option>"
     + escapeExpression((typeof depth0 === functionType ? depth0.apply(depth0) : depth0))
-    + "</option>\n                        ";
+    + "</option>\n        ";
   return buffer;
   }
 
-  buffer += "<!-- OntoNew Modal -->\n<div class=\"modal fade\" id=\"newModal\" data-backdrop=\"false\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"newModalLabel\" aria-hidden=\"true\">\n  <div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\">Load Store</h4>\n      </div> <!-- /modal header -->\n      <div class=\"modal-body\">\n        <div class=\"alert alert-danger fade in\" id=\"nameAlert\" style=\"display: none\">\n          <button id=\"modalClose\" type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button>\n          <p><strong>Invalid name for ontology!</strong> Change the name field and try again.</p>\n        </div>\n        <form role=\"form\">\n          <div class=\"form-group\">\n            <label for=\"inputOntoName\">Ontology Name:</label>\n            <input type=\"text\" class=\"form-control\" id=\"inputOntoName\" placeholder=\"onto_\">\n          </div>\n        </form>\n        <div class=\"panel-group\" id=\"accordion\">\n          ";
+  buffer += "<div class=\"page-header\">\n  <h1>Create Ontology</h1>\n</div>\n<div class=\"alert alert-danger fade in\" id=\"nameAlert\" style=\"display: none\">\n  <button id=\"modalClose\" type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button>\n  <p><strong>Invalid name for ontology!</strong> Change the name field and try again.</p>\n</div>\n  <form class=\"form-horizontal\" role=\"form\">\n     <div class=\"form-group\">\n       <label  class=\"col-sm-4 control-label\" for=\"inputOntoName\">Ontology name</label>\n       <div class=\"col-sm-4\">\n        <input type=\"text\" class=\"form-control\" id=\"inputOntoName\" placeholder=\"onto_\">\n      </div>\n    </div>\n    <div class=\"form-group\">\n      <label class=\"col-sm-4  control-label\" for=\"storePicker\">Store</label>\n      <div class=\"col-sm-8\">\n        <select class=\"selectpicker\" id=\"storePicker\">\n          ";
   stack1 = helpers.each.call(depth0, depth0.stores, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
-  buffer += " <!-- end of each store -->\n          </div> <!-- /panel (accordion) item -->\n        </div> <!-- /accordion -->\n      </div> <!-- /modal body -->\n      <div class=\"modal-footer\">\n        <button id=\"close\" type=\"button\" class=\"btn btn-danger\" data-dismiss=\"modal\">Cancel</button>\n      </div> <!-- /modal footer -->\n    </div><!-- /.modal-content -->\n  </div><!-- /.modal-dialog -->\n</div> <!-- /LoadView Modal -->\n";
+  buffer += "\n        </select>\n      </div>\n    </div>\n    <div class=\"form-group\">\n      <label class=\"col-sm-4  control-label\" for=\"fieldPicker\">Field</label>\n      <div class=\"col-sm-8\">\n        <select class=\"selectpicker\" id=\"fieldPicker\">\n          ";
+  stack1 = helpers.each.call(depth0, depth0.fields, {hash:{},inverse:self.noop,fn:self.program(3, program3, data),data:data});
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += "\n        </select>\n      </div>\n    </div>\n    <div class=\"form-group\">\n      <label class=\"col-sm-4 control-label\" for=\"stemmerPicker\">Stemmer</label>\n      <div class=\"col-sm-8\">\n        <select class=\"selectpicker\" id=\"stemmerPicker\">\n        ";
+  stack2 = helpers.each.call(depth0, ((stack1 = depth0.langopts),stack1 == null || stack1 === false ? stack1 : stack1.stemmer), {hash:{},inverse:self.noop,fn:self.program(5, program5, data),data:data});
+  if(stack2 || stack2 === 0) { buffer += stack2; }
+  buffer += "\n      </select>\n    </div>\n  </div>\n  <div class=\"form-group\">\n    <label class=\"col-sm-4 control-label\" for=\"stopwordsPicker\">Stopwords</label>\n    <div class=\"col-sm-8\">\n      <select class=\"selectpicker\" id=\"stopwordsPicker\">\n        ";
+  stack2 = helpers.each.call(depth0, ((stack1 = depth0.langopts),stack1 == null || stack1 === false ? stack1 : stack1.stopwords), {hash:{},inverse:self.noop,fn:self.program(5, program5, data),data:data});
+  if(stack2 || stack2 === 0) { buffer += stack2; }
+  buffer += "\n      </select>\n    </div>\n  </div>\n  <div class=\"form-group\">\n    <label class=\"col-sm-4 control-label\" for=\"maxngramlength\">Max n-gram length</label>\n    <input class=\"col-sm-4\" type=\"number\" id=\"maxNgramLength\" value=\"3\">\n  </div>\n  <div class=\"form-group\">\n    <label class=\"col-sm-4 control-label\" for=\"minNgramFreq\">Min n-gram frequency</label>\n    <input class=\"col-sm-4\" type=\"number\" id=\"minNgramFreq\" value=5>\n  </div>\n</form>\n <div class=\"col-sm-offset-4 col-sm-8\">\n  <button class=\"btn btn-primary pull-right\" id=\"ontoCreate\">Create</button>\n</div>\n";
   return buffer;
   });
 templates['ontoproperties'] = template(function (Handlebars,depth0,helpers,partials,data) {
@@ -495,6 +554,14 @@ function program1(depth0,data) {
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n";
   return buffer;
+  });
+templates['storefromdata'] = template(function (Handlebars,depth0,helpers,partials,data) {
+  this.compilerInfo = [4,'>= 1.0.0'];
+helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
+  
+
+
+  return "<div class=\"page-header\">\n  <h1>Create Store From Dataset</h1>\n</div>\n<div class=\"alert alert-danger fade in\" id=\"nameAlert\" style=\"display: none\">\n  <button id=\"modalClose\" type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">&times;</button>\n  <p><strong>Invalid name for store!</strong> Change the name field and try again.</p>\n</div>\n<form class=\"form-horizontal\" role=\"form\">\n   <div class=\"form-group\">\n     <label  class=\"col-sm-4 control-label\" for=\"inputStoreName\">Store name</label>\n     <div class=\"col-sm-4\">\n      <input type=\"text\" class=\"form-control\" id=\"inputStoreName\">\n    </div>\n  </div>\n  <div class=\"form-group\">\n    <label class=\"col-sm-4  control-label\" for=\"files\">Files</label>\n    <div class=\"col-sm-8\">\n      <input type=\"file\" id=\"files\" name=\"files[]\" multiple />\n    </div>\n  </div>\n</form>\n<output id=\"list\"></output>\n<div class=\"col-sm-offset-4 col-sm-8\">\n<button class=\"btn btn-primary pull-right\" id=\"storeCreate\">Create</button>\n</div>\n";
   });
 templates['suggestmodal'] = template(function (Handlebars,depth0,helpers,partials,data) {
   this.compilerInfo = [4,'>= 1.0.0'];
