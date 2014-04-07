@@ -227,6 +227,7 @@ http.onRequest("stores", "GET", function(req, res) {
 
 
 http.onRequest("stores/", "POST", function(req, res) {
+  console.say("entering function");
   if(!req.hasOwnProperty("jsonData")) {
     res.setStatusCode(400);
     res.send("Missing data.");
@@ -256,8 +257,9 @@ http.onRequest("stores/", "POST", function(req, res) {
     res.send("Records array is empty.");
     return;
   }
+  console.say("starting to process request");
   var proto = records[0];
-  if(what_is(proto) != "[object Object]") { // yes, JSON = associative array...
+  if(what_is(proto) != "[object Object]") { 
     res.setStatusCode(400);
     res.send("Records (array elements) must be JSON not " + what_is(proto) + ".");
     return;
@@ -275,10 +277,15 @@ http.onRequest("stores/", "POST", function(req, res) {
   var used_keys = [];
   for (var key in proto) {
     var el = proto[key];
-    console.say(JSON.stringify(el));
+    //console.say(JSON.stringify(el));
     switch(what_is(el)) {
     case "[object Number]":
-      storeDef[0].fields.push({name:key, type:"float", primary:false}); 
+      if(key === "id" || key === "$id") {
+        storeDef[0].fields.push({name:key, type:"int", primary:true}); 
+      }
+      else {
+        storeDef[0].fields.push({name:key, type:"float", primary:false}); 
+      }
       used_keys.push(key);
       break;
     case "[object String]":
@@ -315,17 +322,20 @@ http.onRequest("stores/", "POST", function(req, res) {
     res.send("Unable to create store.");
     return;
   }
+  console.say("store created");
 
   // ok we have our store, now lets add the records
   for(var ii = 0; ii < records.length; ii++) {
+    console.say("adding " + ii + " of " + records.length);
     var recVal = {};
     for(var kk = 0; kk < used_keys.length; kk++) {
       var keyname = used_keys[kk];
-      console.say("key used: " + keyname);
+      //console.say("key used: " + keyname);
       recVal[keyname] = records[ii][keyname]; 
     }
     store.add(recVal);
   }
+  console.say("finished adding data");
 
   // @TODO newsfeed, twitter
   // newsfeed: {username, password, timestamp, max}
@@ -336,8 +346,9 @@ http.onRequest("stores/", "POST", function(req, res) {
   var storeObj = qm.getStoreList().filter(function(store) {
     return store.storeName === storeName;
   })[0];
+  console.say(JSON.stringify(storeObj));
 
-  res.setStatusCode(201);
+  //res.setStatusCode(201);
   res.send(storeObj);
 });
 
@@ -1509,6 +1520,13 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/", "POST", function (req
 
   var name = "default";
   if(data.hasOwnProperty("name")) {
+    // extremely restrictive use of names
+    name = String(data.name);
+    if(name.match(/^[0-9a-zA-Z_]+$/) === null) {
+      res.setStatusCode(400);
+      res.send("Active learner name must be alphanumeric (underscore allowed).");
+      return;
+    }
     name = data.name;
   }
 
@@ -1694,14 +1712,8 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "PATCH", funct
     res.send("Missing parameter: active learner id (name)");
     return;
   }
-  // extremely restrictive use of names
-  var name = String(data.name);
-  if(name.match(/^[0-9a-zA-Z_]+$/) === null) {
-    res.setStatusCode(400);
-    res.send("Active learner name must be alphanumeric (underscore allowed).");
-    return;
-  }
-  
+  var name = params.alid;
+
   if(!req.hasOwnProperty("jsonData")) {
     res.setStatusCode(400);
     res.send("Missing data.");

@@ -23,6 +23,10 @@ App.Routers.Main = Backbone.Router.extend({
       this.storefromdata_view.remove();
     }
 
+    if(typeof this.new_view !== "undefined") {
+        this.new_view.remove();
+    }
+
   },
  
   index: function() {
@@ -39,9 +43,7 @@ App.Routers.Main = Backbone.Router.extend({
 
   ontonew: function() {
     console.log("Router.ontonew: New Ontology");
-    if(typeof this.new_view !== "undefined") {
-      this.new_view.remove();
-    }
+    this.removeMainViews();
     this.new_view = new App.Views.OntoNewView();
   },
 

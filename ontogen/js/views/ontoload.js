@@ -48,9 +48,8 @@ App.Views.OntoLoadView = Backbone.View.extend({
     $("#loadModal").modal('hide');
     var self = this;
     $('#loadModal').on('hidden.bs.modal', function () {
+      App.router.navigate("ontoview", {trigger: true});
       $('#loadModal').remove();
-      self.router = new App.Routers.Main();
-      self.router.navigate("ontoview", {trigger: true});
       self.remove();
     });
   }

@@ -57,6 +57,7 @@ App.Views.StoreFromDataView = Backbone.View.extend({
 
     // callback for when files are done being read
     this.readCounter = 0;
+    this.data = [];
     var self = this;
     var doneReading = function(e) {
       var text = e.target.result;
@@ -74,7 +75,7 @@ App.Views.StoreFromDataView = Backbone.View.extend({
   },
 
   loaded: function() {
-    console.log(this.readCounter);
+    //console.log(this.readCounter);
     if(this.readCounter != this.files.length) {
       return;
     }

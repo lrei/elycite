@@ -95,8 +95,7 @@ App.Views.OntoNewView = Backbone.View.extend({
 
   doneLoading: function() {
     console.log("View.OntoNewView.doneLoading");
-    this.router = new App.Routers.Main();
-    this.router.navigate("ontoview", {trigger: true});
+    App.router.navigate("ontoview", {trigger: true});
     this.remove();
   }
 
