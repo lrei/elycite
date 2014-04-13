@@ -1094,6 +1094,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET", function (re
                                 per_page, false); 
   }
   else {
+    docs = [];
     for(var ii = 0; ii < result.length; ii++) {
       docs.push(result[ii].$id);
     }
