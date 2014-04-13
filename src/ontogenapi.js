@@ -1091,7 +1091,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET", function (re
       per_page = parseInt(args.per_page);
     }
     docs = paginatedDocuments(result, storeName, docsFieldName, page,
-                                per_page, false); 
+                                per_page, true); 
   }
   else {
     docs = [];

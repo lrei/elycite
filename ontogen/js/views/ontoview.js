@@ -374,7 +374,7 @@ App.Views.OntologyView = Backbone.View.extend({
         this.listenToOnce(App.State.queryConcept, "destroy", this.renderNoResults);
 
         var setQueryConcept = function(data) {
-          if(data.hasOwnProperty('isEmpty')) {
+          if(data.hasOwnProperty('isEmpty') || data.length === 0 || data.length === undefined) {
             App.State.queryConcept.destroy();
             return;
           }
@@ -382,7 +382,7 @@ App.Views.OntologyView = Backbone.View.extend({
         };
         c.getQuerySuggestion(queryText, setQueryConcept);
         break;
-      case 'query-opt-al:
+      case 'query-opt-al':
         // Active Learner Query
         // make query and set AL, make question = true
         App.State.currentAL = new App.Models.AL({concept: c, 
