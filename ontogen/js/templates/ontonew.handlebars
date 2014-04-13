@@ -1,10 +1,6 @@
 <div class="page-header">
   <h1>Create Ontology</h1>
 </div>
-<div class="alert alert-danger fade in" id="nameAlert" style="display: none">
-  <button id="modalClose" type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-  <p><strong>Invalid name for ontology!</strong> Change the name field and try again.</p>
-</div>
   <form class="form-horizontal" role="form">
      <div class="form-group">
        <label  class="col-sm-4 control-label" for="inputOntoName">Ontology name</label>
@@ -62,5 +58,5 @@
   </div>
 </form>
  <div class="col-sm-offset-4 col-sm-8">
-  <button class="btn btn-primary pull-right" id="ontoCreate">Create</button>
+  <button class="btn btn-primary pull-right" id="ontoCreate" data-loading-text="Creating...">Create</button>
 </div>

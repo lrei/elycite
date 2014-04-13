@@ -4,6 +4,7 @@ App.Views.OntoNewView = Backbone.View.extend({
   className: "mainView",
 
   template: Handlebars.templates['ontonew'],
+  errorTemplate: Handlebars.templates['erroralert'],
 
    events: {
      "click #ontoCreate" : "createOntology",
@@ -29,6 +30,7 @@ App.Views.OntoNewView = Backbone.View.extend({
     $(this.el).appendTo('#main').html( this.template(
           {stores:stores, fields:fields, langopts:lopts}
     ));
+    $(this.el).prepend(this.errorTemplate());
     $('.selectpicker').selectpicker('render');
   },
 
@@ -78,19 +80,28 @@ App.Views.OntoNewView = Backbone.View.extend({
       minNgramFreq: minNgramFreq,
       stopwordList: stopwords
     };
+    $('#ontoCreate').button('loading');
     this.ontologies = new App.Collections.Ontologies();
-    this.ontology = this.ontologies.create(opts, {wait:true});
     this.listenToOnce(this.ontologies, "add", this.loadNew);
-    // remove the modal
-    //this.removeModal();
+    this.ontology = this.ontologies.create(opts, {wait:true, error:this.createError});
+  },
+
+  createError: function(model, xhr, options) {
+    $('#ontoCreate').button('reset');
+    $("#createAlert").show();
   },
 
   loadNew: function(model, collection, options) {
     console.log("View.OntoNewView.loadNew");
+    $('#ontoCreate').button('reset');
     var ontojs = model.toJSON();
-    App.State.concepts = new App.Collections.Concepts([], {url: ontojs.links.concepts});
+    App.State.concepts = new App.Collections.Concepts([], {url: ontojs.links.concepts, error:this.loadError});
     this.listenToOnce(App.State.concepts, "add", this.doneLoading);
     App.State.concepts.fetch();
+  },
+
+  loadError: function(model, xhr, options) {
+    $("#loadAlert").show();
   },
 
   doneLoading: function() {

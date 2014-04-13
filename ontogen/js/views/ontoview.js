@@ -34,7 +34,7 @@ App.Views.OntologyView = Backbone.View.extend({
 
      "click #suggest-concepts": "showSuggestConcepts",
      "click #suggest": "suggestConcepts",
-     "click #add-suggested": "addSuggested",
+     "click button.add-suggested": "addSuggested",
 
      "click button.query-concept": "showQueryModal",
      "click #make-query": "makeQuery",
@@ -142,12 +142,16 @@ App.Views.OntologyView = Backbone.View.extend({
 
   changeConcept: function() {
     console.log("App.Views.OntoView.changeConcept");
+    $('#change-concept').button('loading');
     var name = $("input#input-name").val();
     var keywords = $("input#input-keywords").val();
     var concept = App.Helpers.getSelectedConcept();
-    concept.set("name", name);
-    concept.set("keywords", keywords);
-    concept.save();
+    concept.set("name", name, {silent:true});
+    concept.set("keywords", keywords, {silent:true});
+
+    var clbk = function() {  $('#change-concept').button('reset'); };
+
+    concept.save([], {success:clbk, error:clbk});
   },
 
   showSuggestConcepts: function() {
@@ -165,16 +169,16 @@ App.Views.OntologyView = Backbone.View.extend({
 
   renderSuggestTable: function() {
     console.log("App.Views.OntoView.renderSuggestTable");
-      $('#suggestions-table').empty();
-      $('#suggestions-table').
-        append(Handlebars.templates.
-                suggesttable({suggestions: App.State.suggestions.toJSON()}));
+    $('#do-classify').button('reset');
+    $('#suggestions-table').empty();
+    $('#suggestions-table').append(Handlebars.templates.suggesttable(
+          {suggestions: App.State.suggestions.toJSON()}));
   },
 
   suggestConcepts: function() {
     console.log("App.Views.OntoView.SuggestConcepts");
     var n = $("input#input-number-suggestions").val();
-
+    $('#suggest').button('loading');
     // callback that sets the suggestions
     var setSuggestions = function(res) {
       var lid = 0;
@@ -183,6 +187,7 @@ App.Views.OntologyView = Backbone.View.extend({
         c.lid = lid++;
       });
       App.State.suggestions.reset(res);
+    $('#suggest').button('reset');
     }; // end of callback
     
     var concept = App.Helpers.getSelectedConcept();
@@ -192,6 +197,7 @@ App.Views.OntologyView = Backbone.View.extend({
   addSuggested: function(ev) {
     console.log("App.Views.OntoView.addSuggested");
     var lid = parseInt($(ev.currentTarget).attr("data-lid"));
+    $(ev.currentTarget).button('loading');
     console.log(App.State.suggestions.findWhere({lid: lid}));
     App.State.concepts.create(App.State.suggestions.findWhere({lid: lid}).toJSON());
     App.State.suggestions.remove(App.State.suggestions.findWhere({lid: lid}));
@@ -227,6 +233,9 @@ App.Views.OntologyView = Backbone.View.extend({
   deleteConcept: function(ev) {
     console.log("App.Views.OntoView.deleteConcept");
     var cid = $(ev.currentTarget).data("cid");
+    $('#delete-all').button('disabled');
+    $('#delete-move').button('disabled');
+    $(ev.currentTarget).button('loading');
     console.log("delete cid: " + cid);
     App.Helpers.setSelectedConceptRoot();
     App.State.concepts.findWhere({$id: cid}).destroy({silent:true});
@@ -235,7 +244,6 @@ App.Views.OntologyView = Backbone.View.extend({
     $('#modal-delete').on('hidden.bs.modal', function (e) {
       $('#modal-delete').remove();
     });
-
   },
 
   deleteMoveConcept: function(ev) {
@@ -292,6 +300,7 @@ App.Views.OntologyView = Backbone.View.extend({
     // warning: no checks are performed here. there should be server side
     // checks to prevent a concept from being moved into a subconcept
     var cid = $(ev.currentTarget).data("cid");
+    $(ev.currentTarget).button('loading');
     var did = $("#picker-destination").find("option:selected").data("did");
     App.State.concepts.findWhere({$id: cid}).set("parentId", did).save();
     $('#modal-move').modal('hide');
@@ -354,30 +363,39 @@ App.Views.OntologyView = Backbone.View.extend({
     var cid = $(ev.currentTarget).data("cid");
     var c = App.State.concepts.findWhere({$id: cid});
     var queryType = $("#query-type").find("label.active").find("input").attr('id');
-
+    $('#make-query').button('loading');
+    
     // Simple Query
-    if(queryType === "query-opt-simple") {
-      App.State.queryConcept = new App.Models.Concept();
-      App.State.queryConcept.set("query", queryText);
-      this.listenToOnce(App.State.queryConcept, "change", this.renderQueryResult);
-      this.listenToOnce(App.State.queryConcept, "destroy", this.renderNoResults);
+    switch(queryType) {
+      case 'query-opt-simple':
+        App.State.queryConcept = new App.Models.Concept();
+        App.State.queryConcept.set("query", queryText);
+        this.listenToOnce(App.State.queryConcept, "change", this.renderQueryResult);
+        this.listenToOnce(App.State.queryConcept, "destroy", this.renderNoResults);
 
-      var setQueryConcept = function(data) {
-        if(data.hasOwnProperty('isEmpty')) {
-          App.State.queryConcept.destroy();
-          return;
-        }
-        App.State.queryConcept.set(data);
-      };
-      c.getQuerySuggestion(queryText, setQueryConcept);
-      return;
+        var setQueryConcept = function(data) {
+          if(data.hasOwnProperty('isEmpty')) {
+            App.State.queryConcept.destroy();
+            return;
+          }
+          App.State.queryConcept.set(data);
+        };
+        c.getQuerySuggestion(queryText, setQueryConcept);
+        break;
+      case 'query-opt-al:
+        // Active Learner Query
+        // make query and set AL, make question = true
+        App.State.currentAL = new App.Models.AL({concept: c, 
+                                                 query: queryText});
+        this.listenTo(App.State.currentAL, "change", this.renderQuestion);
+        App.State.currentAL.save();
+        break;
+      case 'query-opt-gal':
+        $('#modal-query').modal('hide');
+        App.State.GuidedDocuments = new App.Collections.Documents();
+        
+        break;
     }
-    // Active Learner Query
-    // make query and set AL, make question = true
-    App.State.currentAL = new App.Models.AL({concept: c, 
-                                             query: queryText});
-    this.listenTo(App.State.currentAL, "change", this.renderQuestion);
-    App.State.currentAL.save();
   },
 
   renderQueryResult: function() {
@@ -425,10 +443,17 @@ App.Views.OntologyView = Backbone.View.extend({
     $("#modal-query-main").append(this.questionTemplate(question));
     $("#modal-query-footer").empty();
     $("#modal-query-footer").append(this.answerButtonsTemplate(question));
+    // Enable buttons
+    $('.answer-question').button('reset');
+    $('.answer-question').prop('disabled', false);
+    
   },
 
   answerQuestion: function(ev) {
     console.log("App.Views.OntoView.answerQuestion");
+    $('.answer-question').prop('disabled', true);
+    $(ev.currentTarget).button('loading');
+
     //var alid = $(ev.currentTarget).data("alid");
     var answer = Boolean($(ev.currentTarget).data("answer"));
     App.State.currentAL.save({answer: answer,
@@ -448,9 +473,10 @@ App.Views.OntologyView = Backbone.View.extend({
 
   finishQuery: function(ev) {
     console.log("App.Views.OntoView.finishQuery");
-    // check if simple query
+    $(ev.currentTarget).data("alid").button('loading');
     var alid = $(ev.currentTarget).data("alid");
-    console.log("ALID = " + alid);
+
+    // check if simple query
     if(alid < 0 && App.State.queryConcept) {
       console.log("Simple Query");
       // add concept from simple query, cleanup first
@@ -480,7 +506,7 @@ App.Views.OntologyView = Backbone.View.extend({
     concept.getDocs(function() {
       $(self.el).append(self.documentsTemplate({concept: conceptjs}));
       self.appendToDocList();
-      // @TODO show loading indicator
+      $('#view-documents').button('reset');
       $('#docs-modal').modal('show');
       
       // bind events
@@ -503,7 +529,7 @@ App.Views.OntologyView = Backbone.View.extend({
     if($('#docs-modal').length > 0) {
         $('#docs-modal').remove();
     }
-
+    $('#view-documents').button('loading');
     var self = this;
     // Fetch initial batch of Documents if necessary
     if(typeof App.State.Documents === "undefined") {
@@ -580,10 +606,14 @@ App.Views.OntologyView = Backbone.View.extend({
 
   suggestKeywords: function() {
     var concept = App.Helpers.getSelectedConcept();
+    $('#suggest-keywords').button('loading');
+    
     var setKeywords = function(data) {
       concept.set(data, {silent: true});
-      concept.save();
-      //$("#input-keywords").val(data.keywords);
+      var clbk = function() {
+        $('#suggest-keywords').button('reset');
+      };
+      concept.save([],{success:clbk, error:clbk});
     };
     concept.getKeywordsSuggestion(setKeywords);
   },
@@ -629,6 +659,7 @@ App.Views.OntologyView = Backbone.View.extend({
 
   buildClassifier: function(ev) {
     var cid = $(ev.currentTarget).data("cid");
+    $(ev.currentTarget).button('loading');
     var concept = App.State.concepts.findWhere({$id: cid});
     var classifiersUrl = concept.get("links").ontology + "classifiers/";
     // get options
@@ -675,6 +706,7 @@ App.Views.OntologyView = Backbone.View.extend({
         classifiers:classifiers.toJSON()
       }));
       $('#modal-classify').modal('show');
+      $('#classifierPicker').selectpicker('render');
       $('#modal-classify').on('hidden.bs.modal', function (e) {
         $('#modal-classify').remove();
       });
@@ -686,6 +718,7 @@ App.Views.OntologyView = Backbone.View.extend({
   classifyConcept: function() {
     console.log("App.Views.OntoView.classifyConcept");
     var cls = $("#classifierPicker").val();
+    $('#do-classify').button('loading');
 
     // callback that sets the suggestions
     var setSuggestions = function(res) {

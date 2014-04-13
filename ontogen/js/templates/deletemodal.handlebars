@@ -19,9 +19,9 @@
         {{/if}}
       </div>
       <div class="modal-footer">
-        <button data-cid={{concept.$id}} type="button" id='delete-all' class="btn btn-danger" style="margin-top:5px">Delete Sub Concepts</button>
+        <button data-cid={{concept.$id}} type="button" id='delete-all' class="btn btn-danger" style="margin-top:5px" data-loading-text="Deleting...">Delete</button>
         {{#if concept.hasChildren}}
-        <button data-cid={{concept.$id}} type="button" id='delete-move' class="btn btn-warning" style="margin-top:5px">Delete and Move Sub Concepts</button>
+        <button data-cid={{concept.$id}} type="button" id='delete-move' class="btn btn-warning" style="margin-top:5px" data-loading-text="Deleting...">Delete and Move Sub Concepts</button>
         {{/if}}
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>

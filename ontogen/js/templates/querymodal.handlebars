@@ -18,11 +18,14 @@
           <label class="btn btn-primary">
             <input type="radio" name="options" id="query-opt-al"> Use Active Learning
           </label>
+          <label class="btn btn-primary">
+            <input type="radio" name="options" id="query-opt-gal"> Use Guided+Active Learning
+          </label>
         </div>
       </form>
       </div>
       <div id="modal-query-footer" class="modal-footer">
-        <button id="make-query" data-cid={{concept.$id}} type="button" class="btn btn-primary">Query</button>
+        <button id="make-query" data-cid={{concept.$id}} type="button" class="btn btn-primary" data-loading-text="Querying...">Query</button>
         <button type="button" class="btn btn-default cancel-question" data-dismiss="modal">Cancel</button>
       </div>
     </div><!-- /.modal-content -->

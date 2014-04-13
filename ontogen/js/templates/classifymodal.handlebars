@@ -7,17 +7,19 @@
         <h4 class="modal-title" id="modal-classify-label">Classify {{concept.name}}</h4>
       </div>
       <div class="modal-body" id="modal-classify-main">
-        <form class="form-inline" role="form">
+        <form class="form-horizontal" role="form">
           <div class="form-group">
-            <label for="classifierPicker">Classifier: </label>
-            <select class="selectpicker" id="classifierPicker">
-              {{#each classifiers}}
-              <option>{{id}}</option>
-              {{/each}}
-            </select>
+            <label  class="col-sm-2 control-label" style="text-align:left;" for="classifierPicker">Classifier</label>
+            <div class="col-sm-10">
+              <select class="selectpicker" id="classifierPicker">
+                {{#each classifiers}}
+                <option>{{id}}</option>
+                {{/each}}
+              </select>
+              <button type="button" id='do-classify' class="btn btn-primary" data-loading-text="Classifying...">Classify</button>
+            </div>
           </div>
         </form>
-        <button type="button" id='do-classify' class="btn btn-primary" style="margin-top:5px">classify</button>
         <table id="suggestions-table" class="table table-bordered table-responsive" style="margin-top:5px">
         </table>
       </div>

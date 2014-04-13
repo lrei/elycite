@@ -6,7 +6,7 @@
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
         <h4 class="modal-title">Load Ontology</h4>
       </div> <!-- /modal header -->
-      <div class="modal-body">
+      <div class="modal-body" id="load-body">
            <div class="form-group">
             <select class="selectpicker" id="onto-picker">
               {{#each ontologies}}
@@ -17,7 +17,7 @@
       </div> <!-- /modal body -->
       <div class="modal-footer">
         <button id="close" type="button" class="btn" data-dismiss="modal">Cancel</button>
-        <button id="ontoLoad" type="button" class="btn btn-primary" data-dismiss="modal">Load</button>
+        <button id="ontoLoad" type="button" class="btn btn-primary" data-loading-text="Loading...">Load</button>
       </div> <!-- /modal footer -->
     </div><!-- /.modal-content -->
   </div><!-- /.modal-dialog -->

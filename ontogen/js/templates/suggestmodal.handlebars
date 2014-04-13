@@ -7,13 +7,15 @@
         <h4 class="modal-title" id="modal-suggest-label">Suggest Sub Concepts for {{name}}</h4>
       </div>
       <div class="modal-body" id="modal-suggest-main">
-        <form class="form-inline" role="form">
+        <form class="form-horizontal" role="form">
           <div class="form-group">
-            <label for="input-number-suggestions">Number of sub concepts: </label>
-            <input type="number" class="form-control" id="input-number-suggestions" value="2">
+            <label  class="col-sm-5 control-label" style="text-align:left;" for="input-number-suggestions">Number of sub concepts</label>
+            <div class="col-sm-2">
+              <input type="number" class="form-control" id="input-number-suggestions" value="2">
+            </div>
+            <button type="button" id='suggest' class="btn btn-primary" data-loading-text="Getting suggestions...">Suggest</button>
           </div>
         </form>
-        <button type="button" id='suggest' class="btn btn-primary" style="margin-top:5px">Suggest</button>
         <table id="suggestions-table" class="table table-bordered table-responsive" style="margin-top:5px">
         </table>
       </div>

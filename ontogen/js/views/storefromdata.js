@@ -5,6 +5,7 @@ App.Views.StoreFromDataView = Backbone.View.extend({
 
   template: Handlebars.templates['storefromdata'],
   fileListTemplate: Handlebars.templates['filelist'],
+  errorTemplate: Handlebars.templates['erroralert'],
 
    events: {
      "click #storeCreate" : "createStore",
@@ -21,6 +22,8 @@ App.Views.StoreFromDataView = Backbone.View.extend({
   render: function() {
     console.log("Views.StoreFromDataView.render");
     $(this.el).appendTo('#main').html( this.template());
+    $(this.el).prepend(this.errorTemplate());
+    $('.selectpicker').selectpicker('render');
   },
 
   filesSelected: function(evt) {
@@ -39,6 +42,10 @@ App.Views.StoreFromDataView = Backbone.View.extend({
       fileDisplay.push(d);
     }
     $("#list").html( this.fileListTemplate({files:fileDisplay}));
+    // check if files are csv
+    if(files[0].type === "text/csv") {
+      $('#typePicker').selectpicker('val', 'CSV');
+    }
     this.files = files;
   },
 
@@ -54,14 +61,30 @@ App.Views.StoreFromDataView = Backbone.View.extend({
       $("#fileAlert").show();
       return;
     }
+    $('#storeCreate').button('loading');
 
     // callback for when files are done being read
     this.readCounter = 0;
     this.data = [];
+    this.error = false;
+    var fileType = $("#typePicker").val();
     var self = this;
     var doneReading = function(e) {
       var text = e.target.result;
-      var parsedJSON = JSON.parse(text);
+      var parsedJSON;
+      if(fileType === "CSV") {
+        try {
+          parsedJSON = $.csv.toObjects(text);
+        }
+        catch(e) {
+          $("#csvAlert").show();
+          self.error = true;
+          return;
+        }
+      }
+      else { // ASSUME JSON
+        parsedJSON = JSON.parse(text);
+      }
       self.data = self.data.concat(parsedJSON);
       self.readCounter++;
       self.loaded();
@@ -79,14 +102,26 @@ App.Views.StoreFromDataView = Backbone.View.extend({
     if(this.readCounter != this.files.length) {
       return;
     }
+    if(this.error) {
+      $('#storeCreate').button('reset');
+      return;
+    }
     // we're done loading files so lets create the store
     var storeOptions = {storeName: this.storeName, records: this.data};
     var store = new App.Models.Store(storeOptions);
-    this.listenToOnce(store, "change", this.storeCreated);
-    store.save();
+    this.listenToOnce(store, "sync", this.storeCreated);
+    this.listenToOnce(store, "error", this.createError);
+    store.save({error:this.createError});
+  },
+
+  createError: function(model, xhr, options) {
+    console.log("Create error");
+    $('#storeCreate').button('reset');
+    $("#createAlert").show();
   },
 
   storeCreated: function() {
+    $('#storeCreate').button('reset');
     $("#createdAlert").show();
   }
 

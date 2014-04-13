@@ -130,6 +130,22 @@ var documentFromRecord = function(rec, ontology, field, summary) {
   return d;
 };
 
+var paginatedDocuments = function(recSet, ontology, field, page, per_page, summarize) {
+  // Get the documents
+  var docs = [];
+  // calculate start
+  var start = page * per_page;
+  // calculate end
+  var end = page * per_page + per_page;
+  if(end > recSet.length)
+    end = recSet.length;
+  for (var ii = start; ii < end; ii++) {
+    var d = documentFromRecord(recSet[ii], ontology, field, summarize);
+    docs.push(d);
+  }
+  return docs;
+};
+
 
 var classifierFromName = function(name, ontology) {
   var c = {"id": name};
@@ -227,7 +243,6 @@ http.onRequest("stores", "GET", function(req, res) {
 
 
 http.onRequest("stores/", "POST", function(req, res) {
-  console.say("entering function");
   if(!req.hasOwnProperty("jsonData")) {
     res.setStatusCode(400);
     res.send("Missing data.");
@@ -257,7 +272,6 @@ http.onRequest("stores/", "POST", function(req, res) {
     res.send("Records array is empty.");
     return;
   }
-  console.say("starting to process request");
   var proto = records[0];
   if(what_is(proto) != "[object Object]") { 
     res.setStatusCode(400);
@@ -277,7 +291,6 @@ http.onRequest("stores/", "POST", function(req, res) {
   var used_keys = [];
   for (var key in proto) {
     var el = proto[key];
-    //console.say(JSON.stringify(el));
     switch(what_is(el)) {
     case "[object Number]":
       if(key === "id" || key === "$id") {
@@ -322,20 +335,16 @@ http.onRequest("stores/", "POST", function(req, res) {
     res.send("Unable to create store.");
     return;
   }
-  console.say("store created");
 
   // ok we have our store, now lets add the records
   for(var ii = 0; ii < records.length; ii++) {
-    console.say("adding " + ii + " of " + records.length);
     var recVal = {};
     for(var kk = 0; kk < used_keys.length; kk++) {
       var keyname = used_keys[kk];
-      //console.say("key used: " + keyname);
       recVal[keyname] = records[ii][keyname]; 
     }
     store.add(recVal);
   }
-  console.say("finished adding data");
 
   // @TODO newsfeed, twitter
   // newsfeed: {username, password, timestamp, max}
@@ -346,7 +355,6 @@ http.onRequest("stores/", "POST", function(req, res) {
   var storeObj = qm.getStoreList().filter(function(store) {
     return store.storeName === storeName;
   })[0];
-  console.say(JSON.stringify(storeObj));
 
   //res.setStatusCode(201);
   res.send(storeObj);
@@ -543,19 +551,10 @@ http.onRequest("ontologies/<ontology>/documents/", "GET", function (req, res) {
   }
   var docStoreName = docStoreNameFromOntoStore(store, ontology);
   var docStore = qm.store(docStoreName);
-  
-  // Get the documents
-  var docs = [];
-  // calculate start
-  var start = page * per_page;
-  // calculate end
-  var end = page * per_page + per_page;
-  if(end > docStore.length)
-    end = docStore.length;
-  for (var ii = start; ii < end; ii++) {
-    var d = documentFromRecord(docStore[ii], ontology, docsFieldName, true);
-    docs.push(d);
-  }
+
+  var summarize = true;
+  var docs = paginatedDocuments(docStore.recs, ontology, docsFieldName, page,
+                                per_page, summarize);  
 
   res.send(docs);
 });
@@ -1041,13 +1040,63 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET", function (re
     return;
   }
 
+  // doc ids for concept
   var rSet = concept[docsJoinName]; // concept documents
-  var docs = [];
+  var result;
 
-  for(var ii = 0; ii < rSet.length; ii++) {
-    docs.push(rSet[ii].$id);
-    //link: url_for("documents", rSet[ii].$id, storeName)
-    //docs.push(rSet[ii]);
+  var args = req.args || {};
+
+  if(args.hasOwnProperty("query")) {
+    // Query
+    var docIds = [];
+    for (var jj = 0; jj < rSet.length; jj++) {
+      docIds.push(rSet[jj].$id);
+    }
+    var docStoreName = docStoreNameFromOntoStore(store, storeName); // storeName = ontology
+    var query = {}; query.$from = docStoreName;
+    query[docsFieldName] = args.query[0];
+    //console.say(JSON.stringify(query));
+    // perform search
+    result = qm.search(query); // search
+    // filter by concept docs
+    result.filterById(docIds);
+  }
+  else {
+    // No Query
+    result = rSet;
+  }
+
+  // Nothing - send empty array
+  if(result.length === 0) {
+    res.send([]);
+    return;
+  }
+
+  var fullDocs = false; // reply with the full document object
+  if(args.hasOwnProperty("full")) {
+    if(args.full[0].toLowerCase() === "true") {
+      fullDocs = true;
+    }
+  }
+  
+  var docs;
+  if(fullDocs) {
+    // Get Pagination Arguments
+    var page = 0;
+    if(args.hasOwnProperty('page')) {
+      page = parseInt(args.page);
+    }
+    var per_page = 50;
+    if(args.hasOwnProperty('per_page')) {
+      per_page = parseInt(args.per_page);
+    }
+    docs = paginatedDocuments(result, storeName, docsFieldName, page,
+                                per_page, false); 
+  }
+  else {
+    for(var ii = 0; ii < result.length; ii++) {
+      docs.push(result[ii].$id);
+    }
   }
   res.send(docs); 
 });
@@ -1220,7 +1269,6 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/suggestkeywords/", "GET", f
   var keywords = rSet.aggr(get_keywords[0]);
 
   // Create suggestion object
-  var suggestion = {};
   var skeywords = keywords.keywords.map(function(k) { return k.keyword; });
   var rkey = {keywords: skeywords.slice(0, numKeywords).join(", ")};
 
@@ -1518,7 +1566,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/", "POST", function (req
     }
   }
 
-  var name = "default";
+  var name = query.split(" ").join("_") + "_" + randomPosInt32();
   if(data.hasOwnProperty("name")) {
     // extremely restrictive use of names
     name = String(data.name);
@@ -1566,8 +1614,6 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/", "POST", function (req
   var dId = parseInt(question.questionId);
   var doc = conceptDocs[dId];
   question.text = doc[docsFieldName];
-  question.name = question.keywords.split(", ").splice(0,3).join(", ").toUpperCase();
-  question.keywords = question.keywords.split(", ").slice(0, 10).join(", ").toUpperCase();
 
   res.setStatusCode(201);
   res.send(question);
@@ -1653,9 +1699,29 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "GET", functio
   var conceptDocs = concept[docsJoinName];
   var doc = conceptDocs[dId];
   
+  var keywords = question.keywords.split(", ");
+  // get keywords if return mode = true
+  if(question.mode) {
+    var positives = AL.getPositives();
+    console.say(JSON.stringify(positives));
+    positiveDocs = [];
+    for (var ii = 0; ii < positives.length; ii++) {
+      positiveDocs.push(conceptDocs[positives[ii]].$id);
+    }
+    var get_keywords = [{name: 'keywords', type: 'keywords', field: docsFieldName}];
+
+    if (positiveDocs.length > 0) {
+      var posRecs = conceptDocs;
+      posRecs.filterById(positiveDocs);
+      keywords = posRecs.aggr(get_keywords[0]);
+      keywords = keywords.keywords.map(function(k) { return k.keyword; });
+    }
+  }
+
   question.text = doc[docsFieldName];
-  question.name = question.keywords.split(", ").splice(0,3).join(", ").toUpperCase();
-  question.keywords = question.keywords.split(", ").slice(0, 10).join(", ").toUpperCase();
+  question.name = keywords.slice(0,3).join(", ").toUpperCase();
+  question.keywords = keywords.slice(0, 10).join(", ").toUpperCase();
+
 
   res.send(question);
 
@@ -1765,12 +1831,29 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "PATCH", funct
   var docStore = qm.store(docStoreName);
   var conceptDocs = concept[docsJoinName];
   var doc = conceptDocs[dId];
-  
-  question.text = doc[docsFieldName];
-  question.name = question.keywords.split(", ").splice(0,3).join(", ").toUpperCase();
-  question.keywords = question.keywords.split(", ").slice(0, 10).join(", ").toUpperCase();
 
-  
+  var keywords = question.keywords.split(", ");
+  // get keywords if return mode = true
+  if(question.mode) {
+    var positives = AL.getPositives();
+    positiveDocs = [];
+    for (var ii = 0; ii < positives.length; ii++) {
+      positiveDocs.push(conceptDocs[positives[ii]].$id);
+    }
+    var get_keywords = [{name: 'keywords', type: 'keywords', field: docsFieldName}];
+
+    if (positiveDocs.length > 0) {
+      var posRecs = conceptDocs;
+      posRecs.filterById(positiveDocs);
+      keywords = posRecs.aggr(get_keywords[0]);
+      keywords = keywords.keywords.map(function(k) { return k.keyword; });
+    }
+  }
+
+  question.text = doc[docsFieldName];
+  question.name = keywords.slice(0,3).join(", ").toUpperCase();
+  question.keywords = keywords.slice(0, 10).join(", ").toUpperCase();
+
   res.send(question);
 });
 
@@ -1912,16 +1995,22 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "POST", functi
   for (var ii = 0; ii < positives.length; ii++) {
     suggestion.docs.push(conceptDocs[positives[ii]].$id);
   }
-  /* Non Working Alternative 
-  var records = docStore.recs.filterById(suggestion.docs);
-  var get_keywords = [{name: 'keywords', type: 'keywords', field: docsFieldName}];
-  var keywords = records.aggr(get_keywords[0]);
-  */
 
-  // Get Words
-  var keywords = AL.getQuestion(0).keywords;
-  suggestion.name = keywords.split(", ").splice(0,3).join(", ").toUpperCase();
-  suggestion.keywords = keywords.split(", ").slice(0, 10).join(", ").toUpperCase();
+  var get_keywords = [{name: 'keywords', type: 'keywords', field: docsFieldName}];
+  var keywords;
+
+  if (suggestion.docs.length > 0) {
+    var posRecs = conceptDocs;
+    posRecs.filterById(suggestion.docs);
+    keywords = posRecs.aggr(get_keywords[0]);
+    keywords = keywords.keywords.map(function(k) { return k.keyword; });
+  }
+  else {
+    // This should not happen: get Words from AL
+    keywords = AL.getQuestion(0).keywords.split(", ");
+  }
+  suggestion.name = keywords.slice(0,3).join(", ").toUpperCase();
+  suggestion.keywords = keywords.slice(0, 10).join(", ").toUpperCase();
   suggestion.parentId = conceptId;
   
   res.send(suggestion);

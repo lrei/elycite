@@ -9,10 +9,10 @@
     <input type="text" class="form-control input-sm" id="input-keywords" value="{{keywords}}" data-trigger="hover" data-title="Keywords">
   </div>
   <div class="form-group col-md-5">
-  <button id="change-concept" type="button" class="btn btn-primary btn-sm">Change</button>
-  <button id="suggest-keywords" type="button" class="btn btn-warning btn-sm">Suggest Keywords</button>
+  <button id="change-concept" type="button" class="btn btn-primary btn-sm" data-loading-text="Changing...">Change</button>
+  <button id="suggest-keywords" type="button" class="btn btn-warning btn-sm" data-loading-text="Loading...">Suggest Keywords</button>
   <!--  <button id="properties-concept" type="button" class="btn btn-default btn-sm">Properties</button> -->
-  <button id="view-documents" type="button" class="btn btn-default btn-sm">Documents</button>
+  <button id="view-documents" type="button" class="btn btn-default btn-sm" data-loading-text="Opening...">Documents</button>
   <button id="build-classifier" type="button" class="btn btn-success btn-sm">Build</button>
   
 </div>
@@ -26,11 +26,11 @@
     <button id="classify-concept" type="button" class="btn btn-primary btn-sm">Classify</button>
     <button id="move-concept" type="button" class="btn btn-warning btn-sm">Move</button>
     <button id="delete-concept" type="button" class="btn btn-danger btn-sm">Delete</button>
-    <button id="vis-increase" type="button" class="btn btn-default" title="Increase visualization size">
-      <span class="glyphicon glyphicon-plus"></span>
-    </button>
     <button id="vis-decrease" type="button" class="btn btn-default" title="decrease visualization size">
       <span class="glyphicon glyphicon-minus"></span>
+    </button>
+    <button id="vis-increase" type="button" class="btn btn-default" title="Increase visualization size">
+      <span class="glyphicon glyphicon-plus"></span>
     </button>
     <button id="vis-download" type="button" class="btn btn-default" title="Download visualization">
       <span class="glyphicon glyphicon-download"></span>

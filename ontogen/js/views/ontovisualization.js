@@ -5,8 +5,7 @@ App.Views.OntoViz = Backbone.View.extend({
     var height = 600;
     var freeVerticalSpace = $(window).height() - $('#main-navbar').height();
     freeVerticalSpace -= $('#actiobar').height();
-    freeVerticalSpace -= $('#main-heading').height();
-    freeVerticalSpace -= 10;
+    //console.log("freeVerticalSpace: " + freeVerticalSpace);
     if (height < freeVerticalSpace) {
       height = freeVerticalSpace;
     }
