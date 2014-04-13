@@ -1074,9 +1074,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET", function (re
 
   var fullDocs = false; // reply with the full document object
   if(args.hasOwnProperty("full")) {
-    if(args.full[0].toLowerCase() === "true") {
-      fullDocs = true;
-    }
+    fullDocs = Boolean(args.full[0]);
   }
   
   var docs;
@@ -1090,8 +1088,12 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET", function (re
     if(args.hasOwnProperty('per_page')) {
       per_page = parseInt(args.per_page);
     }
+    var summarize = true;
+    if(args.hasOwnProperty('summarize')) {
+      summarize = Boolean(args.summarize[0]);
+    }
     docs = paginatedDocuments(result, storeName, docsFieldName, page,
-                                per_page, true); 
+                                per_page, summarize); 
   }
   else {
     docs = [];
