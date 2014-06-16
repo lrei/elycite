@@ -38,17 +38,9 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
   if (stack1 = helpers.id) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.id; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
-    + " data-questionid=";
-  if (stack1 = helpers.questionId) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
-  else { stack1 = depth0.questionId; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
-  buffer += escapeExpression(stack1)
     + " data-answer=1 type=\"button\" class=\"btn btn-primary pull-left answer-question\" data-loading-text=\"Answering...\">Yes</button>\n    <button data-alid=";
   if (stack1 = helpers.id) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.id; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
-  buffer += escapeExpression(stack1)
-    + " data-questionid=";
-  if (stack1 = helpers.questionId) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
-  else { stack1 = depth0.questionId; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
     + " data-answer=0 type=\"button\" class=\"btn btn-default pull-left answer-question\" data-loading-text=\"Answering...\">No</button>\n    <button data-alid=";
   if (stack1 = helpers.id) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
@@ -331,6 +323,19 @@ function program1(depth0,data) {
   buffer += "\n</ul>\n";
   return buffer;
   });
+templates['guided'] = template(function (Handlebars,depth0,helpers,partials,data) {
+  this.compilerInfo = [4,'>= 1.0.0'];
+helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
+  var buffer = "", stack1, functionType="function", escapeExpression=this.escapeExpression;
+
+
+  buffer += "<!-- Guided Learning Modal -->\n<div class=\"modal fade\" id=\"gl-modal\" data-backdrop=\"false\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"docs-modal-label\" aria-hidden=\"true\">\n  <div class=\"modal-dialog docmodal\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\">Querying in "
+    + escapeExpression(((stack1 = ((stack1 = depth0.concept),stack1 == null || stack1 === false ? stack1 : stack1.name)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
+    + "</h4>\n      </div> <!-- /modal header -->\n      <div class=\"modal-body\">\n        <form class=\"form-inline\" role=\"form\">\n          <div class=\"form-group\" style=\"margin-top:5px\">\n            <textarea id=\"query-text\" class=\"form-control\" rows=\"1\"></textarea>\n          </div> <!-- /from group -->\n        <button id=\"make-gl-query\" data-cid="
+    + escapeExpression(((stack1 = ((stack1 = depth0.concept),stack1 == null || stack1 === false ? stack1 : stack1.$id)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
+    + " type=\"button\" class=\"btn btn-primary\" data-loading-text=\"Querying...\">Query</button>\n        </form>\n        <div class=\"row\">\n          <!-- document list -->\n          <div id=\"doclist\" class=\"col-xs-4\" style=\"max-height:300px; overflow-y:scroll;\">\n            <div class=\"list-group\" id=\"doclist-items\"> \n              <!-- doclist-items goes here -->\n            </div> <!-- /list group -->\n          </div> <!-- /document list -->\n          <!-- document properties -->\n          <div id=\"document-details\" class=\"col-xs-8\" style=\"max-height:300px; overflow-y:scroll;\">\n          </div> <!-- /document properties -->\n        </div>\n        <div class=\"panel panel-default\">\n          <div class=\"panel-body\">\n            One click to select, two to mark negative, three positive, four to remove mark.\n          </div>\n        </div>\n     </div> <!-- /modal body -->\n     <div class=\"modal-footer\">\n        <button id=\"gl-switch-al\" type=\"button\" class=\"btn\" data-dismiss=\"modal\">Switch to Active Learning</button>\n        <button id=\"gl-cancel\" type=\"button\" class=\"btn\" data-dismiss=\"modal\">Cancel</button>\n      </div> <!-- /modal footer -->\n    </div><!-- /.modal-content -->\n  </div><!-- /.modal-dialog -->\n</div> <!-- /LoadView Modal -->\n";
+  return buffer;
+  });
 templates['movemodal'] = template(function (Handlebars,depth0,helpers,partials,data) {
   this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
@@ -513,7 +518,7 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
 
   buffer += "<!-- Modal -->\n<div class=\"modal fade\" id=\"modal-query\" data-backdrop=\"false\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"modal-query-label\" aria-hidden=\"true\">\n  <div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close cancel-question\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\" id=\"modal-query-label\">Query "
     + escapeExpression(((stack1 = ((stack1 = depth0.concept),stack1 == null || stack1 === false ? stack1 : stack1.name)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
-    + "</h4>\n      </div>\n      <div class=\"modal-body\" id=\"modal-query-main\">\n        <form class=\"form-horizontal\" role=\"form\">\n        <div class=\"form-group\" style=\"margin-top:5px\">\n          <textarea id=\"query-text\" class=\"form-control\" rows=\"1\"></textarea>\n        </div> <!-- /from group -->\n        <div class=\"btn-group\" id=\"query-type\" data-toggle=\"buttons\">\n          <label class=\"btn btn-primary active\">\n            <input type=\"radio\" name=\"options\" id=\"query-opt-simple\"> Simple Query\n          </label>\n          <label class=\"btn btn-primary\">\n            <input type=\"radio\" name=\"options\" id=\"query-opt-al\"> Use Active Learning\n          </label>\n        </div>\n      </form>\n      </div>\n      <div id=\"modal-query-footer\" class=\"modal-footer\">\n        <button id=\"make-query\" data-cid="
+    + "</h4>\n      </div>\n      <div class=\"modal-body\" id=\"modal-query-main\">\n        <form class=\"form-horizontal\" role=\"form\">\n        <div class=\"form-group\" style=\"margin-top:5px\">\n          <textarea id=\"query-text\" class=\"form-control\" rows=\"1\"></textarea>\n        </div> <!-- /from group -->\n        <div class=\"btn-group\" id=\"query-type\" data-toggle=\"buttons\">\n          <label class=\"btn btn-primary active\">\n            <input type=\"radio\" name=\"options\" id=\"query-opt-simple\">Simple Query\n          </label>\n          <label class=\"btn btn-primary\">\n            <input type=\"radio\" name=\"options\" id=\"query-opt-al\">Active Learning\n          </label>\n          <!--\n          <label class=\"btn btn-primary\">\n            <input type=\"radio\" name=\"options\" id=\"query-opt-gal\">Guided+Active Learning\n          </label>\n          -->\n        </div>\n      </form>\n      </div>\n      <div id=\"modal-query-footer\" class=\"modal-footer\">\n        <button id=\"make-query\" data-cid="
     + escapeExpression(((stack1 = ((stack1 = depth0.concept),stack1 == null || stack1 === false ? stack1 : stack1.$id)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
     + " type=\"button\" class=\"btn btn-primary\" data-loading-text=\"Querying...\">Query</button>\n        <button type=\"button\" class=\"btn btn-default cancel-question\" data-dismiss=\"modal\">Cancel</button>\n      </div>\n    </div><!-- /.modal-content -->\n  </div><!-- /.modal-dialog -->\n</div><!-- /.modal -->\n";
   return buffer;
@@ -607,7 +612,7 @@ function program1(depth0,data) {
   if (stack1 = helpers.numDocs) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.numDocs; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)
-    + "</td>\n  <td><button class=\"btn btn-primary add-suggested\" id=\"suggested-";
+    + "</td>\n  <td><button class=\"btn btn-success add-suggested\" id=\"suggested-";
   if (stack1 = helpers.lid) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
   else { stack1 = depth0.lid; stack1 = typeof stack1 === functionType ? stack1.apply(depth0) : stack1; }
   buffer += escapeExpression(stack1)

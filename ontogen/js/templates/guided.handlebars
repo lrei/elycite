@@ -1,0 +1,39 @@
+<!-- Guided Learning Modal -->
+<div class="modal fade" id="gl-modal" data-backdrop="false" tabindex="-1" role="dialog" aria-labelledby="docs-modal-label" aria-hidden="true">
+  <div class="modal-dialog docmodal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title">Querying in {{concept.name}}</h4>
+      </div> <!-- /modal header -->
+      <div class="modal-body">
+        <form class="form-inline" role="form">
+          <div class="form-group" style="margin-top:5px">
+            <textarea id="query-text" class="form-control" rows="1"></textarea>
+          </div> <!-- /from group -->
+        <button id="make-gl-query" data-cid={{concept.$id}} type="button" class="btn btn-primary" data-loading-text="Querying...">Query</button>
+        </form>
+        <div class="row">
+          <!-- document list -->
+          <div id="doclist" class="col-xs-4" style="max-height:300px; overflow-y:scroll;">
+            <div class="list-group" id="doclist-items"> 
+              <!-- doclist-items goes here -->
+            </div> <!-- /list group -->
+          </div> <!-- /document list -->
+          <!-- document properties -->
+          <div id="document-details" class="col-xs-8" style="max-height:300px; overflow-y:scroll;">
+          </div> <!-- /document properties -->
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            One click to select, two to mark negative, three positive, four to remove mark.
+          </div>
+        </div>
+     </div> <!-- /modal body -->
+     <div class="modal-footer">
+        <button id="gl-switch-al" type="button" class="btn" data-dismiss="modal">Switch to Active Learning</button>
+        <button id="gl-cancel" type="button" class="btn" data-dismiss="modal">Cancel</button>
+      </div> <!-- /modal footer -->
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div> <!-- /LoadView Modal -->

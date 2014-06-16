@@ -374,7 +374,8 @@ App.Views.OntologyView = Backbone.View.extend({
         this.listenToOnce(App.State.queryConcept, "destroy", this.renderNoResults);
 
         var setQueryConcept = function(data) {
-          if(data.hasOwnProperty('isEmpty') || data.length === 0 || data.length === undefined) {
+          if(typeof data === 'undefined' || data.hasOwnProperty('isEmpty')) {
+            console.log("Data is empy/missing");
             App.State.queryConcept.destroy();
             return;
           }
@@ -451,13 +452,14 @@ App.Views.OntologyView = Backbone.View.extend({
 
   answerQuestion: function(ev) {
     console.log("App.Views.OntoView.answerQuestion");
+    var answer = $(ev.currentTarget).data("answer");
     $('.answer-question').prop('disabled', true);
     $(ev.currentTarget).button('loading');
 
     //var alid = $(ev.currentTarget).data("alid");
-    var answer = Boolean($(ev.currentTarget).data("answer"));
+    answer = Boolean(answer);
     App.State.currentAL.save({answer: answer,
-                              questionId: App.State.currentAL.get("questionId")},
+                              did: App.State.currentAL.get("questionId")},
                              {patch: true});
   },
   
@@ -473,7 +475,7 @@ App.Views.OntologyView = Backbone.View.extend({
 
   finishQuery: function(ev) {
     console.log("App.Views.OntoView.finishQuery");
-    $(ev.currentTarget).data("alid").button('loading');
+    $(ev.currentTarget).button('loading');
     var alid = $(ev.currentTarget).data("alid");
 
     // check if simple query
@@ -487,12 +489,14 @@ App.Views.OntologyView = Backbone.View.extend({
       App.State.queryConcept.destroy();
       return;
     }
+    // ad concept from AL
     // make sure AL is available
     if(!App.State.currentAL) {
       return;
     }
     // add concept from al
     var addConceptFromAL = function(data) {
+      console.log(data);
       App.State.concepts.create(data);
       App.State.currentAL.destroy();
     };
