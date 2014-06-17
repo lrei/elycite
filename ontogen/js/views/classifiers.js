@@ -3,9 +3,12 @@ App.Views.ClassifierView = Backbone.View.extend({
   className: "mainView",
 
   template: Handlebars.templates['classifiers'],
+  tryClassifierTemplate: Handlebars.templates['tryclassifiermodal'],
 
    events: {
      "click #delete-cls": "deleteClassifier",
+     "click #try-cls": "showTryClassifierModal",
+     "click #do-try-cls": "classifyData",
   },
 
   initialize: function() {
@@ -35,6 +38,54 @@ App.Views.ClassifierView = Backbone.View.extend({
     var cls = this.classifiers.get(mid);
     cls.destroy();
 
+  },
+
+  showTryClassifierModal: function(ev) {
+    console.log("App.Views.ClassifierView.showClassifyModal");
+    if($('#modal-tryclassifier').length) {
+      $('#modal-tryclassifier').remove();
+    }
+    var mid = $(ev.currentTarget).data("mid");
+    var cls = this.classifiers.get(mid);
+
+    $(this.el).append(this.tryClassifierTemplate(cls.toJSON()));
+    $('#modal-tryclassifier').modal('show');
+    $('#modal-tryclassifer').on('hidden.bs.modal', function (e) {
+      $('#modal-tryclassifer').remove();
+    });
+  },
+
+  classifyData: function(ev) {
+    var tgt = $(ev.currentTarget);
+    var mid = $(ev.currentTarget).data("mid");
+    console.log(mid);
+    var cls = this.classifiers.get(mid);
+
+    var testdata = $("#tryclassifier-text").val();
+    testdata = JSON.stringify([testdata]);  // call expects array
+
+    // success callback
+    var success = function(data) {
+      console.log(data);
+      if(data[0] >= 0) {
+        $("#classification").html('<p class="bg-success text-center"><strong>POSITIVE</strong></p>');
+        tgt.button('reset');
+      }
+      else {
+        $("#classification").html('<p class="bg-danger text-center"><strong>NEGATIVE</strong></p>');
+        tgt.button('reset');
+      }
+    };
+    // error calbback
+    var err = function() {
+
+      tgt.button('reset');
+    };
+
+    // set loading status
+    tgt.button('loading');
+    // classify
+    cls.classify(testdata, success, err);
   }
 });
 

@@ -12,15 +12,32 @@ var al = require('activelearning.js');
 var cls = require('classifiers.js');
 
 
-// Notes
-// ------
+// Introductory Notes
+// -------------------
+//
 // * Trailing slashes are important! .../documents/ not ../documents
 // * Generally, all document representations include a links property 
 // containing at least a links.self
+// * **PARAMS** refers to URL parameters such as collections and elements.
+// For example, in *http://example.com/<resources>/<item>/* both *<resources>*  
+// and *<item>* are `params` to be replaced accordingly.
+// * **ARGS** refers to HTTP GET query strings. For example, in 
+// *http://example.com/<resources>/?q=hello&w=world* both *q* and *w* are
+// `args` that take the value *hello* and *world*, respectively.
+// * **JSONDATA** is the JSON content of a request which requires the 
+// HTTP "Content-Type" header to be set to "application/json".
  
-// Get Language Options
-// Returns:
-//  { stemmer: ["none", "porter"], stopwords: ["none", "en8", ...] }
+// Misc
+// -----
+// **URL:** /languageoptions/
+//
+// **Method:** GET
+//
+// **DESCRIPTION:** Get Language Options
+//
+// **Returns:** Options for stemmers and stopword lists
+//
+//    { stemmer: ["none", "porter"], stopwords: ["none", "en8", ...] }
 http.onRequest("languageoptions", "GET", function(req, res) {
   console.say("OntoGen API - Language Options");
 
@@ -31,15 +48,27 @@ http.onRequest("languageoptions", "GET", function(req, res) {
 // Stores
 // ------
 
-// Get List of Data Stores
-// Returns:
+// **URL:** /stores/ 
 //
+// **METHOD:** GET
+//
+// **DESCRIPTION:** Get List of available Data (Document) Stores
+//
+// **Returns:** A list of qminer store definitions
 http.onRequest("stores", "GET", function(req, res) {
   console.say("OntoGen API - GET Stores");
   stores.listStores(res);
 });
 
-// Create store
+// **URL:** /stores/
+//
+// **METHOD:** POST
+//
+// **DESCRIPTION:** Create a data (document) store with records
+//
+// **JSON DATA:**
+//
+//    {storeName: "exampleName", records: [{RecVal1}, ...]} 
 http.onRequest("stores/", "POST", function(req, res) {
   console.say("OntoGen API - POST Stores");
   var data = restf.requireJSON(req, res, "storeName", "records");
@@ -48,42 +77,63 @@ http.onRequest("stores/", "POST", function(req, res) {
   stores.createStore(res, data);
 });
 
-// Get a single store by name @TODO
+// Get a single store definition by name @TODO: NOT IMPLEMENTED
 http.onRequest("stores/<store>", "GET", function(req, res) {
   console.say("OntoGen API - GET Stores");
   res.setStatusCode(501);
   res.send();
 });
 
-// [onto]: Ontologies
-// ------------------
+// Ontologies
+// -----------
 // Example `ontology` document (JSON representation):
+//
+//<pre><code>
 //  {
-//    $id: 3,
-//    name: "textmining",
-//    docStore: "news",
-//    classifierStore: "textmining_cls",
-//    isDeleted: false,
-//    links: {
-//      self: "/ontogenapi/ontologies/textmining/",
-//      concepts: "/ontogenapi/ontologies/textmining/concepts/"
+//      $id: 3,
+//      name: "textmining",
+//      docStore: "news",
+//      classifierStore: "textmining_cls",
+//      isDeleted: false,
+//      links: {
+//        self: "/ontogenapi/ontologies/textmining/",
+//        concepts: "/ontogenapi/ontologies/textmining/concepts/"
+//      }
 //    }
-//  }
+//</code></pre>
 
-// Get List of Existing Ontologies
-// Returns: list of `ontology` documents
-//  [OntologyDocument1, OntologyDocument2, ...]
+// **URL:** /ontologies/
+//
+// **METHOD:** GET
+//
+// **DESCRIPTION:** Get List of Existing Ontologies
+//
+// **Returns:** list of `ontology` documents
+//
+//    [OntologyDocument1, OntologyDocument2, ...]
 http.onRequest("ontologies", "GET", function(req, res) {
   console.say("OntoGen API - GET Existing Ontologies");
   stores.listOntologies(res);
 });
 
-// Create a new ontology
-// Example:
-//  curl -H "Content-Type: application/json" -d \
-//  '{"ontologyName":"textmining","dataStore":"news"}' \
-//  http://localhost:8080/ontogenapi/ontologies
-// Returns: the `ontology`
+// **URL:** /ontologies/
+//
+// **METHOD:** POST
+//
+// **DESCRIPTION:** Create a new ontology
+//
+// **JSONDATA:**
+//
+//  {ontologyName: "new_ontology", dataStore:"news_data"}
+//
+// **Returns:** the `ontology`
+//
+// **Example Request:**
+//<pre><code>
+//    curl -H "Content-Type: application/json" -d \
+//    '{"ontologyName":"textmining","dataStore":"news"}' \
+//    http://localhost:8080/ontogenapi/ontologies
+//</code></pre>
 http.onRequest("ontologies", "POST", function(req, res) {
   console.say("OntoGen API - Create Ontology: ");
   var data = restf.requireJSON(req, res, "ontologyName", "dataStore");
@@ -91,9 +141,17 @@ http.onRequest("ontologies", "POST", function(req, res) {
   stores.createOntology(res, data);
 });
 
-// Read ontology definition 
-// @params: ontology - name of the `ontology`
-// Returns: the `ontology`
+// **URL:** /ontologies/<ontology>/
+//
+// **METHOD:** GET
+//
+// **DESCRIPTION:** Read ontology definition 
+//
+// **PARAMS:**
+//
+//  * *<ontology>* - the ontology name
+//
+// **Returns:** the `ontology` JSON representation. See above.
 http.onRequest("ontologies/<ontology>/", "GET", function (req, res) {
   console.say("OntoGen API - Concept ontology def");
   var params = restf.requireParams(req, res, "ontology");
@@ -107,17 +165,32 @@ http.onRequest("ontologies/<ontology>/", "GET", function (req, res) {
 // Documents
 // ---------
 // A document is a record from the data store associated with the ontology. 
-// It includes all fields in the data record. Text fields can optionally be
-// summarized (truncated).
+// It includes all fields in the data (qminer( record. 
+// Text fields can optionally be summarized (truncated).
 
-// Read - Get All Documents - Summaries only by default
-// @params: ontology - the name of the `ontology`
-// @args (optional): per_page (optional) - int, number of documents per page
-// @args (optional): page (optional) - int, the page number, with `per_page`
-// @args (optional): summarize - boolean, weather or not text is truncated
-// @returns: list of `document`s, summarized
-// Example:
-//  curl -X GET "http://localhost:8080/ontogenapi/ontologies/textmining/documents/?page=3&per_page=2&summarize=true?"
+// **URL:** /ontologies/<ontology>/documents/
+//
+// **METHOD:** GET
+//
+// **DESCRIPTION:** Get All Documents - Summaries only by default
+//
+// **PARAMS:**
+//
+//  * *<ontology>* - the ontology name
+//
+// **ARGS:**
+// 
+//  * *per_page* (int, optional) - number of documents per page
+//  * *page* (int, optional) - the page number, with `per_page` documents
+//  * *summarize* (boolean, optional, default: true), truncate text fields
+//
+// **RETURNS:** list of `document`s (see above).
+//
+// **Example:** 
+//<pre><code>
+//  curl -X GET \
+//  "http://localhost:8080/ontogenapi/ontologies/test/documents/?page=3&per_page=2&summarize=true?"
+//</code></pre>
 http.onRequest("ontologies/<ontology>/documents/", "GET", function (req, res) {
   console.say("OntoGen API - Document GET ALL (summaries)");
   var params = restf.requireParams(req, res, "ontology");
@@ -127,10 +200,18 @@ http.onRequest("ontologies/<ontology>/documents/", "GET", function (req, res) {
   documents.getDocuments(req, res, store);
 });
 
-// Read Document
-// @params: ontology - store name of the ontology
-// @params: did - record id of document to get
-// @returns: a single `document`
+// **URL:** /ontologies/<ontology>/documents/<did>/
+//
+// **METHOD:** GET
+//
+// **DESCRIPTION:** Read Document
+//
+// **PARAMS:**
+//
+//  * *<ontology>* - the ontology name
+//  * *<did>* - record id of document to get
+//
+// **RETURNS:** a single `document`
 http.onRequest("ontologies/<ontology>/documents/<did>/", "GET", 
                function (req, res) {
   console.say("OntoGen API - Document <did> GET");
@@ -146,6 +227,7 @@ http.onRequest("ontologies/<ontology>/documents/<did>/", "GET",
 
 // Concepts
 // --------
+//<pre><code>
 //  {
 //    $id: 0,
 //    name: "root",
@@ -161,10 +243,23 @@ http.onRequest("ontologies/<ontology>/documents/<did>/", "GET",
 //              ontology: "/ontogenapi/ontologies/textmining/"
 //           }
 //  }
+//</code></pre>
 
-// Read - Get all Concepts, @TODO add query parameter here
-// @params: ontology - store name of the ontology
-// @returns: a list of `concept`s
+// **URL:** /ontologies/<ontology>/concepts/
+//
+// **METHOD:** GET
+//
+// **DESCRIPTION:** Get all `concept`s (see above)
+// 
+// **PARAMS:**
+//
+//  * *<ontology>* - the ontology name
+//
+// **ARGS:**
+//
+//  * *query* (string, optional) - query to filter concepts @TODO NOT IMPLEMENTED
+//
+// **RETURNS:** a list of `concept`s
 http.onRequest("ontologies/<ontology>/concepts/", "GET", function (req, res) {
   console.say("OntoGen API - Concept GET ALL");
   var params = restf.requireParams(req, res, "ontology");
@@ -175,10 +270,18 @@ http.onRequest("ontologies/<ontology>/concepts/", "GET", function (req, res) {
   concepts.getConcepts(res, store, params.ontology);
 });
 
-// Concept - Get a single Concept
-// @params: ontology - store name of the ontology
-// @params: cid - the record id of the `Concept` to get
-// @returns: a `Concept`
+// **URL:** /ontologies/<ontology>/concepts/<cid>/
+//
+// **METHOD:** GET
+//
+// **DESCRIPTION:** Get a single `concept`
+//
+// **PARAMS:**
+//
+//  * *<ontology>* - the ontology name
+//  * *<cid>* - the record id of the `concept` to get
+//
+// **RETURNS:** the `concept`
 http.onRequest("ontologies/<ontology>/concepts/<cid>/", "GET",
                function (req, res) {
   console.say("OntoGen API - Concept GET");
@@ -194,11 +297,30 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/", "GET",
   concepts.getConcept(res, store, concept);
 });
 
-// Create a Concept
-// Example:
-//  curl -H "Content-Type: application/json" -d 
-//  '{"name":"testc", "parentId":0, "docs":[0,1,3]}'
+// **URL:** /ontologies/<ontology>/concepts/
+//
+// **METHOD:** POST
+//
+// **DESCRIPTION:** Create a `concept`
+// 
+// **PARAMS:**
+//
+//  * *<ontology>* - the ontology name
+//
+// **JSONDATA:**  A JSON representation of non-calculated `concept` properties.
+//
+//  * *name* (string) - the new `concept`'s name
+//  * *parentId* (int) - the id of the parent `concept`
+//  * *stemmer* (string, optional) - "none", "porter" see /languageoptions/
+//  * *stopwords* (string, optional): see /languageoptions/
+//  * *docs* (array) - an array of document ids that will be in the `concept`
+//
+// **EXAMPLE REQUEST:**
+//<pre><code>
+//  curl -H "Content-Type: application/json" -d \
+//  '{"name":"testc", "parentId":0, "docs":[0,1,3]}' \
 //  http://localhost:8080/ontogenapi/ontologies/textmining/concepts/
+//</code></pre>
 http.onRequest("ontologies/<ontology>/concepts/", "POST", 
                function (req, res) {
   console.say("OntoGen API - Concept POST");
@@ -212,10 +334,29 @@ http.onRequest("ontologies/<ontology>/concepts/", "POST",
   concepts.createConcept(res, data, store, params.ontology);
 });
 
-// EDIT a Concept
-// Example
-//  curl -X PUT -H "Content-Type: application/json" -d '{"name":"hello"}' 
+// **URL:** /ontologies/<ontology>/concepts/<cid>/
+//
+// **METHOD:** PUT
+//
+// **DESCRIPTION:** Edit a `concept`
+//
+// **PARAMS:**
+//
+//  * *<ontology>* - the ontology name
+//  * *<cid>* - the record id of the concept do edit
+//
+//  **JSONDATA:**
+//
+//  * *name* (string, optional) - the `concept`'s name
+//  * *parentId* (int, optional) - the id of the parent `concept`
+//  * *stemmer* (string, optional) - "none", "porter" see /languageoptions/
+//  * *stopwords* (string, optional): see /languageoptions/
+//
+// **EXAMPLE REQUEST:**
+//<pre><code>
+//  curl -X PUT -H "Content-Type: application/json" -d '{"name":"hello"}' \ 
 //  http://localhost:8080/ontogenapi/ontologies/textmining/concepts/1/
+//</code></pre>
 http.onRequest("ontologies/<ontology>/concepts/<cid>/", "PUT", 
                function (req, res) {
   console.say("OntoGen API - Concept edit PUT");
@@ -233,8 +374,20 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/", "PUT",
   concepts.editConcept(res, concept, data, store, params.ontology);
 });
 
-// GET subsconcepts
-// Returns: the concept children (subconcepts)
+// **URL:** /ontologies/<ontology>/concepts/<cid>/subconcepts/
+//
+// **METHOD:** GET
+//
+// **DESCRIPTION:** get a list of `concept`s that are subsconcepts (children) 
+// of this `concept`
+//
+// **PARAMS:**
+//
+//  * *<ontology>* - the ontology name
+//  * *<cid>* - the record id of this concept
+//
+// **RETURNS:** an array containing `concept`s that are the `concept`'s 
+// subconcepts (children)
 http.onRequest("ontologies/<ontology>/concepts/<cid>/subconcepts/", "GET",
                function (req, res) {
   console.say("OntoGen API - GET SUB CONCETPS");
@@ -250,8 +403,19 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/subconcepts/", "GET",
   concepts.getSubConcepts(res, concept, store, params.ontology);
 });
 
-// DELETE Concept (and sub-concepts)
-//  curl -X DELETE 
+// **URL:** /ontologies/<ontology>/concepts/<cid>/
+//
+// **METHOD:** DELETE
+//
+// **DESCRIPTION:** Delete this `concept` including subconcepts (recursively).
+//
+// **PARAMS:**
+//
+//  * *<ontology>* - the ontology name
+//  * *<cid>* - the record id of the concept to delete
+//
+// **EXAMPLE REQUEST:**
+//  curl -X DELETE \
 //  http://localhost:8080/ontogenapi/ontologies/textmining/concepts/1/
 http.onRequest("ontologies/<ontology>/concepts/<cid>/", "DELETE",
                function (req, res) {
@@ -268,7 +432,19 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/", "DELETE",
   concepts.deleteConcept(res, concept, store);
 });
 
-// Get List of Document Ids associated with the Concept
+// **URL:** /ontologies/<ontology>/concepts/<cid>/docs/
+//
+// **METHOD:** GET
+//
+// **DESCRIPTION:** Get a list of `document` record ids that are in the
+// `concept`
+//
+// **PARAMS:**
+//
+//  * *<ontology>* - the ontology name
+//  * *<cid>* - the record id of the concept
+//
+// **RETURNS:** an array of `document` record ids (ints)
 http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET", 
                function (req, res) {
   console.say("OntoGen API - Concept GET docs");
@@ -284,14 +460,32 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET",
   concepts.getConceptDocuments(req, res, concept, store);
 });
 
-// Concept - EDIT Docs - Edit List of Document Ids (Select, DeSelect)
-// @data: docId - id of a document to add or remove from the concept
-// @data: operation - "add" or "del"
-// Returns: array of document ids in the concept
-// Example:
-//  curl -X PATCH -H "Content-Type: application/json" 
-//  -d '{"docId":20, "operation":"add"}' 
+// **URL:**  /ontologies/<ontology>/concepts/<cid>/docs/
+//
+// **METHOD:** PATCH
+//
+// **DESCRIPTION**: Edit the list of `document` record ids in the `concept`
+// (Select, DeSelect)
+//
+// **PARAMS:**
+//
+//  * *<ontology>* - the ontology name
+//  * *<cid>* - the record id of the concept
+//
+// **JSONDATA:**
+//
+//  * *docId* (int) - id of a `document` to add or remove from the concept
+//  *operation* (string) - "add" or "del" to add or remove, respectively, the 
+//  `document` id from the list
+//
+// **RETURNS:** an array with the `document` record ids in the concept
+//
+// **EXAMPLE REQUEST:**
+//<pre><code>
+//  curl -X PATCH -H "Content-Type: application/json" \
+//  -d '{"docId":20, "operation":"add"}' \
 //  http://localhost:8080/ontogenapi/ontologies/demo/concepts/1/docs/
+//</code></pre>
 http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "PATCH",
                function (req, res) {
   console.say("OntoGen API - Concept Edit doc list");
@@ -313,8 +507,21 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "PATCH",
   concepts.editConceptDocuments(res, docId, data.operation, concept, store);
 });
 
-// Get Keyword suggestions for concept
-// args (optional): numKeywords - number of keywords to get
+// **URL:** /ontologies/<ontology>/concepts/<cid>/suggestkeywords/
+//
+// **METHOD:** GET
+//
+// **DESCRIPTION:** Get keyword suggestions for a `concept`
+//
+// **ARGS:**
+//
+// * *numKeywords* (int, optional) - number of keywords to get
+//
+// **RETURNS:** a JSON object with a `keywords` string property consisting of 
+// the suggested keywords separated by a comma an a space. Example:
+// <pre><code>
+// {"keywords":"services, bank, business, management, markets"}
+//</code></pre>
 http.onRequest("ontologies/<ontology>/concepts/<cid>/suggestkeywords/", "GET", 
                function (req, res) {
   console.say("OntoGen API - Concept/suggeskeywords");
@@ -568,7 +775,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/classify/<mid>/", "GET",
   cls.subConcepts(res, mid, threshold, concept, store);
 });
 
-/// List existing classifiers (models) for ALL ontologies
+// List existing classifiers (models) for ALL ontologies
 http.onRequest("classifiers/", "GET", function (req, res) {
   console.say("OntoGen API - Classifiers  Get ALL");
   cls.listAll(res);

@@ -13,7 +13,7 @@ var og = require('ogconfig.js');
 var checkParentId = function(res, store, pid) {
   var parentId = 0;
   // gracefully handle parentId sent as string instead of number 
-  if (pid === "string") {
+  if (typeof pid === "string") {
     parentId = parseInt(pid, 10);
   }
   else { 
@@ -154,7 +154,7 @@ exports.editConcept = function(res, concept, data, store) {
     // Change Parent ("Move")
     if(data.hasOwnProperty("parentId")) {
       if (data.parentId !== concept.parent.$id) {
-        var parentId = checkParentId(store, data.parentId, res);
+        var parentId = checkParentId(res, store, data.parentId);
         if (parentId === null) { return; }
         // new parent is valid
         concept.delJoin('parent', store[concept.parent.$id]);
@@ -193,7 +193,7 @@ exports.deleteConcept = function(res, concept, store) {
 
   var recursiveDelete = function(c) {
     var ii = 0;
-    var now = Date();
+    var now = new Date();
     var rSet = c[og.childJoinName];
     for(ii = 0; ii < rSet.length; ii++) {
       recursiveDelete(rSet[ii]);

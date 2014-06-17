@@ -45,6 +45,11 @@ body {
   margin-right: 5px;
 }
 
+/* forms should feel whatever space is allocated to them */
+.form-inline .form-control {
+  width: 100%;
+}
+
 /* GRAPH */
 svg {
   background-color: #FFF;
