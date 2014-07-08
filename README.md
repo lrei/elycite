@@ -1,10 +1,56 @@
-# Ontogen Version 3
+# Elycite
 
 ## Description
-TBA
+Elycite is  semi-automatic, collaborative, data exploration and organization tool.
+The current version is focused on text data.
+
+elycite integrates machine learning and text mining algorithms into a
+simple user interface and a Client/Server architecture.
+
+Built on top of [QMiner](http://qminer.ijs.si).
+
+
+Based on [ontogen](http://ontogen.ijs.si) - a semi-automatic ontology editor by
+Blaz Fortuna, Marko Grobelnik and Dunja Mladenic.
+
+
+The main features of the systems include:
+
+    * Unsupervised and supervised methods for concept suggestion
+    * Data visualizations
+    * Machine Learning As A Service (MLAAS) - both data and methods are  
+      available to other applications through via an API (RESTful).
+
+
+Current automatic methods include:
+    
+    * Support Vector Machine (SVM) for classification
+    * Active Learning with SVMs
+    * K-means++ clustering
+    * Keyword extracion using K-means and TF/IDF
+
+
+## Roadmap Highlights
+
+    * Multi-field methods with non textual data (coming soon)
+    * Allow training supervised classifiers, possibly from different stores
+      display pretty confusion matrix (coming soon)
+    * Pre-built classifiers for common tasks
+    * Integrated data collection
+    * Time Series data and associated methods
+
+## Authors
+[Luis Rei](http://luisrei.com)
+
+Advisors: [Blaz Fortuna](http://blazfortuna.com), Dunja Mladenic and 
+Marko Grobelnik
+
+[AI Lab](http://ailab.ijs.si), Josef Stefan Institute
+
 
 ## License
-Copyright (c) 2014 Jozef Stefan Institute
+(C) 2013-2014 Luis Rei, Josef Stefan Institute
+
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

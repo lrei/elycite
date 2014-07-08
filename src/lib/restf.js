@@ -1,4 +1,4 @@
-// Ontogen - "Restful" Helper Module
+// elycite - "Restful" Helper Module
 
 // (c) 2013-2014 Luis Rei, Josef Stefan Institute
 // MIT License

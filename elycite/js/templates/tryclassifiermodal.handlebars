@@ -1,0 +1,24 @@
+<!-- Modal -->
+<div class="modal fade" id="modal-tryclassifier" data-backdrop="false" tabindex="-1" role="dialog" aria-labelledby="modal-tryclassifier-label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="modal-tryclassifier-label">Classify with {{id}}</h4>
+      </div>
+      <div class="modal-body" id="modal-tryclassifier-main">
+        <form class="form-horizontal" role="form">
+          <div class="form-group" style="margin-top:5px">
+            <textarea id="tryclassifier-text" class="form-control" rows="5"></textarea>
+          </div> <!-- /from group -->
+        </form>
+        <div id="classification" class="center-block">
+        </div>
+      </div> <!-- /.modal-body -->
+      <div id="modal-tryclassifier-footer" class="modal-footer">
+        <button id="do-try-cls" data-mid={{id}} type="button" class="btn btn-primary" data-loading-text="Classifying...">Classify</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->

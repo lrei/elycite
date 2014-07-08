@@ -68,11 +68,11 @@ App = {
   },
 
   API: {
-    root: "/ontogenapi/",
+    root: "/elyciteapi/",
 
     getLanguageOptions: function(callback) {
       $.ajax({
-        url: "/ontogenapi/languageoptions"
+        url: "/elyciteapi/languageoptions"
       }).done(function(data) {
         App.State.LanguageOptions = data;
         if(typeof callback === 'function') {

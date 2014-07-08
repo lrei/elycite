@@ -170,7 +170,8 @@ exports.createStore = function(res, data) {
   // Number is always assumed to be float.
    var storeDef = [{
     "name": storeName,
-    "fields":  []
+    "fields":  [],
+    "keys": []
   }];
   for (var key in proto) {
     var el = proto[key];
@@ -186,6 +187,7 @@ exports.createStore = function(res, data) {
       break;
     case "[object String]":
       storeDef[0].fields.push({name:key, type:"string", primary:false});
+      storeDef[0].keys.push({field:key, type:"text"});
       used_keys.push(key);
       break;
     case "[object Boolean]":

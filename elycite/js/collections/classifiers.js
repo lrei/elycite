@@ -1,7 +1,7 @@
 App.Collections.Classifiers = Backbone.Collection.extend({
   model: App.Models.Classifier,
 
-  url: "/ontogenapi/classifiers/",
+  url: App.API.root + "classifiers/",
   
   initialize: function(models, options) {
     if(options) {

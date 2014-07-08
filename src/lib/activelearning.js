@@ -114,7 +114,7 @@ exports.create = function(res, data, concept, store, query) {
   }
 
   // get the question
-  var question = getQuestionObj(AL, name, concept);
+  var question = getQuestionObj(AL, name, concept, store.name);
   // store AL
   addToTable(AL, name);
 

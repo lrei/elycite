@@ -45,6 +45,9 @@ App.Views.OntoLoadView = Backbone.View.extend({
     var ontoName = $('#onto-picker').val();
     var ontology = this.ontologies.findWhere({name: ontoName}).toJSON();
     $('#ontoLoad').button('loading');
+    if(typeof App.State.Documents !== 'undefined') { 
+      delete App.State.Documents;
+    }
     App.State.concepts = new App.Collections.Concepts([], {url: ontology.links.concepts});
     this.listenToOnce(App.State.concepts, "add", this.removeModal);
     App.State.concepts.fetch({error:this.loadError});

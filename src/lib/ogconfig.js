@@ -4,9 +4,9 @@
 // MIT License
 
 // base url: http://host:port/baseUrl/
-exports.baseUrl = "/ontogenapi/";
+exports.baseUrl = "/elyciteapi/";
 // qminer sandbox directory
-exports.sandbox = "./sandbox/ontogenapi/";
+exports.sandbox = "./sandbox/elyciteapi/";
 
 // databse constants
 exports.ontodb = "ontologies";

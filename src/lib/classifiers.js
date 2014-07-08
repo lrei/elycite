@@ -1,4 +1,4 @@
-// Ontogen - Active Learning Module
+// elycite - Active Learning Module
 
 // (c) 2013-2014 Luis Rei, Josef Stefan Institute
 // MIT License

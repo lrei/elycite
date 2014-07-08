@@ -288,7 +288,7 @@ exports.editConceptDocuments = function(res, docId, op, concept, store) {
   res.send(docs); 
 };
 
-//
+// Get keyword suggestions
 exports.getKeywordSuggestions = function(res, args, concept) {
    // docs
   var rSet = concept.docs; // concept documents
@@ -312,6 +312,7 @@ exports.getConceptSuggestionFromQuery = function(res, parentc,  store,
   var docStore = stores.getDocStore(store);
   var query = {}; query.$from = docStore.name;
   query[og.docsFieldName] = queryStr;
+  console.say(JSON.stringify(query));
 
   // doc ids for intercept
   var rSet = parentc.docs; // concept documents
@@ -322,7 +323,11 @@ exports.getConceptSuggestionFromQuery = function(res, parentc,  store,
 
   // perform search
   var result = qm.search(query); // search
- 
+  if(result === null) {
+    res.setStatusCode(500);
+    res.send();
+    return;
+  }
   // filter by concept docs
   result.filterById(docIds);
   var docs = [];

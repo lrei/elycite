@@ -1,4 +1,4 @@
-// Ontogen - Routing - Main Module
+// Elycite - Routing - Main Module
 
 // (c) 2013-2014 Luis Rei, Josef Stefan Institute
 // MIT License
@@ -19,27 +19,27 @@ var cls = require('classifiers.js');
 // * Generally, all document representations include a links property 
 // containing at least a links.self
 // * **PARAMS** refers to URL parameters such as collections and elements.
-// For example, in *http://example.com/<resources>/<item>/* both *<resources>*  
-// and *<item>* are `params` to be replaced accordingly.
+// For example, in *http://example.com/[resources]/[item]/* both *[resources]*  
+// and *[item]* are `params` to be replaced accordingly.
 // * **ARGS** refers to HTTP GET query strings. For example, in 
 // *http://example.com/<resources>/?q=hello&w=world* both *q* and *w* are
 // `args` that take the value *hello* and *world*, respectively.
 // * **JSONDATA** is the JSON content of a request which requires the 
 // HTTP "Content-Type" header to be set to "application/json".
  
-// Misc
-// -----
-// **URL:** /languageoptions/
+// Options
+// --------------
+// #### /languageoptions/
 //
 // **Method:** GET
 //
-// **DESCRIPTION:** Get Language Options
+// **Description:** Get Language Options
 //
 // **Returns:** Options for stemmers and stopword lists
 //
 //    { stemmer: ["none", "porter"], stopwords: ["none", "en8", ...] }
 http.onRequest("languageoptions", "GET", function(req, res) {
-  console.say("OntoGen API - Language Options");
+  console.say("elycite API - Language Options");
 
   var LangOpts = analytics.getLanguageOptions();
   res.send(LangOpts);
@@ -48,29 +48,31 @@ http.onRequest("languageoptions", "GET", function(req, res) {
 // Stores
 // ------
 
-// **URL:** /stores/ 
+// #### /stores/ 
 //
 // **METHOD:** GET
 //
-// **DESCRIPTION:** Get List of available Data (Document) Stores
+// **Description:** Get List of available Data (Document) Stores
 //
 // **Returns:** A list of qminer store definitions
 http.onRequest("stores", "GET", function(req, res) {
-  console.say("OntoGen API - GET Stores");
+  console.say("elycite API - GET Stores");
   stores.listStores(res);
 });
 
-// **URL:** /stores/
-//
 // **METHOD:** POST
 //
-// **DESCRIPTION:** Create a data (document) store with records
+// **Description:** Create a data (document) store with records
 //
 // **JSON DATA:**
-//
-//    {storeName: "exampleName", records: [{RecVal1}, ...]} 
+//<pre><code>
+//  {
+//    storeName: "exampleName",
+//    records: [{RecVal1}, ...]
+//  }
+//</code></pre>
 http.onRequest("stores/", "POST", function(req, res) {
-  console.say("OntoGen API - POST Stores");
+  console.say("elycite API - POST Stores");
   var data = restf.requireJSON(req, res, "storeName", "records");
   if(data === null) { return; }
 
@@ -79,7 +81,7 @@ http.onRequest("stores/", "POST", function(req, res) {
 
 // Get a single store definition by name @TODO: NOT IMPLEMENTED
 http.onRequest("stores/<store>", "GET", function(req, res) {
-  console.say("OntoGen API - GET Stores");
+  console.say("elycite API - GET Stores");
   res.setStatusCode(501);
   res.send();
 });
@@ -87,7 +89,6 @@ http.onRequest("stores/<store>", "GET", function(req, res) {
 // Ontologies
 // -----------
 // Example `ontology` document (JSON representation):
-//
 //<pre><code>
 //  {
 //      $id: 3,
@@ -96,35 +97,37 @@ http.onRequest("stores/<store>", "GET", function(req, res) {
 //      classifierStore: "textmining_cls",
 //      isDeleted: false,
 //      links: {
-//        self: "/ontogenapi/ontologies/textmining/",
-//        concepts: "/ontogenapi/ontologies/textmining/concepts/"
+//        self: "/elyciteapi/ontologies/textmining/",
+//        concepts: "/elyciteapi/ontologies/textmining/concepts/"
 //      }
 //    }
 //</code></pre>
 
-// **URL:** /ontologies/
+// #### /ontologies/
 //
 // **METHOD:** GET
 //
-// **DESCRIPTION:** Get List of Existing Ontologies
+// **Description:** Get List of Existing Ontologies
 //
 // **Returns:** list of `ontology` documents
 //
 //    [OntologyDocument1, OntologyDocument2, ...]
 http.onRequest("ontologies", "GET", function(req, res) {
-  console.say("OntoGen API - GET Existing Ontologies");
+  console.say("elycite API - GET Existing Ontologies");
   stores.listOntologies(res);
 });
 
-// **URL:** /ontologies/
-//
 // **METHOD:** POST
 //
-// **DESCRIPTION:** Create a new ontology
+// **Description:** Create a new ontology
 //
 // **JSONDATA:**
-//
-//  {ontologyName: "new_ontology", dataStore:"news_data"}
+//<pre><code>
+//  {
+//    ontologyName: "new_ontology", 
+//    dataStore:"news_data"
+//  }
+//</code></pre>
 //
 // **Returns:** the `ontology`
 //
@@ -132,28 +135,28 @@ http.onRequest("ontologies", "GET", function(req, res) {
 //<pre><code>
 //    curl -H "Content-Type: application/json" -d \
 //    '{"ontologyName":"textmining","dataStore":"news"}' \
-//    http://localhost:8080/ontogenapi/ontologies
+//    http://localhost:8080/elyciteapi/ontologies
 //</code></pre>
 http.onRequest("ontologies", "POST", function(req, res) {
-  console.say("OntoGen API - Create Ontology: ");
+  console.say("elycite API - Create Ontology: ");
   var data = restf.requireJSON(req, res, "ontologyName", "dataStore");
   if(data === null) { return; }
   stores.createOntology(res, data);
 });
 
-// **URL:** /ontologies/<ontology>/
+// #### /ontologies/[ontology]/
 //
 // **METHOD:** GET
 //
-// **DESCRIPTION:** Read ontology definition 
+// **Description:** Read ontology definition 
 //
 // **PARAMS:**
 //
-//  * *<ontology>* - the ontology name
+//  * *ontology* - the ontology name
 //
 // **Returns:** the `ontology` JSON representation. See above.
 http.onRequest("ontologies/<ontology>/", "GET", function (req, res) {
-  console.say("OntoGen API - Concept ontology def");
+  console.say("elycite API - Concept ontology def");
   var params = restf.requireParams(req, res, "ontology");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -168,15 +171,15 @@ http.onRequest("ontologies/<ontology>/", "GET", function (req, res) {
 // It includes all fields in the data (qminer( record. 
 // Text fields can optionally be summarized (truncated).
 
-// **URL:** /ontologies/<ontology>/documents/
+// #### /ontologies/[ontology]/documents/
 //
 // **METHOD:** GET
 //
-// **DESCRIPTION:** Get All Documents - Summaries only by default
+// **Description:** Get All Documents - Summaries only by default
 //
 // **PARAMS:**
 //
-//  * *<ontology>* - the ontology name
+//  * *ontology* - the ontology name
 //
 // **ARGS:**
 // 
@@ -189,10 +192,10 @@ http.onRequest("ontologies/<ontology>/", "GET", function (req, res) {
 // **Example:** 
 //<pre><code>
 //  curl -X GET \
-//  "http://localhost:8080/ontogenapi/ontologies/test/documents/?page=3&per_page=2&summarize=true?"
+//  "http://localhost:8080/elyciteapi/ontologies/test/documents/?page=3&per_page=2&summarize=true?"
 //</code></pre>
 http.onRequest("ontologies/<ontology>/documents/", "GET", function (req, res) {
-  console.say("OntoGen API - Document GET ALL (summaries)");
+  console.say("elycite API - Document GET ALL (summaries)");
   var params = restf.requireParams(req, res, "ontology");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -200,21 +203,21 @@ http.onRequest("ontologies/<ontology>/documents/", "GET", function (req, res) {
   documents.getDocuments(req, res, store);
 });
 
-// **URL:** /ontologies/<ontology>/documents/<did>/
+// #### /ontologies/[ontology]/documents/[did]/
 //
 // **METHOD:** GET
 //
-// **DESCRIPTION:** Read Document
+// **Description:** Read Document
 //
 // **PARAMS:**
 //
-//  * *<ontology>* - the ontology name
-//  * *<did>* - record id of document to get
+//  * *ontology* - the ontology name
+//  * *did* - record id of document to get
 //
 // **RETURNS:** a single `document`
 http.onRequest("ontologies/<ontology>/documents/<did>/", "GET", 
                function (req, res) {
-  console.say("OntoGen API - Document <did> GET");
+  console.say("elycite API - Document <did> GET");
   var params = restf.requireParams(req, res, "ontology", "did");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -239,21 +242,21 @@ http.onRequest("ontologies/<ontology>/documents/<did>/", "GET",
 //    parentId: -1,
 //    ontology: "textmining",
 //    links: {
-//              self: "/ontogenapi/ontologies/textmining/concepts/0/",
-//              ontology: "/ontogenapi/ontologies/textmining/"
+//              self: "/elyciteapi/ontologies/textmining/concepts/0/",
+//              ontology: "/elyciteapi/ontologies/textmining/"
 //           }
 //  }
 //</code></pre>
 
-// **URL:** /ontologies/<ontology>/concepts/
+// #### /ontologies/[ontology]/concepts/
 //
 // **METHOD:** GET
 //
-// **DESCRIPTION:** Get all `concept`s (see above)
+// **Description:** Get all `concept`s (see above)
 // 
 // **PARAMS:**
 //
-//  * *<ontology>* - the ontology name
+//  * *ontology* - the ontology name
 //
 // **ARGS:**
 //
@@ -261,7 +264,7 @@ http.onRequest("ontologies/<ontology>/documents/<did>/", "GET",
 //
 // **RETURNS:** a list of `concept`s
 http.onRequest("ontologies/<ontology>/concepts/", "GET", function (req, res) {
-  console.say("OntoGen API - Concept GET ALL");
+  console.say("elycite API - Concept GET ALL");
   var params = restf.requireParams(req, res, "ontology");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -270,42 +273,14 @@ http.onRequest("ontologies/<ontology>/concepts/", "GET", function (req, res) {
   concepts.getConcepts(res, store, params.ontology);
 });
 
-// **URL:** /ontologies/<ontology>/concepts/<cid>/
-//
-// **METHOD:** GET
-//
-// **DESCRIPTION:** Get a single `concept`
-//
-// **PARAMS:**
-//
-//  * *<ontology>* - the ontology name
-//  * *<cid>* - the record id of the `concept` to get
-//
-// **RETURNS:** the `concept`
-http.onRequest("ontologies/<ontology>/concepts/<cid>/", "GET",
-               function (req, res) {
-  console.say("OntoGen API - Concept GET");
-  var params = restf.requireParams(req, res, "ontology", "cid");
-  if(params === null) { return; }
-  var store = stores.requireExists(res, params.ontology);
-  if(store === null) { return; }
-  var conceptId = restf.requireInt(res, "cid", params.cid);
-  if(conceptId === null) { return; }
-  var concept = stores.requireRecord(res, store, "concept", conceptId);
-  if(concept === null) { return; }
-
-  concepts.getConcept(res, store, concept);
-});
-
-// **URL:** /ontologies/<ontology>/concepts/
 //
 // **METHOD:** POST
 //
-// **DESCRIPTION:** Create a `concept`
+// **Description:** Create a `concept`
 // 
 // **PARAMS:**
 //
-//  * *<ontology>* - the ontology name
+//  * *ontology* - the ontology name
 //
 // **JSONDATA:**  A JSON representation of non-calculated `concept` properties.
 //
@@ -319,11 +294,11 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/", "GET",
 //<pre><code>
 //  curl -H "Content-Type: application/json" -d \
 //  '{"name":"testc", "parentId":0, "docs":[0,1,3]}' \
-//  http://localhost:8080/ontogenapi/ontologies/textmining/concepts/
+//  http://localhost:8080/elyciteapi/ontologies/textmining/concepts/
 //</code></pre>
 http.onRequest("ontologies/<ontology>/concepts/", "POST", 
                function (req, res) {
-  console.say("OntoGen API - Concept POST");
+  console.say("elycite API - Concept POST");
   var params = restf.requireParams(req, res, "ontology");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -334,16 +309,42 @@ http.onRequest("ontologies/<ontology>/concepts/", "POST",
   concepts.createConcept(res, data, store, params.ontology);
 });
 
-// **URL:** /ontologies/<ontology>/concepts/<cid>/
+// #### /ontologies/[ontology]/concepts/[cid]/
 //
-// **METHOD:** PUT
+// **METHOD:** GET
 //
-// **DESCRIPTION:** Edit a `concept`
+// **Description:** Get a single `concept`
 //
 // **PARAMS:**
 //
-//  * *<ontology>* - the ontology name
-//  * *<cid>* - the record id of the concept do edit
+//  * *ontology* - the ontology name
+//  * *cid* - the record id of the `concept` to get
+//
+// **RETURNS:** the `concept`
+http.onRequest("ontologies/<ontology>/concepts/<cid>/", "GET",
+               function (req, res) {
+  console.say("elycite API - Concept GET");
+  var params = restf.requireParams(req, res, "ontology", "cid");
+  if(params === null) { return; }
+  var store = stores.requireExists(res, params.ontology);
+  if(store === null) { return; }
+  var conceptId = restf.requireInt(res, "cid", params.cid);
+  if(conceptId === null) { return; }
+  var concept = stores.requireRecord(res, store, "concept", conceptId);
+  if(concept === null) { return; }
+
+  concepts.getConcept(res, store, concept);
+});
+
+//
+// **METHOD:** PUT
+//
+// **Description:** Edit a `concept`
+//
+// **PARAMS:**
+//
+//  * *ontology* - the ontology name
+//  * *cid* - the record id of the concept do edit
 //
 //  **JSONDATA:**
 //
@@ -355,11 +356,11 @@ http.onRequest("ontologies/<ontology>/concepts/", "POST",
 // **EXAMPLE REQUEST:**
 //<pre><code>
 //  curl -X PUT -H "Content-Type: application/json" -d '{"name":"hello"}' \ 
-//  http://localhost:8080/ontogenapi/ontologies/textmining/concepts/1/
+//  http://localhost:8080/elyciteapi/ontologies/textmining/concepts/1/
 //</code></pre>
 http.onRequest("ontologies/<ontology>/concepts/<cid>/", "PUT", 
                function (req, res) {
-  console.say("OntoGen API - Concept edit PUT");
+  console.say("elycite API - Concept edit PUT");
   var params = restf.requireParams(req, res, "ontology", "cid");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -374,52 +375,24 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/", "PUT",
   concepts.editConcept(res, concept, data, store, params.ontology);
 });
 
-// **URL:** /ontologies/<ontology>/concepts/<cid>/subconcepts/
-//
-// **METHOD:** GET
-//
-// **DESCRIPTION:** get a list of `concept`s that are subsconcepts (children) 
-// of this `concept`
-//
-// **PARAMS:**
-//
-//  * *<ontology>* - the ontology name
-//  * *<cid>* - the record id of this concept
-//
-// **RETURNS:** an array containing `concept`s that are the `concept`'s 
-// subconcepts (children)
-http.onRequest("ontologies/<ontology>/concepts/<cid>/subconcepts/", "GET",
-               function (req, res) {
-  console.say("OntoGen API - GET SUB CONCETPS");
-  var params = restf.requireParams(req, res, "ontology", "cid");
-  if(params === null) { return; }
-  var store = stores.requireExists(res, params.ontology);
-  if(store === null) { return; }
-  var conceptId = restf.requireInt(res, "cid", params.cid);
-  if(conceptId === null) { return; }
-  var concept = stores.requireRecord(res, store, "concept", conceptId);
-  if(concept === null) { return; }
-
-  concepts.getSubConcepts(res, concept, store, params.ontology);
-});
-
-// **URL:** /ontologies/<ontology>/concepts/<cid>/
 //
 // **METHOD:** DELETE
 //
-// **DESCRIPTION:** Delete this `concept` including subconcepts (recursively).
+// **Description:** Delete this `concept` including subconcepts (recursively).
 //
 // **PARAMS:**
 //
-//  * *<ontology>* - the ontology name
-//  * *<cid>* - the record id of the concept to delete
+//  * *ontology* - the ontology name
+//  * *cid* - the record id of the concept to delete
 //
 // **EXAMPLE REQUEST:**
+//<pre><code>
 //  curl -X DELETE \
-//  http://localhost:8080/ontogenapi/ontologies/textmining/concepts/1/
+//  http://localhost:8080/elyciteapi/ontologies/textmining/concepts/1/
+//</code></pre>
 http.onRequest("ontologies/<ontology>/concepts/<cid>/", "DELETE",
                function (req, res) {
-  console.say("OntoGen API - Concept DELETE");
+  console.say("elycite API - Concept DELETE");
   var params = restf.requireParams(req, res, "ontology", "cid");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -432,22 +405,52 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/", "DELETE",
   concepts.deleteConcept(res, concept, store);
 });
 
-// **URL:** /ontologies/<ontology>/concepts/<cid>/docs/
+// #### /ontologies/<ontology>/concepts/[cid]/subconcepts/
 //
 // **METHOD:** GET
 //
-// **DESCRIPTION:** Get a list of `document` record ids that are in the
+// **Description:** get a list of `concept`s that are subsconcepts (children) 
+// of this `concept`
+//
+// **PARAMS:**
+//
+//
+//  * *ontology* - the ontology name
+//  * *cid* - the record id of this concept
+//
+// **RETURNS:** an array containing `concept`s that are the `concept`'s 
+// subconcepts (children)
+http.onRequest("ontologies/<ontology>/concepts/<cid>/subconcepts/", "GET",
+               function (req, res) {
+  console.say("elycite API - GET SUB CONCETPS");
+  var params = restf.requireParams(req, res, "ontology", "cid");
+  if(params === null) { return; }
+  var store = stores.requireExists(res, params.ontology);
+  if(store === null) { return; }
+  var conceptId = restf.requireInt(res, "cid", params.cid);
+  if(conceptId === null) { return; }
+  var concept = stores.requireRecord(res, store, "concept", conceptId);
+  if(concept === null) { return; }
+
+  concepts.getSubConcepts(res, concept, store, params.ontology);
+});
+
+// #### /ontologies/[ontology]/concepts/[cid]/docs/
+//
+// **METHOD:** GET
+//
+// **Description:** Get a list of `document` record ids that are in the
 // `concept`
 //
 // **PARAMS:**
 //
-//  * *<ontology>* - the ontology name
-//  * *<cid>* - the record id of the concept
+//  * *ontology* - the ontology name
+//  * *cid* - the record id of the concept
 //
 // **RETURNS:** an array of `document` record ids (ints)
 http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET", 
                function (req, res) {
-  console.say("OntoGen API - Concept GET docs");
+  console.say("elycite API - Concept GET docs");
   var params = restf.requireParams(req, res, "ontology", "cid");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -460,7 +463,6 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET",
   concepts.getConceptDocuments(req, res, concept, store);
 });
 
-// **URL:**  /ontologies/<ontology>/concepts/<cid>/docs/
 //
 // **METHOD:** PATCH
 //
@@ -469,8 +471,8 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET",
 //
 // **PARAMS:**
 //
-//  * *<ontology>* - the ontology name
-//  * *<cid>* - the record id of the concept
+//  * *ontology* - the ontology name
+//  * *cid* - the record id of the concept
 //
 // **JSONDATA:**
 //
@@ -484,11 +486,11 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET",
 //<pre><code>
 //  curl -X PATCH -H "Content-Type: application/json" \
 //  -d '{"docId":20, "operation":"add"}' \
-//  http://localhost:8080/ontogenapi/ontologies/demo/concepts/1/docs/
+//  http://localhost:8080/elyciteapi/ontologies/demo/concepts/1/docs/
 //</code></pre>
 http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "PATCH",
                function (req, res) {
-  console.say("OntoGen API - Concept Edit doc list");
+  console.say("elycite API - Concept Edit doc list");
   var params = restf.requireParams(req, res, "ontology", "cid");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -507,11 +509,16 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "PATCH",
   concepts.editConceptDocuments(res, docId, data.operation, concept, store);
 });
 
-// **URL:** /ontologies/<ontology>/concepts/<cid>/suggestkeywords/
+// #### /ontologies/[ontology]/concepts/[cid]/suggestkeywords/
 //
 // **METHOD:** GET
 //
-// **DESCRIPTION:** Get keyword suggestions for a `concept`
+// **Description:** Get keyword suggestions for a `concept`
+//
+// **PARAMS:**
+//
+//  * *ontology* - the ontology name
+//  * *cid* - the record id of the concept
 //
 // **ARGS:**
 //
@@ -520,11 +527,13 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "PATCH",
 // **RETURNS:** a JSON object with a `keywords` string property consisting of 
 // the suggested keywords separated by a comma an a space. Example:
 // <pre><code>
-// {"keywords":"services, bank, business, management, markets"}
+//  {
+//    "keywords":"services, bank, business, management, markets"
+//  }
 //</code></pre>
 http.onRequest("ontologies/<ontology>/concepts/<cid>/suggestkeywords/", "GET", 
                function (req, res) {
-  console.say("OntoGen API - Concept/suggeskeywords");
+  console.say("elycite API - Concept/suggeskeywords");
   var params = restf.requireParams(req, res, "ontology", "cid");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -540,12 +549,34 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/suggestkeywords/", "GET",
   concepts.getKeywordSuggestions(res, args, concept);
 });
 
-// Suggest a subConcept based on search
-// args: query
-// Returns a subConcept suggestion.
+// #### /ontologies/[ontology]/concepts/[cid]/search/
+//
+// **METHOD:** GET
+//
+// **Description:** Suggest a subconcept based on search
+//
+// **PARAMS:**
+//
+//  * *ontology* - the ontology name
+//  * *cid* - the record id of the concept
+//
+// **ARGS:**
+//
+//  * *query* (string) - the query used to create the suggestion
+//
+// **RETURNS:** a concept suggestion (`concept` without id or generated
+// properties). Example:
+//<pre><code>
+//  {
+//    name: "software",
+//    keywords: "services, solutions, systems, management, technology, network",
+//    parentId: 0,
+//    docs: [3, 5, ...]
+//  }
+//</code></pre>
 http.onRequest("ontologies/<ontology>/concepts/<cid>/search/", "GET", 
                function (req, res) {
-  console.say("OntoGen API - Concept/Search");
+  console.say("elycite API - Concept/Search");
   var params = restf.requireParams(req, res, "ontology", "cid");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -562,10 +593,31 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/search/", "GET",
   concepts.getConceptSuggestionFromQuery(res, concept, store, args.query);
 });
 
-// Concept - Suggest sub-concepts
+// #### /ontologies/[ontology]/concepts/[cid]/suggest/
+//
+// **METHOD:** GET
+//
+// **Description:** Suggest subconcepts (clustering based)
+//
+// **PARAMS:**
+//
+//  * *ontology* - the ontology name
+//  * *cid* - the record id of the concept
+//
+// **ARGS:**
+//
+//  * *stemmer* (string, optional) - "none", "porter" see /languageoptions/
+//  * *stopwords* (string, optional) - see /languageoptions/
+//  * *numSuggest* (int, optional) - number of `concept` suggestions
+//  * *numIter* (int, optional) - number of iterations of the clustering
+//  algorithm
+//  * *numKeywords* (int, optional) - number of keywords per concept
+//
+// **RETURNS:** an array of concept suggestions (`concept`s without id or 
+// generated properties). See the return of /search/ above.
 http.onRequest("ontologies/<ontology>/concepts/<cid>/suggest/", "GET",
                function (req, res) {
-  console.say("OntoGen API - Concept GET suggestions");
+  console.say("elycite API - Concept GET suggestions");
   var params = restf.requireParams(req, res, "ontology", "cid");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -582,11 +634,53 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/suggest/", "GET",
 
 // Active Learning
 // ---------------
+// While there is no actual "active learner document", there is a `question`
+// document where the `id` attribute refers to the AL and the questionId is the 
+// id of the data associated with the question:
+//<pre><code>
+//  {
+//    "questionId":128,
+//    "id":"medical_1936769238",
+//    "links":{
+//      "self":"/elyciteapi/ontologies/undefined/concepts/0/al/medical_1936769238/"
+//    },
+//    "text":"Develops and manages medical facilities...",
+//    "mode":false
+//  }
+//</pre></code>
+//  If mode is true, the `question` also includes all necessary information to
+//  create a new concept
+//<pre><code>
+//  {
+//    ...
+//    "mode":true,
+//    "count":518,
+//    "docs":[75,...],
+//    "name": "medical, services, products",
+//    "keywords":, "medical, ..."
+//  }
+//</pre></code>
 
-// AL - Create
+// #### /ontologies/[ontology]/concepts/[cid]/al/
+//
+// **METHOD:** POST
+//
+// **Description:** Create Active Learner for a given query
+//
+// **PARAMS:**
+//
+//  * *ontology* - the ontology name
+//  * *cid* - the record id of the concept
+//
+// **JSONDATA:**
+//
+//  * *query* (string) - query to search for documents (seed positive
+//  concepts).
+//
+// **RETURNS:** An initial `question`.
 http.onRequest("ontologies/<ontology>/concepts/<cid>/al/", "POST",
                function (req, res) {
-  console.say("OntoGen API - AL Create - POST");
+  console.say("elycite API - AL Create - POST");
   var params = restf.requireParams(req, res, "ontology", "cid");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -603,10 +697,22 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/", "POST",
   al.create(res, data, concept, store, query);
 });
 
-// AL - Get Question
+// #### /ontologies/[ontology]/concepts/[cid]/al/[alid]/
+//
+// **METHOD:** GET
+//
+// **Description:** Get a question from an active learner.
+//
+// **PARAMS:**
+//
+//  * *ontology* - the ontology name
+//  * *cid* - the record id of the concept
+//  * *alid* - the active learner id
+//
+// **RETURNS:** A `question`.
 http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "GET",
                function (req, res) {
-  console.say("OntoGen API - AL/name/ GET");
+  console.say("elycite API - AL/name/ GET");
   var params = restf.requireParams(req, res, "ontology", "cid", "alid");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -623,10 +729,25 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "GET",
   al.getQuestion(res, name, concept, params.ontology);
 });
 
-// AL - Answer Question
+// **METHOD:** PATCH
+//
+// **Description:** Answer a question from an active learner.
+//
+// **PARAMS:**
+//
+//  * *ontology* - the ontology name
+//  * *cid* - the record id of the concept
+//  * *alid* - the active learner id
+// 
+// **JSONDATA:**
+//
+//  * *did* - the questionId of the question being answered
+//  * *answer* - 0 or 1 (integer) = no or yes, respectively
+//
+// **RETURNS:** The next `question`.
 http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "PATCH",
                function (req, res) {
-  console.say("OntoGen API - AL/name/ PATCH");
+  console.say("elycite API - AL/name/ PATCH");
   var params = restf.requireParams(req, res, "ontology", "cid", "alid");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -644,10 +765,18 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "PATCH",
   al.answerQuestion(res, name, concept, params.ontology, did, data.answer);
 });
 
-// AL - Cancel active learnerning
+// **METHOD:** DELETE
+//
+// **Description:** Cancel (DELETE) active learner.
+//
+// **PARAMS:**
+//
+//  * *ontology* - the ontology name
+//  * *cid* - the record id of the concept
+//  * *alid* - the active learner id
 http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "DELETE",
                function (req, res) {
-  console.say("OntoGen API - AL/name/ DELETE");
+  console.say("elycite API - AL/name/ DELETE");
   var params = restf.requireParams(req, res, "ontology", "cid", "alid");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -663,10 +792,20 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "DELETE",
   al.cancel(res, name);
 });
 
-// AL - Get Concept: finish active learning and create the concept
+// **METHOD:** POST
+//
+// **Description:** Get Concept: finish active learning and create the concept
+//
+// **PARAMS:**
+//
+//  * *ontology* - the ontology name
+//  * *cid* - the record id of the concept
+//  * *alid* - the active learner id
+//
+// **RETURNS:** The `concept` created.
 http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", 
                "POST", function (req, res) {
-  console.say("OntoGen API - AL/name/ POST");
+  console.say("elycite API - AL/name/ POST");
   var params = restf.requireParams(req, res, "ontology", "cid", "alid");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -684,11 +823,53 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/",
 
 // Classifiers (SVM)
 // -----------------
+//<pre><code>
+//  {
+//    "id":"classifier_name",
+//    "links":{
+//      "self":"/elyciteapi/ontologies/blahblah/classifiers/classifier_name/",
+//      "ontology":"/elyciteapi/ontologies/blahblah/"
+//    }
+//  }
+//</pre></code>
+// #### /ontologies/[ontology]/classifiers/
+// **METHOD:** POST
+//
+// **Description:** List existing classifiers (models).
+//
+// **PARAMS:**
+//
+//  * *ontology* - the ontology name
+//
+// **RETURNS:** A list of `classifier`s.
+http.onRequest("ontologies/<ontology>/classifiers/", "GET",
+               function (req, res) {
+  console.say("elycite API - Classifiers  Get");
+  var params = restf.requireParams(req, res, "ontology");
+  if(params === null) { return; }
+  var store = stores.requireExists(res, params.ontology);
+  if(store === null) { return; }
 
-// Create classifier for Concept
+  cls.list(res, store);
+});
+
+// **METHOD:** POST
+//
+// **Description:** Create classifier for a Concept.
+//
+// **PARAMS:**
+//
+//  * *ontology* - the ontology name
+//
+// **JSONDATA:**
+//
+//  * *cid* - the record id of the concept
+//  * *name* - name for the classifier (mid)
+//
+// **RETURNS:** The `classifier` created.
 http.onRequest("ontologies/<ontology>/classifiers/", "POST", 
                function (req, res) {
-  console.say("OntoGen API - Concept Classifier - POST");
+  console.say("elycite API - Concept Classifier - POST");
   var params = restf.requireParams(req, res, "ontology");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -704,26 +885,28 @@ http.onRequest("ontologies/<ontology>/classifiers/", "POST",
   cls.create(res, data, concept, store, params.ontology);
 });
 
-// List existing classifiers (models)
-http.onRequest("ontologies/<ontology>/classifiers/", "GET",
-               function (req, res) {
-  console.say("OntoGen API - Classifiers  Get");
-  var params = restf.requireParams(req, res, "ontology");
-  if(params === null) { return; }
-  var store = stores.requireExists(res, params.ontology);
-  if(store === null) { return; }
-
-  cls.list(res, store);
-});
-
-// Classify array of documents
+// #### /ontologies/[ontology]/classifiers/[mid]/
+//
+// **METHOD:** POST
+//
+// **Description:** Classify array of documents.
+//
+// **PARAMS:**
+//
+//  * *ontology* - the ontology name
+//  * *mid* - the classifier name (model id)
+//
+// **RETURNS:** An array of decision functions (negative or positive numbers).
+// 
 // Example:
-//  curl -X POST -H "Content-Type: application/json" 
-//  -d '["this is about networks", "this is dog"]' 
-//  http://localhost:8080/ontogenapi/ontologies/worktest/classifiers/worktest_network/
+//<pre><code>
+//  curl -X POST -H "Content-Type: application/json" \
+//  -d '["this is about networks", "this is dog"]' \
+//  http://localhost:8080/elyciteapi/ontologies/worktest/classifiers/worktest_network/
+//</pre></code>
 http.onRequest("ontologies/<ontology>/classifiers/<mid>/", "POST", 
                function (req, res) {
-  console.say("OntoGen API - Classify with model POST");
+  console.say("elycite API - Classify with model POST");
   var params = restf.requireParams(req, res, "ontology", "mid");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -733,10 +916,18 @@ http.onRequest("ontologies/<ontology>/classifiers/<mid>/", "POST",
   cls.classify(res, params.mid, data, store);
 });
 
-// Delete a classifier (with ontology parameter)
+// **METHOD:** DELETE
+//
+// **Description:** Delete a classifier (with ontology parameter).
+//
+// **PARAMS:**
+//
+//  * *ontology* - the ontology name
+//  * *mid* - the classifier name (model id)
+// 
 http.onRequest("ontologies/<ontology>/classifiers/<mid>/", "DELETE",
                function (req, res) {
-  console.say("OntoGen API - DELETE Classifier");
+  console.say("elycite API - DELETE Classifier");
   var params = restf.requireParams(req, res, "mid");
   if(params === null) { return; }
   var mid = params.mid;
@@ -744,20 +935,22 @@ http.onRequest("ontologies/<ontology>/classifiers/<mid>/", "DELETE",
   res.send();
 });
 
-// Delete a classifier (without ontology parameter)
-http.onRequest("ontologies/classifiers/<mid>/", "DELETE", function (req, res) {
-  console.say("OntoGen API - DELETE Classifier");
-  var params = restf.requireParams(req, res, "mid");
-  if(params === null) { return; }
-  var mid = params.mid;
-  cls.deleteClassifier(mid);
-  res.send();
-});
-
-// Concept -  GET subsconcepts from classifier
+// #### /ontologies/[ontology]/classifiers/[mid]/
+//
+// **METHOD:** POST
+//
+// **Description:** Get (binary) subsconcepts from classifier.
+//
+// **PARAMS:**
+//
+//  * *ontology* - the ontology name
+//  * *cid* - the id of the concept from which the subconcepts will be created 
+//  * *mid* - the classifier name (model id)
+//
+// **RETURNS:** Array with positive and negative sub`concept`s. 
 http.onRequest("ontologies/<ontology>/concepts/<cid>/classify/<mid>/", "GET", 
                function (req, res) {
-  console.say("OntoGen API - GET SUB CONCETPS FROM CLASSIFIER");
+  console.say("elycite API - GET SUB CONCETPS FROM CLASSIFIER");
   var params = restf.requireParams(req, res, "ontology", "cid", "mid");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -775,8 +968,33 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/classify/<mid>/", "GET",
   cls.subConcepts(res, mid, threshold, concept, store);
 });
 
-// List existing classifiers (models) for ALL ontologies
+// #### /classifiers/
+//
+// **METHOD:** GET
+//
+// **Description:** List existing classifiers (models) for ALL ontologies
+//
+//
+// **RETURNS:** A list of `classifier`s. 
 http.onRequest("classifiers/", "GET", function (req, res) {
-  console.say("OntoGen API - Classifiers  Get ALL");
+  console.say("elycite API - Classifiers  Get ALL");
   cls.listAll(res);
+});
+
+// #### /classifiers/[mid]/
+//
+// **METHOD:** DELETE
+//
+// **Description:** Delete a classifier (without ontology parameter)
+//
+// **PARAMS:**
+//
+//  * *mid* - the classifier name (model id)
+http.onRequest("classifiers/<mid>/", "DELETE", function (req, res) {
+  console.say("elycite API - DELETE Classifier");
+  var params = restf.requireParams(req, res, "mid");
+  if(params === null) { return; }
+  var mid = params.mid;
+  cls.deleteClassifier(mid);
+  res.send();
 });
