@@ -1,0 +1,6 @@
+.slick-prev:before, .slick-next:before { font-family: "slick"; font-size: 20px; line-height: 1; color: black; opacity: 0.85; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+.screenshot-slider img {
+ border:none;
+ margin:0px;
+ padding: 0px;
+}

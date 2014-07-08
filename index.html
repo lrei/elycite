@@ -3,11 +3,13 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Ontogen by lrei</title>
+    <title>Elycite</title>
 
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
     <script src="javascripts/scale.fix.js"></script>
+    <link rel="stylesheet" type="text/css" href="stylesheets/slick.css"/>
+    <link rel="stylesheet" type="text/css" href="stylesheets/override.css"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -16,16 +18,17 @@
   <body>
     <div class="wrapper">
       <header>
-        <h1 class="header">Ontogen</h1>
+        <h1 class="header">Elycite</h1>
         <p class="header">A semi-automatic, collaborative, data exploration and organization tool and API.</p>
 
         <ul>
           <li class="download"><a class="buttons" href="https://github.com/lrei/elycite/zipball/master">Download ZIP</a></li>
           <li class="download"><a class="buttons" href="https://github.com/lrei/elycite/tarball/master">Download TAR</a></li>
           <li><a class="buttons github" href="https://github.com/lrei/elycite">View On GitHub</a></li>
+           <li><a class="header" href="https://github.com/qminer/qminer">QMiner On GitHub</a></li>
         </ul>
 
-        <p class="header">This project is maintained by <a class="header name" href="https://github.com/lrei">lrei</a></p>
+        <p class="header">This project is maintained by <a class="header name" href="http://luisrei.com">Luis Rei</a></p>
 
 
       </header>
@@ -39,10 +42,21 @@
 <p>Elycite is  semi-automatic, collaborative, data exploration and organization tool.
 The current version is focused on text data.</p>
 
-<p>elycite integrates machine learning and text mining algorithms into a
+<p>Elycite integrates machine learning and text mining algorithms into a
 simple user interface and a Client/Server architecture.</p>
 
-<p>Built on top of <a href="http://qminer.ijs.si">QMiner</a>.</p>
+<div class="screenshot-slider">
+  <div><img src="images/subconcepts_cluster.png" alt="Clustering" /></div>
+  <div><img src="images/simple_search.png" alt="Search" /></div>
+  <div><img src="images/al_1.png" alt="Active Learning" /></div>
+  <div><img src="images/al_3.png" alt="Active Learning" /></div>
+  <div><img src="images/cls_1.png" alt="Create a classifier" /></div>
+  <div><img src="images/cls_2.png" alt="Use a classifier" /></div>
+  <div><img src="images/cls_3.png" alt="Use a classifier" /></div>
+  <div><img src="images/documents.png" alt="View and select documents" /></div>
+</div>
+
+<p>Built with <a href="http://qminer.ijs.si">QMiner</a>.</p>
 
 <p>Based on <a href="http://ontogen.ijs.si">ontogen</a> - a semi-automatic ontology editor by
 Blaz Fortuna, Marko Grobelnik and Dunja Mladenic.</p>
@@ -82,6 +96,12 @@ Marko Grobelnik</p>
 <p><a href="http://ailab.ijs.si">AI Lab</a>, Josef Stefan Institute</p>
 
 <h2>
+<a name="documentation" class="anchor" href="#documentation"><span class="octicon octicon-link"></span></a>Documentation</h2>
+
+<p><a href="https://github.com/lrei/elycite/blob/master/INSTALL.md">Install</a></p>
+<p><a href="docs/elyciteapi.html">API Documentation</a></p>
+
+<h2>
 <a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
 
 <p>(C) 2013-2014 Luis Rei, Josef Stefan Institute</p>
@@ -104,11 +124,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.</p>
       </section>
+      <!--
       <footer>
         <p><small>Hosted on <a href="http://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
       </footer>
+      -->
     </div>
     <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-		
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script type="text/javascript" src="javascripts/slick.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function(){
+            $('.screenshot-slider').slick({
+                dots: true,
+                autoplay: true,
+                fade: true,
+                autoplaySpeed: 3000,
+                fade: true,
+            });
+        });
+    </script>
   </body>
 </html>
