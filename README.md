@@ -14,30 +14,30 @@ Based on [ontogen](http://ontogen.ijs.si) - a semi-automatic ontology editor by
 Blaz Fortuna, Marko Grobelnik and Dunja Mladenic.
 
 
-The main features of the systems include:
+The main features include:
 
-    * Unsupervised and supervised methods for concept suggestion
-    * Data visualizations
-    * Machine Learning As A Service (MLAAS) - both data and methods are  
-      available to other applications through via an API (RESTful).
+* Unsupervised and supervised methods for concept suggestion
+* Data visualizations
+* Machine Learning As A Service (MLAAS) - both data and methods are available 
+  to other applications through via an API (RESTful).
 
 
 Current automatic methods include:
     
-    * Support Vector Machine (SVM) for classification
-    * Active Learning with SVMs
-    * K-means++ clustering
-    * Keyword extracion using K-means and TF/IDF
+* Support Vector Machine (SVM) for classification
+* Active Learning with SVMs
+* K-means++ clustering
+* Keyword extracion using K-means and TF/IDF
 
 
 ## Roadmap Highlights
 
-    * Multi-field methods with non textual data (coming soon)
-    * Allow training supervised classifiers, possibly from different stores
-      display pretty confusion matrix (coming soon)
-    * Pre-built classifiers for common tasks
-    * Integrated data collection
-    * Time Series data and associated methods
+* Multi-field methods with non textual data (coming soon)
+* Allow training supervised classifiers, possibly from different stores
+  display pretty confusion matrix (coming soon)
+* Pre-built classifiers for common tasks
+* Integrated data collection
+* Time Series data and associated methods
 
 ## Authors
 [Luis Rei](http://luisrei.com)
