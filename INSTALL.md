@@ -19,6 +19,6 @@
       }
     }
 
-7. Start qminer (typically by runing the command `qm start &`
-8. By default, assuming you are using the same machine, 
+7. Create the base/index with `qm create` and start qminer with `qm start &`
+8. Assuming you are using the same computer, 
 open [http://localhost:8080/elycite/](http://localhost:8080/elycite/) in your browser

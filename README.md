@@ -1,18 +1,18 @@
 # Elycite
 
-## Description
-Elycite is  semi-automatic, collaborative, data exploration and organization tool.
+[Elycite](http://lrei.github.io/elycite/) is  semi-automatic, collaborative, 
+data exploration and organization tool.
 The current version is focused on text data.
 
-elycite integrates machine learning and text mining algorithms into a
+Elycite integrates machine learning and text mining algorithms into a
 simple user interface and a Client/Server architecture.
 
-Built on top of [QMiner](http://qminer.ijs.si).
-
+Built with [QMiner](http://qminer.ijs.si).
 
 Based on [ontogen](http://ontogen.ijs.si) - a semi-automatic ontology editor by
 Blaz Fortuna, Marko Grobelnik and Dunja Mladenic.
 
+## Features
 
 The main features include:
 
