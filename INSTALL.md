@@ -1,4 +1,5 @@
-1. Install [qminer](http://qminer.ijs.si), [github](https://github.com/qminer/qminer)
+1. Install [qminer](http://qminer.ijs.si), [github](https://github.com/qminer/qminer).
+[Release 0.6](https://github.com/qminer/qminer/releases/tag/v0.6.0) was tested but should work with latest version.
 2. Download elycite
     * Option a) [zip](https://github.com/lrei/elycite/archive/master.zip)
     * Option b) git clone git@github.com:lrei/elycite.git
