@@ -5,7 +5,7 @@
     * Option b) git clone git@github.com:lrei/elycite.git
 3. Unzip if necessary, move the contents of ontogen to your qminer directory (QMINER_HOME)
 4. In your qminer directory you should have a folder named `elycite` and a folder named `src`
-5. Verify that inside the `src` directory there is a `lib` directory and an `elicyte.js` file.
+5. Verify that inside the `src` directory there is a `lib` directory and an `elicyteapi.js` file.
 6. Add a `wwwroot` entry to your qm.conf file. It should look something like this:
 
     {
