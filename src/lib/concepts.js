@@ -296,8 +296,11 @@ exports.getKeywordSuggestions = function(res, args, concept) {
   // Aggregate Keywords
   var numKeywords = restf.optionalInt(args, "numKeywords",
                                       og.DEFAULT_NUM_KEYWORDS);
+                                      
   var get_keywords = [{name: 'keywords', type: 'keywords', 
-                       field: og.docsFieldName}];
+                       field: og.docsFieldName,
+                       stopwords: concept.stopwords}];
+                       
   var keywords = rSet.aggr(get_keywords[0]);
   var skeywords = keywords.keywords.map(function(k) { return k.keyword; });
   var rkey = {keywords: skeywords.slice(0, numKeywords).join(", ")};
@@ -341,7 +344,9 @@ exports.getConceptSuggestionFromQuery = function(res, parentc,  store,
   }
   // Aggregate Keywords
   var get_keywords = [{name: 'keywords', type: 'keywords', 
-                       field: og.docsFieldName}];
+                       field: og.docsFieldName,
+                       stopwords: concept.stopwords}];
+                       
   var keywords = result.aggr(get_keywords[0]);
 
   // Create suggestion object
@@ -381,7 +386,6 @@ exports.getConceptSuggestionsByClustering = function(req, res, concept, store) {
   var ftrSpace = analytics.newFeatureSpace([{type: 'text',
                                              source: docStore.name,
                                              field: og.docsFieldName,
-                                             stemmer: {type: stemmer},
                                              stopwords: stopwords,
                                              normalize: true}]);
   ftrSpace.updateRecords(conceptDocs);
@@ -391,8 +395,9 @@ exports.getConceptSuggestionsByClustering = function(req, res, concept, store) {
   var clusters = analytics.trainKMeans(ftrSpace, conceptDocs , KMeansParams);
 
   // Get Words
-  get_keywords = [{name: 'keywords', type: 'keywords',
-                   field: og.docsFieldName}];
+  get_keywords = [{name: 'keywords', type: 'keywords', 
+                   field: og.docsFieldName,
+                   stopwords: concept.stopwords}];
 
   for(ii = 0; ii < clusters.length; ii++) {
     docids = [];

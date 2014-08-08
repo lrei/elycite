@@ -19,19 +19,33 @@ App.Views.OntoNewView = Backbone.View.extend({
     }
     this.stores = new App.Collections.Stores();
     this.stores.fetch();
-    this.listenTo(this.stores, "add", this.render);
+    this.listenTo(this.stores, "sync", this.render);
   },
  
   render: function() {
     console.log("Views.OntoNewView.render");
     var stores = this.stores.toJSON();
-    var lopts = App.State.LanguageOptions;
-    var fields = stores[0].fields;
-    $(this.el).appendTo('#main').html( this.template(
-          {stores:stores, fields:fields, langopts:lopts}
-    ));
-    $(this.el).prepend(this.errorTemplate());
-    $('.selectpicker').selectpicker('render');
+    // check if there are any data stores to load
+    if(stores.length === 0) { // no, show warning
+      console.log("Views.OntoNewView.render: no stores to load");
+      if($('.alert').length > 0) {
+        $('.alert').remove();
+      }
+      $('#main').prepend(this.errorTemplate());
+      $('#emptyStoreList').show();
+    }
+    else { // yes, show load modal
+      var lopts = App.State.LanguageOptions;
+      var fields = stores[0].fields;
+      $(this.el).appendTo('#main').html( this.template(
+            {stores:stores, fields:fields, langopts:lopts}
+      ));
+      if($('.alert').length > 0) {
+        $('.alert').remove();
+      }
+      $(this.el).prepend(this.errorTemplate());
+      $('.selectpicker').selectpicker('render');
+    }
   },
 
   changeStore: function(ev) {

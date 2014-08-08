@@ -17,26 +17,35 @@ App.Views.OntoLoadView = Backbone.View.extend({
 
     this.ontologies = new App.Collections.Ontologies();
     this.ontologies.fetch();
-    this.listenTo(this.ontologies, "add", this.render);
-    this.listenTo(this.ontologies, "change", this.render);
+    this.listenTo(this.ontologies, "sync", this.render);
   },
  
   render: function() {
     console.log("Views.OntoLoadView.render");
-     $('#main').append(this.el);
+    $('#main').append(this.el);
     var ontologies = this.ontologies.toJSON();
-    //this.$el.html(this.template(data));
-    $(this.el).append( this.template({"ontologies":ontologies}) );
-    $('#loadModal').modal('show');
-    $('#onto-picker').selectpicker('render');
-    $('#load-body').prepend(this.errorTemplate());
-    //install remove
-    var self = this;
-    $('#loadModal').on('hidden.bs.modal', function () {
-      $('#loadModal').remove();
-      self.remove();
-      App.router.navigate("ontoview", {trigger: true});
-    });
+    // check if there are any ontologies to load
+    if(ontologies.length === 0) { // no, show warning
+      console.log("Views.OntoLoadView.render: no ontologies to load");
+      if($('.alert').length > 0) {
+        $('.alert').remove();
+      }
+      $('#main').prepend(this.errorTemplate());
+      $('#emptyOntologyList').show();
+    }
+    else { // yes, show load modal
+      $(this.el).append( this.template({"ontologies":ontologies}) );
+      $('#loadModal').modal('show');
+      $('#onto-picker').selectpicker('render');
+      $('#load-body').prepend(this.errorTemplate());
+      //install remove
+      var self = this;
+      $('#loadModal').on('hidden.bs.modal', function () {
+        $('#loadModal').remove();
+        self.remove();
+        App.router.navigate("ontoview", {trigger: true});
+      });
+    }
   },
 
   loadOntology: function(event) {
