@@ -107,11 +107,16 @@ App.Views.StoreFromDataView = Backbone.View.extend({
       return;
     }
     // we're done loading files so lets create the store
-    var storeOptions = {storeName: this.storeName, records: this.data};
-    var store = new App.Models.Store(storeOptions);
-    this.listenToOnce(store, "sync", this.storeCreated);
-    this.listenToOnce(store, "error", this.createError);
-    store.save({error:this.createError});
+    // split records into arrays of len 10
+    // send the first small array with the create
+    console.log("Data loaded into memory");
+    var initdata = this.data.slice(0, App.Constants.uploadPart);
+    var storeOptions = {name: this.storeName, records: initdata};
+    this.store = new App.Models.Store(storeOptions);
+    this.listenToOnce(this.store, "sync", this.storeCreated);
+    this.listenToOnce(this.store, "error", this.createError);
+
+    this.store.save({error:this.createError});
   },
 
   createError: function(model, xhr, options) {
@@ -120,9 +125,32 @@ App.Views.StoreFromDataView = Backbone.View.extend({
     $("#createAlert").show();
   },
 
-  storeCreated: function() {
+  storeCreated: function(model, res, opts) {
+    console.log("Store Created");
+
     $('#storeCreate').button('reset');
     $("#createdAlert").show();
-  }
 
+    var storejs = model.toJSON();
+    console.log("records url: " + storejs.links.records);
+
+    var canceledUpload = function() {
+      console.log("Upload Canceled");
+      $("#createdAlert").hide();
+      $("#uploadFailed").show();
+      $('#storeCreate').button('reset');
+    };
+
+    var finishedUpload = function() {
+      console.log("Uploading Finished"); 
+      $("#createdAlert").hide();
+      $("#uploadComplete").show();
+      $('#storeCreate').button('reset');
+    };
+    var data = this.data;
+    var url = storejs.links.records;
+    App.API.uploadRecords(data, url, finishedUpload, canceledUpload);
+  },
+
+  
 });

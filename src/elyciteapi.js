@@ -47,6 +47,7 @@ http.onRequest("languageoptions", "GET", function(req, res) {
 
 // Stores
 // ------
+// Stores refer to data stores i.e. does not include ontology stores
 
 // #### /stores/ 
 //
@@ -73,18 +74,124 @@ http.onRequest("stores", "GET", function(req, res) {
 //</code></pre>
 http.onRequest("stores/", "POST", function(req, res) {
   console.say("elycite API - POST Stores");
-  var data = restf.requireJSON(req, res, "storeName", "records");
+  var data = restf.requireJSON(req, res, "name", "records");
   if(data === null) { return; }
 
   stores.createStore(res, data);
 });
+// #### /stores/[store]/
+//
+// **METHOD:** GET
+//
+// **Description:** Read store definition 
+//
+// **PARAMS:**
+//
+//  * *store* - the store name
+//
+// **Returns:** the `store` JSON representation. 
+http.onRequest("stores/<store>/", "GET", function(req, res) {
+  console.say("elycite API - GET Store");
+  var params = restf.requireParams(req, res, "store");
+  if(params === null) { return; }
+  var store = stores.requireExists(res, params.store);
+  if(store === null) { return; }
 
-// Get a single store definition by name @TODO: NOT IMPLEMENTED
-http.onRequest("stores/<store>", "GET", function(req, res) {
-  console.say("elycite API - GET Stores");
-  res.setStatusCode(501);
-  res.send();
+  stores.getStore(res, store);
 });
+
+// Records
+// -------
+// A qminer record in this datastore. 
+
+// #### /stores/[store]/records/
+//
+// **METHOD:** GET
+//
+// **Description:** Get All Records 
+//
+// **PARAMS:**
+//
+//  * *store* - the store name
+//
+// **ARGS:**
+// 
+//  * *per_page* (int, optional) - number of records per page
+//  * *page* (int, optional) - the page number, with `per_page` records
+//
+// **RETURNS:** list of `record`s (see above).
+//
+// **Example:** 
+//<pre><code>
+//  curl -X GET \
+//  "http://localhost:8080/elyciteapi/stores/testdata/records/?page=3&per_page=2"
+//</code></pre>
+http.onRequest("stores/<store>/records/", "GET", function (req, res) {
+  console.say("elycite API - Records GET ALL");
+  var params = restf.requireParams(req, res, "store");
+  if(params === null) { return; }
+  var store = stores.requireExists(res, params.store);
+  if(store === null) { return; }
+  var pargs = restf.paginationArguments(req, 100);
+  stores.getRecords(res, store, pargs.page, pargs.per_page);
+});
+
+// #### /stores/[store]/records/
+//
+// **METHOD:** POST
+//
+// **Description:** Add a record or array of records
+//
+// **PARAMS:**
+//
+//  * *store* - the store name
+//
+// **JSONDATA:**
+//<pre><code>
+//  {
+//    records:["array of records"]
+//  }
+//</code></pre>
+// 
+// **RETURNS:** 201 OK.
+http.onRequest("stores/<store>/records/", "POST", function (req, res) {
+  console.say("elycite API - Records POST");
+  var params = restf.requireParams(req, res, "store");
+  if(params === null) { return; }
+  var store = stores.requireExists(res, params.store);
+  if(store === null) { return; }
+  var records = restf.requireJSON(req, res);
+  if(records === null) { return; }
+  stores.createRecords(res, store, records);
+});
+
+
+// #### /ontologies/[store]/records/[rid]/
+//
+// **METHOD:** GET
+//
+// **Description:** Read Record
+//
+// **PARAMS:**
+//
+//  * *store* - the ontology name
+//  * *rid* - record id to get
+//
+// **RETURNS:** a single `document`
+http.onRequest("stores/<store>/records/<rid>/", "GET", 
+               function (req, res) {
+  console.say("elycite API - Document <did> GET");
+  var params = restf.requireParams(req, res, "store", "rid");
+  if(params === null) { return; }
+  var store = stores.requireExists(res, params.store);
+  if(store === null) { return; }
+  var recId = restf.requireInt(res, "rid", params.rid);
+  if(recId === null) { return; }
+  var rec = stores.requireRecord(res, store, "record", recId);
+  if(rec == null) { return; }
+  res.send(rec.toJSON());
+});
+
 
 // Ontologies
 // -----------

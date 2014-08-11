@@ -109,8 +109,7 @@ exports.listOntologies = function(res) {
   res.send(ontologies);
 };
 
-// Responds with a list of qminer stores as objects, exluding ontogen stores
-exports.listStores = function(res) {
+var getDataStores = function() {
   var dataStores = qm.getStoreList();
   // remove ontology stores
   var os = listOntologies().map(function(s) {
@@ -135,14 +134,43 @@ exports.listStores = function(res) {
   var rdata = dataStores.map(function(s) {
     s.links = {};
     s.links.self = restf.url_for("stores", s.storeName);
+    s.links.records = restf.url_for("records", null, s.storeName);
     return s;
   });
-  res.send(rdata);
+  return rdata;
+};
+
+// Responds with a list of qminer stores as objects, exluding ontogen stores
+exports.listStores = function(res) {
+  var data = getDataStores();
+  res.send(data);
+};
+
+// Gets a Store document from the store
+var storeDocFromStore = function(store) {
+  var storeDocs = getDataStores();
+  var name = store.name;
+  var filtered = storeDocs.filter(function(s) {
+    return s.storeName ===  name;
+  });
+  if(filtered.length > 0) { return filtered[0]; }
+  return -1; // not found
+};
+
+// Returns a store document from its store
+exports.getStore = function(res, store) {
+  var storeDoc = storeDocFromStore(store);
+  if(storeDoc === -1) { // this should never happen...
+    res.setStatusCode(404);
+    res.send();
+    return;
+  }
+  res.send(storeDoc);
 };
 
 // Creates a qminer store, including schema from data, for normal data
 exports.createStore = function(res, data) {
-  var storeName = data.storeName;
+  var storeName = data.name;
   var records = data.records;
   var used_keys = [];
   var proto;
@@ -237,13 +265,40 @@ exports.createStore = function(res, data) {
   // how to mark finished?
   // for now, only allow {$id, text} stores
   
-  var storeObj = qm.getStoreList().filter(function(store) {
-    return store.storeName === storeName;
-  })[0];
-
+  var storeDoc = storeDocFromStore(store);
   res.setStatusCode(201);
-  res.send(storeObj);
+  res.send(storeDoc);
 };
+
+// Get records paginated
+exports.getRecords = function(res, store, page, per_page) {
+  var ii = 0;
+  // Get the documents
+  var recs = [];
+  // calculate start
+  var start = page * per_page;
+  // calculate end
+  var end = page * per_page + per_page;
+  if(end > store.length) {
+    end = store.length;
+  }
+  for (ii = start; ii < end; ii++) {
+    var d = store[ii];
+    recs.push(d.toJSON());
+  }
+  res.send(recs);
+};
+
+// Create records
+exports.createRecords = function(res, store, records) {
+  var ii = 0;
+
+  for(ii = 0; ii < records.length; ii++) {
+    store.add(records[ii]);
+  }
+  res.setStatusCode(204);
+  res.send();
+ };
 
 // Check if a store exists
 // Handles error response and returns null on error. Otherwise returns the
@@ -269,7 +324,7 @@ exports.requireRecord = function(res, store, name, rid) {
   return r;
 };
 
-// Helper function for adding a record to a store
+// Helper function for adding a record to a store - Not Implemented
 exports.addToStore = function(res, store, name, obj) {
   rid = store.add(obj);
   if(rid === null) {

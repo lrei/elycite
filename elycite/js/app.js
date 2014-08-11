@@ -4,11 +4,23 @@ App = {
   Collections: {},
   Routers: {},
   State: {},
+  // Constants:
+  // - ajaxTimeout: global timeout for ajax requests in milliseconds
+  // - uploadPart: used in views/storefromdata.js, determines number of recs to 
+  //               upload to the server in each request (POST)
+  // - uploadMaxRetries: used in views/storefromdata.js, number of times to
+  //                     retry an upload 
+  Constants: {
+    ajaxTimeout: 120000,
+    uploadPart: 10,
+    uploadMaxRetries: 5
+  },
 
   init: function() {
     console.log("App Init");
     // Init State Variables
-    
+    $.ajaxSetup({timeout:App.Constants.ajaxTimeout});
+
     // Register Handlebars Helpers
     Handlebars.registerPartial("conceptPartial", Handlebars.templates['ontotree']);
 
@@ -63,7 +75,9 @@ App = {
       subconcepts = subconcepts.concat(ssc);
       // result
       return subconcepts;
-    }
+    },
+
+    // Upload Management
 
   },
 
@@ -136,6 +150,63 @@ App = {
           callback(data);
         }
       });
+    },
+
+    // Upload Management 
+    uploadRecords: function(data, url, finishedUpload, canceledUpload) {
+      console.log("App.API.uploadRecords");
+      App.State.recordData = data;
+      App.State.recordsUrl = url;
+      App.State.uploadPart = App.Constants.uploadPart;
+      App.State.uploadpos = 0;
+      App.State.uploadRetry = 0;
+      App.State.uploadFinished = finishedUpload;
+      App.State.uploadCanceled = canceledUpload;
+
+      App.API.doUploadRecords();
+    },
+
+    doUploadRecords: function() {
+      var next = App.State.uploadpos + App.State.uploadPart;
+      console.log("current pos=" + App.State.uploadpos + ", next=" + next);
+      App.State.recordDiff = App.State.recordData.slice(App.State.uploadpos, next);
+      //console.log(App.State.recordDiff );
+      $.ajax({
+        type: "POST",
+        url: App.State.recordsUrl,
+        data: App.State.recordDiff,
+        dataType: "json",
+        processData: "false",
+        contentType: 'application/json'
+      }).done(App.API.uploadSuccess).fail(App.API.uploadError);
+    },
+
+   uploadSuccess: function() {
+      console.log("Upload Complete");
+      App.State.uploadRetry = 0;
+      App.State.uploadpos += App.State.uploadPart;
+
+      if(App.State.uploadpos >= App.State.recordData.length) {
+        console.log("Uploading finished");
+        App.State.uploadFinished();
+        return;
+      }
+
+      App.API.doUploadRecords();
+    },
+
+    uploadError: function(finished, error) {
+      console.log("Upload Error");
+      if(App.State.uploadRetry >= App.Constants.uploadMaxRetries) {
+        console.log("Uploading canceled");
+        App.State.uploadCanceled();
+        return;
+      }
+      App.State.uploadRetry += 1;
+      // Decrease Batch size
+      App.State.uploadPart = Math.ceil(App.State.uploadPart / 2);
+      App.API.doUploadRecords();
     }
+
   } // End of App.API
 };

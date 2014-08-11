@@ -25,6 +25,13 @@ exports.url_for = function(what, which, where, inside) {
       }
       break;
 
+    case "records":
+      url += "stores/" + where + "/records/";
+      if(which !== undefined && which !== null) {
+        url += which + "/";
+      }
+      break;
+
     case "concepts":
       url += "ontologies/" + where + "/concepts/";
       if(which !== undefined && which !== null) {
@@ -51,7 +58,7 @@ exports.url_for = function(what, which, where, inside) {
 };
 
 // Get pagination arguments from req or defaults
-exports.paginationArguments = function(req) {
+exports.paginationArguments = function(req, per_page) {
   // Args
   var args = {};
   var pargs = {};
@@ -64,7 +71,7 @@ exports.paginationArguments = function(req) {
   if(args.hasOwnProperty('page')) {
     pargs.page = parseInt(args.page, 10);
   }
-  pargs.per_page = og.DOCS_DEFAULT_PAGE_SIZE;
+  pargs.per_page = per_page || og.DOCS_DEFAULT_PAGE_SIZE;
   if(args.hasOwnProperty('per_page')) {
     pargs.per_page = parseInt(args.per_page, 10);
   }
@@ -140,6 +147,21 @@ exports.requireInt = function(res, name, value) {
     return null;
   }
   return parsed;
+};
+
+// javascript isArray
+function isArray(what) {
+    return Object.prototype.toString.call(what) === '[object Array]';
+}
+
+// Helper function for requiring that a parameter be an array
+exports.requireArray = function(res, name, value) {
+  if(!isArray(value)) {
+    res.setStatusCode(400);
+    res.send("Invalid " + name + ": " + value + ". Should be array.");
+    return null;
+  }
+  return value;
 };
 
 // Helper function for requiring certain HTTP GET arguments to be present.
