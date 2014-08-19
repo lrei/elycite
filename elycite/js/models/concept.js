@@ -61,12 +61,12 @@ App.Models.Concept = Backbone.Model.extend({
     $.ajax(options);
   },
 
-  getQuerySuggestion: function(query, callback) {
+  getQuerySuggestion: function(query, fieldName, callback) {
     var url = this.url() + "search/";
     $.ajax({
       type: "GET",
       url: url,
-      data: {"query": query }
+      data: {"query": query, "fieldName": fieldName }
     }).done(function(data) {
       if(typeof callback === 'function') {
         callback(data);
@@ -74,10 +74,11 @@ App.Models.Concept = Backbone.Model.extend({
     });
   },
 
-  getKeywordsSuggestion: function(callback) {
+  getKeywordsSuggestion: function(fieldName, callback) {
   var url = this.url() + "suggestkeywords/";
     $.ajax({
       type: "GET",
+      data: {fieldName: fieldName},
       url: url
     }).done(function(data) {
       if(typeof callback === 'function') {

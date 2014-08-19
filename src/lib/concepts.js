@@ -115,11 +115,24 @@ exports.createConcept = function(res, data, store, ontology) {
 
   concept.isDeleted = false; // we just created it after all...
   
-  var rec = stores.addToStore(res, store, "concept", concept);
-  if(rec === null) { return; }
-
+  var rec = stores.createRecord(res, store, concept);
+  if(!rec) { return; }
   var addedConcept = conceptFromRecord(rec, ontology);
   res.send(addedConcept);
+};
+
+var isRoot = function(concept) {
+  if(!concept.parent) { return true; }
+  return false;
+};
+
+var getAncestors = function(concept, acc) {
+  if(!acc) { acc = []; }
+  
+  if(isRoot(concept)) { return acc; }
+
+  acc.push(concept.parent);
+  return getAncestors(concept.parent, acc);
 };
 
 // Edit a concept
@@ -150,22 +163,35 @@ exports.editConcept = function(res, concept, data, store) {
   }
  
   // Check if concept is root, if not, allow change of parent
-  if(concept.parent !== null) {
+  if(!isRoot(concept)) {
     // Change Parent ("Move")
     if(data.hasOwnProperty("parentId")) {
       if (data.parentId !== concept.parent.$id) {
         var parentId = checkParentId(res, store, data.parentId);
         if (parentId === null) { return; }
         // new parent is valid
+
+        // change the join for the parent
         concept.delJoin('parent', store[concept.parent.$id]);
         concept.addJoin('parent', store[parentId]);
+
+        // Ensure docs are in parents
+        /*
+        var conceptDocs = concept.docs;
+        var ancestors = getAncestors(concept);
+        for(var ii = 0; ii < ancestors.length; ii++) {
+          var ancestor = ancestors[ii];
+          var ancestorDocs = ancestor.docs;
+          var unionDocs = ancestorDocs.setunion(conceptDocs);
+        }
+      */
       } // end of check if parent id is different from current parent id
     } // end of check for parent id in data
   } // end of is root check
 
   // change concept
-  concept = stores.addToStore(res, store, "concept", change);
-  if(concept === null) { return; }
+  concept = stores.createRecord(res, store, change);
+  if(!concept) { return; }
 
   var addedConcept = conceptFromRecord(concept, store.name);
   res.send(addedConcept);
@@ -289,17 +315,21 @@ exports.editConceptDocuments = function(res, docId, op, concept, store) {
 };
 
 // Get keyword suggestions
-exports.getKeywordSuggestions = function(res, args, concept) {
+exports.getKeywordSuggestions = function(res, args, concept, fieldName) {
    // docs
   var rSet = concept.docs; // concept documents
   
   // Aggregate Keywords
   var numKeywords = restf.optionalInt(args, "numKeywords",
                                       og.DEFAULT_NUM_KEYWORDS);
-                                      
-  var get_keywords = [{name: 'keywords', type: 'keywords', 
-                       field: og.docsFieldName,
-                       stopwords: concept.stopwords}];
+  
+  var keyword_params = {
+                        name: 'keywords', type: 'keywords', 
+                        field: fieldName,
+                        stopwords: concept.stopwords
+                      };
+  console.say(keyword_params);
+  var get_keywords = [keyword_params];
                        
   var keywords = rSet.aggr(get_keywords[0]);
   var skeywords = keywords.keywords.map(function(k) { return k.keyword; });
@@ -310,13 +340,17 @@ exports.getKeywordSuggestions = function(res, args, concept) {
 
 // Concept suggestion from search
 exports.getConceptSuggestionFromQuery = function(res, parentc,  store, 
-                                                 queryStr) {
+                                                 fieldName, queryStr, 
+                                                 _stopwords) {
   var ii, jj = 0;
   var docStore = stores.getDocStore(store);
-  var query = {}; query.$from = docStore.name;
-  query[og.docsFieldName] = queryStr;
-  console.say(JSON.stringify(query));
 
+  var query = {}; query.$from = docStore.name;
+  query[fieldName] = queryStr;
+  console.say(JSON.stringify(query));
+  
+  // stopwords
+  var stopwords = _stopwords || parentc.stopwords;
   // doc ids for intercept
   var rSet = parentc.docs; // concept documents
   var docIds = [];
@@ -343,11 +377,12 @@ exports.getConceptSuggestionFromQuery = function(res, parentc,  store,
     return;
   }
   // Aggregate Keywords
-  var get_keywords = [{name: 'keywords', type: 'keywords', 
-                       field: og.docsFieldName,
-                       stopwords: concept.stopwords}];
-                       
-  var keywords = result.aggr(get_keywords[0]);
+  var get_keywords = {
+    name: 'keywords', type: 'keywords', 
+    field: fieldName,
+    stopwords: stopwords
+  };
+  var keywords = result.aggr(get_keywords);
 
   // Create suggestion object
   var suggestion = {};
@@ -369,25 +404,37 @@ exports.getConceptSuggestionsByClustering = function(req, res, concept, store) {
   var args = req.args || {};
   var lopts = analytics.getLanguageOptions();
 
+  // field name
+  var fieldName = args.fieldName[0];
+
   // Stopwords
   var stopwords = restf.stopwordsFromObj(args, lopts, concept.stopwords);
   // Stemmer
   var stemmer = restf.stemmerFromObj(args, lopts, concept.stemmer);
-  // number of suggestion, iterations and keywords
+
+  // number of suggestions (clusters)
   var numSuggest = restf.optionalInt(args, "numSuggest",
                                      og.DEFAULT_SUGGESTIONS);
+  // number of iterations
   var numIter = restf.optionalInt(args, "numIter", og.DEFAULT_ITER);
+
+  // number of keywords
   var numKeywords = restf.optionalInt(args, "numKeywords",
                                       og.DEFAULT_NUM_KEYWORDS);
 
   // Create Feature Space
   var docStore = stores.getDocStore(store);
   var conceptDocs = concept.docs;
-  var ftrSpace = analytics.newFeatureSpace([{type: 'text',
-                                             source: docStore.name,
-                                             field: og.docsFieldName,
-                                             stopwords: stopwords,
-                                             normalize: true}]);
+  var ftrSpaceParams = {
+                        type: 'text',
+                        source: docStore.name,
+                        field: fieldName,
+                        stopwords: stopwords,
+                        stemmer: {type: stemmer},
+                        normalize: true
+                       };
+  console.say(JSON.stringify(ftrSpaceParams));
+  var ftrSpace = analytics.newFeatureSpace([ftrSpaceParams]);
   ftrSpace.updateRecords(conceptDocs);
   
   // Perform KMeans
@@ -396,7 +443,7 @@ exports.getConceptSuggestionsByClustering = function(req, res, concept, store) {
 
   // Get Words
   get_keywords = [{name: 'keywords', type: 'keywords', 
-                   field: og.docsFieldName,
+                   field: fieldName,
                    stopwords: concept.stopwords}];
 
   for(ii = 0; ii < clusters.length; ii++) {

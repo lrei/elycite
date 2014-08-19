@@ -7,24 +7,34 @@
         <h4 class="modal-title" id="modal-query-label">Query {{concept.name}}</h4>
       </div>
       <div class="modal-body" id="modal-query-main">
+
         <form class="form-horizontal" role="form">
-        <div class="form-group" style="margin-top:5px">
-          <textarea id="query-text" class="form-control" rows="1"></textarea>
-        </div> <!-- /from group -->
-        <div class="btn-group" id="query-type" data-toggle="buttons">
-          <label class="btn btn-primary active">
-            <input type="radio" name="options" id="query-opt-simple">Simple Query
-          </label>
-          <label class="btn btn-primary">
-            <input type="radio" name="options" id="query-opt-al">Active Learning
-          </label>
-          <!--
-          <label class="btn btn-primary">
-            <input type="radio" name="options" id="query-opt-gal">Guided+Active Learning
-          </label>
-          -->
-        </div>
-      </form>
+
+          <div class="form-group" style="margin-top:5px">
+            <textarea id="query-text" class="form-control" rows="1"></textarea>
+          </div> <!-- /from group (textarea)-->
+
+          <div class="btn-group" id="query-type" data-toggle="buttons">
+            <label class="btn btn-primary active">
+              <input type="radio" name="options" id="query-opt-simple">Simple Query
+            </label>
+            <label class="btn btn-primary">
+              <input type="radio" name="options" id="query-opt-al">Active Learning
+            </label>
+            <!--
+            <label class="btn btn-primary">
+              <input type="radio" name="options" id="query-opt-gal">Guided+Active Learning
+            </label>
+            -->
+           <select class="selectpicker" data-width="100px" data-style="btn-info" title="Field" id="fieldPicker">
+              {{#each textFields}}
+              <option>{{this}}</option>
+              {{/each}}
+            </select>
+          </div> <!-- /button group -->
+
+        </form> <!-- /modal body -->
+
       </div>
       <div id="modal-query-footer" class="modal-footer">
         <button id="make-query" data-cid={{concept.$id}} type="button" class="btn btn-primary" data-loading-text="Querying...">Query</button>

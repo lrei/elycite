@@ -13,6 +13,14 @@
           <span class="input-group-addon">Name</span>
           <input id="cls-name" type="text" class="form-control" placeholder="{{concept.ontology}}_">
         </div>
+        <div class="input-group" style="margin-top:5px;">
+          <select class="selectpicker" data-width="100px" data-style="btn-info" title="Field" id="fieldPicker">
+            {{#each textFields}}
+            <option>{{this}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <!-- advance options accordion -->
         <div class="panel-group" id="accordion" style="margin-top:5px;">
           <div class="panel panel-default">
             <div class="panel-heading">

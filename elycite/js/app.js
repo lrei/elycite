@@ -43,10 +43,48 @@ App = {
   },
 
   Helpers: {
+    // State Management
+    // Reset (empty) App.State - called on load/create ontology
+    resetState: function() {
+      App.State = {}; 
+      App.API.getLanguageOptions();
+    },
+
+    // Set State Based on an ontology model
+    setState: function(ontology, success, error) {
+      // reset state
+      App.Helpers.resetState();
+
+      // set ontology
+      App.State.ontology = ontology;
+      var ontojs = ontology.toJSON();
+   
+      // Request docStore and inside it, the concepts
+      App.State.docStore = new App.Models.Store({url: ontojs.links.docStore});
+
+      // setup success for docStore fetch
+      App.State.docStore.once("sync", function(model) {
+        // fetch the concepts
+        App.State.concepts = new App.Collections.Concepts([], 
+                                  {url: ontojs.links.concepts});
+
+        App.State.concepts.once("sync", success);
+        App.State.concepts.once("error", error);
+        App.State.concepts.fetch();
+      });
+      // setup error for docStore fetch
+      App.State.docStore.once("error", error);
+
+      // fetch docStore
+      App.State.docStore.fetch();
+    },
+
+
     // TODO: rename to getRootConceptId, move to collection
     getRootConcept: function() {
       return App.State.concepts.findWhere({parentId: -1}).get("$id");
     },
+
     // TODO add collection param, move to model selectedConcept
     getSelectedConcept: function() {
       var conceptId = App.State.selectedConcept.get("selected");
@@ -75,9 +113,7 @@ App = {
       subconcepts = subconcepts.concat(ssc);
       // result
       return subconcepts;
-    },
-
-    // Upload Management
+    }
 
   },
 
@@ -124,12 +160,17 @@ App = {
     },
 
     // @TODO move this to concept model using link url
-    suggestConcepts: function(concept, n, callback) {
+    suggestConcepts: function(concept, n, fieldName, opts, callback) {
       var url = concept.url() + '/suggest/';
+
+      var data = opts || {};
+      data.fieldName = fieldName;
+      data.numSuggest = n;
+
       $.ajax({
         type: "GET",
         url: url,
-        data: {"numSuggest": n }
+        data: data
       }).done(function(data) {
         console.log("API.suggestConcepts.done");
         if(typeof callback === 'function') {
@@ -155,6 +196,7 @@ App = {
     // Upload Management 
     uploadRecords: function(data, url, finishedUpload, canceledUpload) {
       console.log("App.API.uploadRecords");
+      //Setup
       App.State.recordData = data;
       App.State.recordsUrl = url;
       App.State.uploadPart = App.Constants.uploadPart;
@@ -162,27 +204,30 @@ App = {
       App.State.uploadRetry = 0;
       App.State.uploadFinished = finishedUpload;
       App.State.uploadCanceled = canceledUpload;
-
+      // do it
       App.API.doUploadRecords();
     },
 
     doUploadRecords: function() {
+      // data for this block (data array from pos to pos+next)
       var next = App.State.uploadpos + App.State.uploadPart;
       console.log("current pos=" + App.State.uploadpos + ", next=" + next);
       App.State.recordDiff = App.State.recordData.slice(App.State.uploadpos, next);
-      //console.log(App.State.recordDiff );
+
+      // setup closures and do HTTP POST request
+      var uploadData = JSON.stringify(App.State.recordDiff);
+      var uploadUrl = App.State.recordsUrl;
       $.ajax({
         type: "POST",
-        url: App.State.recordsUrl,
-        data: App.State.recordDiff,
+        url: uploadUrl,
+        data: uploadData,
         dataType: "json",
-        processData: "false",
         contentType: 'application/json'
       }).done(App.API.uploadSuccess).fail(App.API.uploadError);
     },
 
    uploadSuccess: function() {
-      console.log("Upload Complete");
+      console.log("Upload part successful");
       App.State.uploadRetry = 0;
       App.State.uploadpos += App.State.uploadPart;
 
@@ -196,7 +241,7 @@ App = {
     },
 
     uploadError: function(finished, error) {
-      console.log("Upload Error");
+      console.log("Upload part error");
       if(App.State.uploadRetry >= App.Constants.uploadMaxRetries) {
         console.log("Uploading canceled");
         App.State.uploadCanceled();

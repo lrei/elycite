@@ -57,6 +57,13 @@ exports.url_for = function(what, which, where, inside) {
   return url;
 };
 
+// JS helpper function for identifying what type of object
+// e.g. what_is(records) === "[object Array]"
+var what = Object.prototype.toString;
+exports.what_is = function(x) {
+  return what.call(x);
+};
+
 // Get pagination arguments from req or defaults
 exports.paginationArguments = function(req, per_page) {
   // Args
@@ -205,9 +212,14 @@ exports.requireNotDeleted = function(rec, name) {
 // Get stopwords from an object, use a default value or the global default
 exports.stopwordsFromObj = function(obj, langopts, defaultval) {
   var stopwords = defaultval || og.DEFAULT_STOPWORDS;
-  obj = obj || {};
-  if(langopts.stopwords.indexOf(obj.stopwords) >= 0) {
-      stopwords = obj.stopwords;
+
+  if(!obj) { return stopwords; }
+  var arg = obj.stopwords || null;
+  if(!arg) { return stopwords; }
+  if(exports.what_is(arg) === "[object Array]") { arg = arg[0]; }
+
+  if(langopts.stopwords.indexOf(arg) >= 0) {
+    stopwords = arg;
   }
   return stopwords;
 };
@@ -215,9 +227,14 @@ exports.stopwordsFromObj = function(obj, langopts, defaultval) {
 // Get stemmer from an object, use a default value or the global default
 exports.stemmerFromObj = function(obj, langopts, defaultval) {
   var stemmer = defaultval || og.DEFAULT_STEMMER;
-  obj = obj || {};
-  if(langopts.stopwords.indexOf(obj.stemmer) >= 0) {
-      stemmer = obj.stemmer;
+
+  if(!obj) { return stemmer; }
+  var arg = obj.stemmer || null;
+  if(!arg) { return stemmer; }
+  if(exports.what_is(arg) === "[object Array]") {arg = arg[0]; }
+
+  if(langopts.stemmer.indexOf(arg) >= 0) {
+    stemmer = arg;
   }
   return stemmer;
 };

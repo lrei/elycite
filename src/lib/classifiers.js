@@ -33,7 +33,8 @@ var saveClassifier = function(classifier, concept, store) {
   var classifierStore = stores.getClassifierStore(store);
   var now = new Date();
   var recVal = {
-    name: classifier.name, 
+    name: classifier.name,
+    fieldName: classifier.fieldName,
     filepath: filepath, 
     concept: {$id: concept.$id},
     type: "svm",
@@ -51,6 +52,7 @@ var loadClassifier = function(name, store) {
   var classifierRec = classifierStore.rec(name);
   // check if classifier has been deleted
   if(classifierRec.isDeleted) { return null; }
+
   // check if file exists
   var filepath = classifierRec.filepath;
   if(!fs.exists(filepath)) { return null; }
@@ -58,9 +60,11 @@ var loadClassifier = function(name, store) {
   var fin = fs.openRead(filepath);
   var ftrSpace = analytics.loadFeatureSpace(fin);
   var cls = analytics.loadSvmModel(fin);
+
   var classifier = {
     name: classifierRec.name,
     model: cls,
+    fieldName: classifierRec.fieldName,
     ftrSpace: ftrSpace
   };
   return classifier;
@@ -109,6 +113,8 @@ exports.create = function(res, data, concept, store) {
   var lopts = analytics.getLanguageOptions();
   // name
   var name = restf.optional(data, "name", concept.name, restf.isValidName);
+  // field
+  var fieldName = data.fieldName;
   // Stopwords
   var stopwords = restf.stopwordsFromObj(data, lopts, concept.stopwords);
   // Stemmer
@@ -145,7 +151,7 @@ exports.create = function(res, data, concept, store) {
   // feature space
   var ftrSpace = analytics.newFeatureSpace([{type: 'text',
                                                 source: docStore.name,
-                                                field: og.docsFieldName,
+                                                field: fieldName,
                                                 stemmer: {type: stemmer},
                                                 stopwords: stopwords}]);
   ftrSpace.updateRecords(docStore.recs); // neg + pos recs = all
@@ -172,6 +178,7 @@ exports.create = function(res, data, concept, store) {
   // create classifier object
   var classifier = {
     name: name,
+    fieldName: fieldName,
     ftrSpace: ftrSpace,
     model: cls
   };
@@ -242,7 +249,7 @@ exports.classify = function(res, mid, data, store) {
   
   // classify loop
   for(ii = 0; ii < data.length; ii++) {
-    recVal = {}; recVal[og.docsFieldName] = data[ii];
+    recVal = {}; recVal[classifier.fieldName] = data[ii];
     rec = docStore.newRec(recVal);
     x = ftrSpace.ftrSpVec(rec);
     y = cls.predict(x);

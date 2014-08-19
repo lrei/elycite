@@ -11,6 +11,14 @@
   <div class="form-group col-xs-6">
   <button id="change-concept" type="button" class="btn btn-primary btn-sm" data-loading-text="Changing...">Change</button>
   <button id="suggest-keywords" type="button" class="btn btn-warning btn-sm" data-loading-text="Loading...">Suggest Keywords</button>
+  <!-- Field -->
+  <select class="selectpicker" data-width="100px" data-style="btn-info btn-sm" title="Field" id="barFieldPicker">
+    {{#each textFields}}
+    <option>{{this}}</option>
+    {{/each}}
+  </select>
+
+
   <!--  <button id="properties-concept" type="button" class="btn btn-default btn-sm">Properties</button> -->
   <button id="view-documents" type="button" class="btn btn-default btn-sm" data-loading-text="Opening...">Documents</button>
   <button id="build-classifier" type="button" class="btn btn-success btn-sm">Build</button>

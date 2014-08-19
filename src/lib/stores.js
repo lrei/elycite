@@ -29,12 +29,28 @@ function RootConcept(docStore, swords, stmr) {
   return concept;
 }
 
+// Get Root Concept from ontology store
+var RootFromOntoStore = function(ontostore) {
+  return ontostore[0];
+};
 
-// JS helpper function for identifying what type of object
-// e.g. what_is(records) === "[object Array]"
-var what = Object.prototype.toString;
-var what_is = function(x) {
-  return what.call(x);
+// Gets an ontology record from the ontology store
+var ontoRecordFromStore = function(store) {
+  var recs = qm.store(og.ontodb).recs;
+  recs.filterByField("name", store.name);
+  return recs[0];
+};
+
+// Create an ontology document (JSON representation) from the its record
+var ontologyFromRecord = function(ontoRec) {
+  var onto = ontoRec.toJSON();
+  // build ontology object
+  onto.links = {
+    "self": restf.url_for("ontologies", onto.name),
+    "docStore": restf.url_for("stores", onto.docStore),
+    "concepts":  restf.url_for("concepts", null, onto.name)
+  };
+  return onto;
 };
 
 // Creates the store that holds ontologies
@@ -93,6 +109,22 @@ var listOntologies = function(res) {
   return ontologies;
 };
 
+// Build ontology object from store JSON representation
+var ontologyFromStoreJson = function(s) {
+  var store = qm.store(s.name);
+  var ontoRec = ontoRecordFromStore(store);
+  var onto = ontologyFromRecord(ontoRec);
+  return onto;
+};
+
+// Build ontology object from store object
+var ontologyFromStore = function(store) {
+  var ontoRec = ontoRecordFromStore(store);
+  var onto = ontologyFromRecord(ontoRec);
+  return onto;
+};
+
+
 // Responds with a list ontology documents containing all existing ontologies
 exports.listOntologies = function(res) {
   var ontologies = listOntologies();
@@ -100,12 +132,7 @@ exports.listOntologies = function(res) {
   ontologies = ontologies.filter(function(o) {
     return o.isDeleted === false;
   });
-  ontologies = ontologies.map(function(s) {
-    s.links = {};
-    s.links.self = restf.url_for("ontologies", s.name);
-    s.links.concepts = restf.url_for("concepts", null, s.name);
-    return s;
-  });
+  ontologies = ontologies.map(ontologyFromStoreJson);
   res.send(ontologies);
 };
 
@@ -174,9 +201,9 @@ exports.createStore = function(res, data) {
   var records = data.records;
   var used_keys = [];
   var proto;
-  if(what_is(records) !== "[object Array]") {
+  if(restf.what_is(records) !== "[object Array]") {
     res.setStatusCode(400);
-    res.send("Records must be an array not " + what_is(records) + ".");
+    res.send("Records must be an array not " + restf.what_is(records) + ".");
     return;
   }
   if(records.length === 0) {
@@ -185,9 +212,9 @@ exports.createStore = function(res, data) {
     return;
   }
   proto = records[0];
-  if(what_is(proto) !== "[object Object]") { 
+  if(restf.what_is(proto) !== "[object Object]") { 
     res.setStatusCode(400);
-    res.send("Records (array elements) must be JSON not " + what_is(proto) + ".");
+    res.send("Records (array elements) must be JSON not " + restf.what_is(proto) + ".");
     return;
   }
   // build datastore schema from first object
@@ -203,7 +230,7 @@ exports.createStore = function(res, data) {
   }];
   for (var key in proto) {
     var el = proto[key];
-    switch(what_is(el)) {
+    switch(restf.what_is(el)) {
     case "[object Number]":
       if(key === "id" || key === "$id") {
         storeDef[0].fields.push({name:key, type:"int", primary:true}); 
@@ -225,7 +252,7 @@ exports.createStore = function(res, data) {
     case "[object Array]":
       if(el.length === 0) { break; } // that's too bad @warning
       var first = el[0];
-      switch(what_is(el)) {
+      switch(restf.what_is(el)) {
         case "[object Number]":
           used_keys.push(key);
           storeDef[0].fields.push({name:key, type:"oftFltV", primary:false}); 
@@ -292,13 +319,52 @@ exports.getRecords = function(res, store, page, per_page) {
 // Create records
 exports.createRecords = function(res, store, records) {
   var ii = 0;
+  var rid;
+
+  if(!records) {
+    res.setStatusCode(400);
+    res.send({message: "no records to add: undefined/null records."});
+    return;
+  }
+
+  if(records.lengh === 0) {
+    res.setStatusCode(400);
+    res.send({message: "no records to add: empty records array."});
+    return;
+  }
 
   for(ii = 0; ii < records.length; ii++) {
-    store.add(records[ii]);
+    rid = store.add(records[ii]);
+    if(rid === null) {
+      res.setStatusCode(400);
+      res.send({message: "unable to add record.", record: records[ii]});
+      return;
+    }
+
   }
   res.setStatusCode(204);
   res.send();
  };
+
+// Create a single record - Caller must res.send - does NOT respond
+exports.createRecord = function(res, store, record) {
+  var ii = 0;
+  var rid;
+
+  if(!record) {
+    res.setStatusCode(400);
+    res.send({message: "no record to add: undefined/null record."});
+    return;
+  }
+
+  rid = store.add(record);
+  if(rid === null || rid === undefined) {
+    res.setStatusCode(400);
+    res.send({message: "unable to add record.", record: record});
+    return;
+  }
+  return store[rid];
+};
 
 // Check if a store exists
 // Handles error response and returns null on error. Otherwise returns the
@@ -322,17 +388,6 @@ exports.requireRecord = function(res, store, name, rid) {
     return null;
   }
   return r;
-};
-
-// Helper function for adding a record to a store - Not Implemented
-exports.addToStore = function(res, store, name, obj) {
-  rid = store.add(obj);
-  if(rid === null) {
-    res.setStatusCode(500);
-    res.send("Unable to add " + name + " to store.");
-    return null;
-  }
-  return store[rid];
 };
 
 
@@ -376,6 +431,7 @@ exports.createOntology = function(res, data) {
       { "name": "name", "type": "string", "primary":true},
       { "name": "filepath", "type": "string", "primary":false},
       { "name": "type", "type": "string", "primary":false},
+      { "name": "fieldName", "type": "string", "primary":false},
       { "name": "isDeleted", "type": "bool", "primary":false, "default":false},
       { "name": "modified", "type": "datetime" }
     ],
@@ -411,34 +467,18 @@ exports.createOntology = function(res, data) {
   var stmr = data.stemmer || null;
   var root = new RootConcept(dataStore, swords, stmr);
   s.add(root);
-  
+
   // build ontology object
-  var onto = {name: s.name};
-  onto.links = {
-    "self": restf.url_for("ontologies", ontologyName),
-    "concepts":  restf.url_for("concepts", null, ontologyName)
-  };
+  var onto = ontologyFromStore(s);
 
   res.setStatusCode(201);
   res.send(onto);
 };
 
-// Gets an ontology record from the ontology store
-var ontoRecordFromStore = function(store) {
-  var recs = qm.store(og.ontodb).recs;
-  recs.filterByField("name", store.name);
-  return recs[0];
-};
-
 // Returns an ontology document from its store
 exports.getOntology = function(res, store) {
   var ontoRec = ontoRecordFromStore(store);
-  var onto = ontoRec.toJSON();
-  // build ontology object
-  onto.links = {
-    "self": restf.url_for("ontologies", onto.name),
-    "concepts":  restf.url_for("concepts", null, onto.name)
-  };
+  var onto = ontologyFromRecord(ontoRec);
   res.send(onto);
 };
 

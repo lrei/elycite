@@ -70,9 +70,6 @@ App.Views.OntoNewView = Backbone.View.extend({
     var storeName = $("#storePicker").val();
     console.log(storeName);
   
-    var fieldName = $("#fieldPicker").val();
-    console.log(fieldName);
-
     // get the params
     var stemmer = $("#stemmerPicker").val();
     console.log(stemmer);
@@ -88,7 +85,6 @@ App.Views.OntoNewView = Backbone.View.extend({
     var opts = {
       ontologyName: ontoName,
       dataStore: storeName, 
-      fieldName: fieldName, 
       stemmer: stemmer,
       maxNgramLength: maxNgramLength, 
       minNgramFreq: minNgramFreq,
@@ -107,11 +103,9 @@ App.Views.OntoNewView = Backbone.View.extend({
 
   loadNew: function(model, collection, options) {
     console.log("View.OntoNewView.loadNew");
-    $('#ontoCreate').button('reset');
-    var ontojs = model.toJSON();
-    App.State.concepts = new App.Collections.Concepts([], {url: ontojs.links.concepts, error:this.loadError});
-    this.listenToOnce(App.State.concepts, "add", this.doneLoading);
-    App.State.concepts.fetch();
+    
+    // Setup state
+    App.Helpers.setState(model, this.doneLoading, this.loadError);
   },
 
   loadError: function(model, xhr, options) {

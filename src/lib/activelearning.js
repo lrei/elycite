@@ -26,6 +26,8 @@ var getQuestionObj = function(AL, name, concept, ontology) {
   var conceptDocs = concept.docs;
   
   // Get new question
+  var fieldName = AL.elycite.field;
+  console.say("go select question");
   var did = AL.selectQuestion();
   console.say("selectQuestion returned did = " + did);
   question.questionId = did;
@@ -35,7 +37,7 @@ var getQuestionObj = function(AL, name, concept, ontology) {
 
   // Document associated with Question
   var doc = conceptDocs[did];
-  question.text = doc[og.docsFieldName];
+  question.text = doc[fieldName];
   question.mode = !AL.getQueryMode();
   // get keywords if return mode = true
   if (!AL.getQueryMode()) {
@@ -49,7 +51,7 @@ var getQuestionObj = function(AL, name, concept, ontology) {
     question.docs = positiveDocs; // assign documents to concept
     // get keywords from concept docs
     var get_keywords = [{name: 'keywords', type: 'keywords',
-                         field: og.docsFieldName}];
+                         field: fieldName}];
 
     if (positiveDocs.length > 0) {
       var posRecs = conceptDocs;
@@ -64,7 +66,7 @@ var getQuestionObj = function(AL, name, concept, ontology) {
 };
 
 // Add AL to table
-var addToTable = function(AL, name) {
+var addToTable = function(AL, name, field) {
   globalALTable[name] = AL;
 };
 
@@ -82,7 +84,7 @@ var removeFromTable = function(name) {
 };
 
 // Create an active learner
-exports.create = function(res, data, concept, store, query) {
+exports.create = function(res, data, concept, store, query, fieldName) {
   var lopts = analytics.getLanguageOptions();
   // Stopwords
   var stopwords = restf.stopwordsFromObj(data, lopts, concept.stopwords);
@@ -97,21 +99,23 @@ exports.create = function(res, data, concept, store, query) {
   var conceptDocs = concept.docs;
   var ftrSpace = analytics.newFeatureSpace([{type: 'text',
                                             source: docStore.name,
-                                            field: og.docsFieldName,
+                                            field: fieldName,
                                             stemmer: {type: stemmer},
                                             stopwords: stopwords}]);
   ftrSpace.updateRecords(conceptDocs);
 
   // Transform Query
-  //var queryObj = {}; queryObj[og.docsFieldName] = query;
+  //var queryObj = {}; queryObj[fieldName] = query;
   //var transformedQuery = ftrSpace.extractStrings(queryObj)[0];
-  var AL = new analytics.activeLearner(ftrSpace, og.docsFieldName, conceptDocs,
+  var AL = new analytics.activeLearner(ftrSpace, fieldName, conceptDocs,
                                        2, 2, query, 1.0, 4.0);
   if(AL === undefined) { // this can't currently happen, i think
     res.setStatusCode(500);
     res.send("Unable to create active learner");
     return;
   }
+  // set field, required for returning the question
+  AL.elycite = {field: fieldName};
 
   // get the question
   var question = getQuestionObj(AL, name, concept, store.name);
@@ -123,7 +127,7 @@ exports.create = function(res, data, concept, store, query) {
 };
 
 // Get a question from an AL by AL name
-exports.getQuestion = function(res, name, concept, ontology, qid) {
+exports.getQuestion = function(res, name, concept, ontology, fieldName) {
   // Load AL
   var AL = getFromTable(name);
   if(AL === null) {
@@ -131,7 +135,7 @@ exports.getQuestion = function(res, name, concept, ontology, qid) {
     res.send("Active Learner " + name + " not found");
     return null;
   }
-  var question = getQuestionObj(AL, name, concept, ontology, qid); 
+  var question = getQuestionObj(AL, name, concept, ontology, fieldName); 
 
   res.send(question);
 };
@@ -153,6 +157,7 @@ exports.answerQuestion = function(res, name, concept, ontology, qid, answer) {
 
   // Get New Question
   var question = getQuestionObj(AL, name, concept, ontology); 
+  console.say("got question");
   res.send(question);
 };
 
@@ -173,6 +178,7 @@ exports.finish = function(res, name, concept) {
     res.send("Active Learner Not Found");
     return;
   }
+  var fieldName = AL.elycite.field;
 
   // Build concept from positive records
   var positives = AL.getPos();
@@ -195,7 +201,7 @@ exports.finish = function(res, name, concept) {
   }
 
   var get_keywords = [{name: 'keywords', type: 'keywords', 
-                       field: og.docsFieldName}];
+                       field: fieldName}];
   var keywords;
   if (suggestion.docs.length > 0) {
     var posRecs = conceptDocs;

@@ -50,19 +50,18 @@ App.Views.OntoLoadView = Backbone.View.extend({
 
   loadOntology: function(event) {
     console.log("Views.OntoLoadView.loadOntology");
-    // get the store name
-    var ontoName = $('#onto-picker').val();
-    var ontology = this.ontologies.findWhere({name: ontoName}).toJSON();
+    // set "loading" status for button
     $('#ontoLoad').button('loading');
-    if(typeof App.State.Documents !== 'undefined') { 
-      delete App.State.Documents;
-    }
-    App.State.concepts = new App.Collections.Concepts([], {url: ontology.links.concepts});
-    this.listenToOnce(App.State.concepts, "add", this.removeModal);
-    App.State.concepts.fetch({error:this.loadError});
-  },
 
-  loadError: function(model, xhr, options) {
+    // get selected ontology
+    var ontoName = $('#onto-picker').val();
+    var ontology = this.ontologies.findWhere({name: ontoName});
+    //set state
+    App.Helpers.setState(ontology, this.removeModal, this.loadError);
+ 
+    },
+
+  loadError: function() {
     $('#ontoLoad').button('reset');
     $('#loadAlert').show();
   },
@@ -71,6 +70,6 @@ App.Views.OntoLoadView = Backbone.View.extend({
     console.log("View.OntoLoadView.removeModal");
     $('#ontoLoad').button('reset');
     $("#loadModal").modal('hide');
-    }
+  }
 
 });

@@ -129,6 +129,7 @@ App.Views.OntologyView = Backbone.View.extend({
     // prepare template data
     var tdata = App.Helpers.getSelectedConcept().toJSON();
     tdata.visualizations = App.Config.VisualizationEnum;
+    tdata.textFields = App.State.docStore.getTextFields();
     // render
     $('#actionbar').empty();
     $('#actionbar').html( this.actionBarTemplate(tdata) );
@@ -138,6 +139,7 @@ App.Views.OntologyView = Backbone.View.extend({
       $('#visualization-picker').val(App.State.VizOpts.get("name"));
     }
     $('#visualization-picker').selectpicker('render');
+    $('#barFieldPicker').selectpicker('render');
   },
 
   changeConcept: function() {
@@ -159,8 +161,22 @@ App.Views.OntologyView = Backbone.View.extend({
     if($('#modal-suggest').length) {
       $('#modal-suggest').remove();
     }
+
+    // setup modal
     var conceptjs = App.Helpers.getSelectedConcept().toJSON();
-    $(this.el).append(this.suggestTemplate(conceptjs));
+    var lopts = App.State.LanguageOptions;
+    var textFields = App.State.docStore.getTextFields();
+    $(this.el).append(this.suggestTemplate({
+                                              concept: conceptjs, 
+                                              textFields: textFields,
+                                              langopts: lopts
+                                            }));
+
+    // show modal
+    $('#modal-suggest').on('shown.bs.modal', function (e) {
+      // when modal is shown, render the selectpicker
+      $('#fieldPicker').selectpicker('render');
+    });
     $('#modal-suggest').modal('show');
     $('#modal-suggest').on('hidden.bs.modal', function (e) {
       $('#modal-suggest').remove();
@@ -177,9 +193,25 @@ App.Views.OntologyView = Backbone.View.extend({
 
   suggestConcepts: function() {
     console.log("App.Views.OntoView.SuggestConcepts");
+
+    // get input options
     var n = $("input#input-number-suggestions").val();
+    var field = $("#fieldPicker").val();
+
+    // advanced options
+    var stopwords = $('#cls-stopwordsPicker').val();
+    var stemmer =  $('#cls-stemmerPicker').val();
+    var numIter = $("#numIter").val();
+    var advanced_opts = {
+                          numIter: numIter, 
+                          stemmer: stemmer, 
+                          stopwords: stopwords
+    };
+
+    // set loading
     $('#suggest').button('loading');
-    // callback that sets the suggestions
+
+    // define callback that sets the suggestions
     var setSuggestions = function(res) {
       var lid = 0;
       res.map(function(c) {
@@ -187,11 +219,14 @@ App.Views.OntologyView = Backbone.View.extend({
         c.lid = lid++;
       });
       App.State.suggestions.reset(res);
-    $('#suggest').button('reset');
+
+      // unset loading
+      $('#suggest').button('reset');
     }; // end of callback
     
+    // make call (get suggestions)
     var concept = App.Helpers.getSelectedConcept();
-    App.API.suggestConcepts(concept, n, setSuggestions);
+    App.API.suggestConcepts(concept, n, field, advanced_opts, setSuggestions);
   },
 
   addSuggested: function(ev) {
@@ -341,35 +376,49 @@ App.Views.OntologyView = Backbone.View.extend({
 
   showQueryModal: function() {
     console.log("App.Views.OntoView.showQueryModal");
+
     var conceptjs = App.Helpers.getSelectedConcept().toJSON();
-    var concepts = App.State.concepts.toJSON();
+    var textFields = App.State.docStore.getTextFields();
 
     // remove if exists
     if($('#modal-query').length > 0) {
       $('#modal-query').remove();
     }
     // display
-    $(this.el).append(this.queryTemplate({concept:conceptjs}));
+    $(this.el).append(this.queryTemplate({concept:conceptjs,
+                                          textFields: textFields}));
+
+    $('#modal-query').on('shown.bs.modal', function (e) {
+      // when modal is shown, render the selectpicker
+      $('#fieldPicker').selectpicker('render');
+    });
     $('#modal-query').modal('show');
   },
 
   makeQuery: function(ev) {
     console.log("App.Views.OntoView.makeQuery");
+
     var queryText = $('#query-text').val();
     if (queryText.length < 1) {
       return;
     }
+
+    // field to query
+    var fieldName = $('#fieldPicker').val();
+    console.log("fieldName: " + fieldName);
+
     // get current concept (parent of query)
     var cid = $(ev.currentTarget).data("cid");
     var c = App.State.concepts.findWhere({$id: cid});
     var queryType = $("#query-type").find("label.active").find("input").attr('id');
     $('#make-query').button('loading');
     
-    // Simple Query
     switch(queryType) {
       case 'query-opt-simple':
+        // Simple Query
         App.State.queryConcept = new App.Models.Concept();
         App.State.queryConcept.set("query", queryText);
+
         this.listenToOnce(App.State.queryConcept, "change", this.renderQueryResult);
         this.listenToOnce(App.State.queryConcept, "destroy", this.renderNoResults);
 
@@ -381,17 +430,19 @@ App.Views.OntologyView = Backbone.View.extend({
           }
           App.State.queryConcept.set(data);
         };
-        c.getQuerySuggestion(queryText, setQueryConcept);
+        c.getQuerySuggestion(queryText, fieldName, setQueryConcept);
         break;
       case 'query-opt-al':
         // Active Learner Query
         // make query and set AL, make question = true
         App.State.currentAL = new App.Models.AL({concept: c, 
-                                                 query: queryText});
+                                                 query: queryText,
+                                                 fieldName: fieldName});
         this.listenTo(App.State.currentAL, "change", this.renderQuestion);
         App.State.currentAL.save();
         break;
       case 'query-opt-gal':
+        // Guided + Active Learner Query: Not Implemented yet
         $('#modal-query').modal('hide');
         App.State.GuidedDocuments = new App.Collections.Documents();
         
@@ -610,6 +661,7 @@ App.Views.OntologyView = Backbone.View.extend({
 
   suggestKeywords: function() {
     var concept = App.Helpers.getSelectedConcept();
+    var fieldName = $('#barFieldPicker').val();
     $('#suggest-keywords').button('loading');
     
     var setKeywords = function(data) {
@@ -619,7 +671,7 @@ App.Views.OntologyView = Backbone.View.extend({
       };
       concept.save([],{success:clbk, error:clbk});
     };
-    concept.getKeywordsSuggestion(setKeywords);
+    concept.getKeywordsSuggestion(fieldName, setKeywords);
   },
 
   fetchMoreDocs: function() {
@@ -652,11 +704,20 @@ App.Views.OntologyView = Backbone.View.extend({
       var conceptjs = App.Helpers.getSelectedConcept().toJSON();
       conceptjs.ndocs = conceptjs.docList.length;
       var lopts = App.State.LanguageOptions;
-      $(self.el).append(self.buildTemplate({concept:conceptjs, langopts:lopts}));
-      $('#modal-build').modal('show');
+      var textFields = App.State.docStore.getTextFields();
+      $(self.el).append(self.buildTemplate({
+                                              concept:conceptjs,
+                                              langopts:lopts, 
+                                              textFields:textFields
+                                            }));
+    $('#modal-build').on('shown.bs.modal', function (e) {
+      // when modal is shown, render the selectpicker
+      $('#fieldPicker').selectpicker('render');
+    });
+    $('#modal-build').modal('show');
       // set defaults
-      $('#cls-stopwordsPicker').val(conceptjs.stopwords);
-      $('#cls-stemmerPicker').val(conceptjs.stemmer);
+    $('#cls-stopwordsPicker').val(conceptjs.stopwords);
+    $('#cls-stemmerPicker').val(conceptjs.stemmer);
     };
     concept.getDocs(display);
   },
@@ -668,6 +729,7 @@ App.Views.OntologyView = Backbone.View.extend({
     var classifiersUrl = concept.get("links").ontology + "classifiers/";
     // get options
     var name = $("#cls-name").val() || "default";
+    var field = $("#fieldPicker").val();
     name = concept.get("ontology") + "_" + name;
     var stopwords = $('#cls-stopwordsPicker').val();
     var stemmer =  $('#cls-stemmerPicker').val();
@@ -675,6 +737,7 @@ App.Views.OntologyView = Backbone.View.extend({
     var j = parseFloat($("#cls-param-j").val());
     var opts = {
       name:name,
+      fieldName:field,
       cid:concept.id,
       c:c,
       j:j, 

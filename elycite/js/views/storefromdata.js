@@ -110,7 +110,10 @@ App.Views.StoreFromDataView = Backbone.View.extend({
     // split records into arrays of len 10
     // send the first small array with the create
     console.log("Data loaded into memory");
-    var initdata = this.data.slice(0, App.Constants.uploadPart);
+    // splice removes the spliced elements from the array
+    // in this case we dont want data to contain the initdata when we
+    // upload the rest of it
+    var initdata = this.data.splice(0, App.Constants.uploadPart);
     var storeOptions = {name: this.storeName, records: initdata};
     this.store = new App.Models.Store(storeOptions);
     this.listenToOnce(this.store, "sync", this.storeCreated);

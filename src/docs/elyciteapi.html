@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>elyciteapi.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="public/stylesheets/normalize.css" />
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="page">
+
+      <div class="header">
+        
+          <h1>elyciteapi.js</h1>
+        
+
+        
+      </div>
+
+      
+        
+        <p>Elycite - Routing - Main Module</p>
+
+        
+      
+        
+        <p>(c) 2013-2014 Luis Rei, Josef Stefan Institute
+MIT License</p>
+
+        
+          <div class='highlight'><pre>
+<span class="hljs-keyword">var</span> analytics = <span class="hljs-built_in">require</span>(<span class="hljs-string">'analytics.js'</span>);
+<span class="hljs-keyword">var</span> restf = <span class="hljs-built_in">require</span>(<span class="hljs-string">'restf.js'</span>);
+<span class="hljs-keyword">var</span> stores = <span class="hljs-built_in">require</span>(<span class="hljs-string">'stores.js'</span>);
+<span class="hljs-keyword">var</span> documents = <span class="hljs-built_in">require</span>(<span class="hljs-string">'documents.js'</span>);
+<span class="hljs-keyword">var</span> concepts = <span class="hljs-built_in">require</span>(<span class="hljs-string">'concepts.js'</span>);
+<span class="hljs-keyword">var</span> al = <span class="hljs-built_in">require</span>(<span class="hljs-string">'activelearning.js'</span>);
+<span class="hljs-keyword">var</span> cls = <span class="hljs-built_in">require</span>(<span class="hljs-string">'classifiers.js'</span>);</pre></div>
+        
+      
+        
+        <h2 id="introductory-notes">Introductory Notes</h2>
+
+        
+      
+        
+        <ul>
+<li>Trailing slashes are important! …/documents/ not ../documents</li>
+<li>Generally, all document representations include a links property 
+containing at least a links.self</li>
+<li><strong>PARAMS</strong> refers to URL parameters such as collections and elements.
+For example, in <em><a href="http://example.com/[resources]/[item]/">http://example.com/[resources]/[item]/</a></em> both <em>[resources]</em><br>and <em>[item]</em> are <code>params</code> to be replaced accordingly.</li>
+<li><strong>ARGS</strong> refers to HTTP GET query strings. For example, in 
+<em><a href="http://example.com/">http://example.com/</a><resources>/?q=hello&amp;w=world</em> both <em>q</em> and <em>w</em> are
+<code>args</code> that take the value <em>hello</em> and <em>world</em>, respectively.</li>
+<li><strong>JSONDATA</strong> is the JSON content of a request which requires the 
+HTTP “Content-Type” header to be set to “application/json”.</li>
+</ul>
+
+        
+      
+        
+        <h2 id="options">Options</h2>
+
+        
+      
+        
+        <h4 id="-languageoptions-">/languageoptions/</h4>
+<p><strong>Method:</strong> GET</p>
+<p><strong>Description:</strong> Get Language Options</p>
+<p><strong>Returns:</strong> Options for stemmers and stopword lists</p>
+<p>   { stemmer: [“none”, “porter”], stopwords: [“none”, “en8”, …] }</p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"languageoptions"</span>, <span class="hljs-string">"GET"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Language Options"</span>);
+
+  <span class="hljs-keyword">var</span> LangOpts = analytics.getLanguageOptions();
+  res.send(LangOpts);
+});</pre></div>
+        
+      
+        
+        <h2 id="stores">Stores</h2>
+
+        
+      
+        
+        <p>Stores refer to data stores i.e. does not include ontology stores</p>
+
+        
+      
+        
+        <h4 id="-stores-">/stores/</h4>
+<p><strong>METHOD:</strong> GET</p>
+<p><strong>Description:</strong> Get List of available Data (Document) Stores</p>
+<p><strong>Returns:</strong> A list of qminer store definitions</p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"stores"</span>, <span class="hljs-string">"GET"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - GET Stores"</span>);
+  stores.listStores(res);
+});</pre></div>
+        
+      
+        
+        <p><strong>METHOD:</strong> POST</p>
+<p><strong>Description:</strong> Create a data (document) store with records</p>
+<p><strong>JSON DATA:</strong></p>
+<pre><code>
+ {
+   storeName: "exampleName",
+   records: [{RecVal1}, ...]
+ }
+</code></pre>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"stores/"</span>, <span class="hljs-string">"POST"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - POST Stores"</span>);
+  <span class="hljs-keyword">var</span> data = restf.requireJSON(req, res, <span class="hljs-string">"name"</span>, <span class="hljs-string">"records"</span>);
+  <span class="hljs-keyword">if</span>(data === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  stores.createStore(res, data);
+});</pre></div>
+        
+      
+        
+        <h4 id="-stores-store-">/stores/[store]/</h4>
+<p><strong>METHOD:</strong> GET</p>
+<p><strong>Description:</strong> Read store definition </p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>store</em> - the store name</li>
+</ul>
+<p><strong>Returns:</strong> the <code>store</code> JSON representation. </p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"stores/&lt;store&gt;/"</span>, <span class="hljs-string">"GET"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - GET Store"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"store"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.store);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  stores.getStore(res, store);
+});</pre></div>
+        
+      
+        
+        <h2 id="records">Records</h2>
+
+        
+      
+        
+        <p>A qminer record in this datastore. </p>
+
+        
+      
+        
+        <h4 id="-stores-store-records-">/stores/[store]/records/</h4>
+<p><strong>METHOD:</strong> GET</p>
+<p><strong>Description:</strong> Get All Records </p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>store</em> - the store name</li>
+</ul>
+<p><strong>ARGS:</strong></p>
+<ul>
+<li><em>per_page</em> (int, optional) - number of records per page</li>
+<li><em>page</em> (int, optional) - the page number, with <code>per_page</code> records</li>
+</ul>
+<p><strong>RETURNS:</strong> list of <code>record</code>s (see above).</p>
+<p><strong>Example:</strong> </p>
+<pre><code>
+ curl -X GET \
+ "http://localhost:8080/elyciteapi/stores/testdata/records/?page=3&per_page=2"
+</code></pre>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"stores/&lt;store&gt;/records/"</span>, <span class="hljs-string">"GET"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Records GET ALL"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"store"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.store);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> pargs = restf.paginationArguments(req, <span class="hljs-number">100</span>);
+  stores.getRecords(res, store, pargs.page, pargs.per_page);
+});</pre></div>
+        
+      
+        
+        <h4 id="-stores-store-records-">/stores/[store]/records/</h4>
+<p><strong>METHOD:</strong> POST</p>
+<p><strong>Description:</strong> Add a record or array of records</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>store</em> - the store name</li>
+</ul>
+<p><strong>JSONDATA:</strong></p>
+<pre><code>
+ {
+   records:["array of records"]
+ }
+</code></pre>
+
+<p><strong>RETURNS:</strong> 201 OK.</p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"stores/&lt;store&gt;/records/"</span>, <span class="hljs-string">"POST"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Records POST"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"store"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.store);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> records = restf.requireJSON(req, res);
+  <span class="hljs-keyword">if</span>(records === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  stores.createRecords(res, store, records);
+});</pre></div>
+        
+      
+        
+        <h4 id="-ontologies-store-records-rid-">/ontologies/[store]/records/[rid]/</h4>
+<p><strong>METHOD:</strong> GET</p>
+<p><strong>Description:</strong> Read Record</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>store</em> - the ontology name</li>
+<li><em>rid</em> - record id to get</li>
+</ul>
+<p><strong>RETURNS:</strong> a single <code>document</code></p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"stores/&lt;store&gt;/records/&lt;rid&gt;/"</span>, <span class="hljs-string">"GET"</span>, 
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Document &lt;did&gt; GET"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"store"</span>, <span class="hljs-string">"rid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.store);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> recId = restf.requireInt(res, <span class="hljs-string">"rid"</span>, params.rid);
+  <span class="hljs-keyword">if</span>(recId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> rec = stores.requireRecord(res, store, <span class="hljs-string">"record"</span>, recId);
+  <span class="hljs-keyword">if</span>(rec == <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  res.send(rec.toJSON());
+});</pre></div>
+        
+      
+        
+        <h2 id="ontologies">Ontologies</h2>
+
+        
+      
+        
+        <p>Example <code>ontology</code> document (JSON representation):</p>
+<pre><code>
+ {
+     $id: 3,
+     name: "textmining",
+     docStore: "news",
+     classifierStore: "textmining_cls",
+     isDeleted: false,
+     links: {
+       self: "/elyciteapi/ontologies/textmining/",
+       concepts: "/elyciteapi/ontologies/textmining/concepts/"
+     }
+   }
+</code></pre>
+
+        
+      
+        
+        <h4 id="-ontologies-">/ontologies/</h4>
+<p><strong>METHOD:</strong> GET</p>
+<p><strong>Description:</strong> Get List of Existing Ontologies</p>
+<p><strong>Returns:</strong> list of <code>ontology</code> documents</p>
+<p>   [OntologyDocument1, OntologyDocument2, …]</p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies"</span>, <span class="hljs-string">"GET"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - GET Existing Ontologies"</span>);
+  stores.listOntologies(res);
+});</pre></div>
+        
+      
+        
+        <p><strong>METHOD:</strong> POST</p>
+<p><strong>Description:</strong> Create a new ontology</p>
+<p><strong>JSONDATA:</strong></p>
+<pre><code>
+ {
+   ontologyName: "new_ontology", 
+   dataStore:"news_data"
+ }
+</code></pre>
+
+<p><strong>Returns:</strong> the <code>ontology</code></p>
+<p><strong>Example Request:</strong></p>
+<pre><code>
+   curl -H "Content-Type: application/json" -d \
+   '{"ontologyName":"textmining","dataStore":"news"}' \
+   http://localhost:8080/elyciteapi/ontologies
+</code></pre>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies"</span>, <span class="hljs-string">"POST"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Create Ontology: "</span>);
+  <span class="hljs-keyword">var</span> data = restf.requireJSON(req, res, <span class="hljs-string">"ontologyName"</span>, <span class="hljs-string">"dataStore"</span>);
+  <span class="hljs-keyword">if</span>(data === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  stores.createOntology(res, data);
+});</pre></div>
+        
+      
+        
+        <h4 id="-ontologies-ontology-">/ontologies/[ontology]/</h4>
+<p><strong>METHOD:</strong> GET</p>
+<p><strong>Description:</strong> Read ontology definition </p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+</ul>
+<p><strong>Returns:</strong> the <code>ontology</code> JSON representation. See above.</p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/"</span>, <span class="hljs-string">"GET"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Concept ontology def"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  stores.getOntology(res, store);
+});</pre></div>
+        
+      
+        
+        <h2 id="documents">Documents</h2>
+
+        
+      
+        
+        <p>A document is a record from the data store associated with the ontology. 
+It includes all fields in the data (qminer( record. 
+Text fields can optionally be summarized (truncated).</p>
+
+        
+      
+        
+        <h4 id="-ontologies-ontology-documents-">/ontologies/[ontology]/documents/</h4>
+<p><strong>METHOD:</strong> GET</p>
+<p><strong>Description:</strong> Get All Documents - Summaries only by default</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+</ul>
+<p><strong>ARGS:</strong></p>
+<ul>
+<li><em>per_page</em> (int, optional) - number of documents per page</li>
+<li><em>page</em> (int, optional) - the page number, with <code>per_page</code> documents</li>
+<li><em>summarize</em> (boolean, optional, default: true), truncate text fields</li>
+</ul>
+<p><strong>RETURNS:</strong> list of <code>document</code>s (see above).</p>
+<p><strong>Example:</strong> </p>
+<pre><code>
+ curl -X GET \
+ "http://localhost:8080/elyciteapi/ontologies/test/documents/?page=3&per_page=2&summarize=true?"
+</code></pre>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/documents/"</span>, <span class="hljs-string">"GET"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Document GET ALL (summaries)"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  documents.getDocuments(req, res, store);
+});</pre></div>
+        
+      
+        
+        <h4 id="-ontologies-ontology-documents-did-">/ontologies/[ontology]/documents/[did]/</h4>
+<p><strong>METHOD:</strong> GET</p>
+<p><strong>Description:</strong> Read Document</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><em>did</em> - record id of document to get</li>
+</ul>
+<p><strong>RETURNS:</strong> a single <code>document</code></p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/documents/&lt;did&gt;/"</span>, <span class="hljs-string">"GET"</span>, 
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Document &lt;did&gt; GET"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>, <span class="hljs-string">"did"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> docId = restf.requireInt(res, <span class="hljs-string">"did"</span>, params.did);
+  <span class="hljs-keyword">if</span>(docId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  documents.getDocument(res, store, params.ontology, docId);
+});</pre></div>
+        
+      
+        
+        <h2 id="concepts">Concepts</h2>
+
+        
+      
+        
+        <pre><code>
+ {
+   $id: 0,
+   name: "root",
+   keywords: "",
+   stopwords: "none",
+   stemmer: "none",
+   isDeleted: false,
+   classifiers: [ ],
+   parentId: -1,
+   ontology: "textmining",
+   links: {
+             self: "/elyciteapi/ontologies/textmining/concepts/0/",
+             ontology: "/elyciteapi/ontologies/textmining/"
+          }
+ }
+</code></pre>
+
+        
+      
+        
+        <h4 id="-ontologies-ontology-concepts-">/ontologies/[ontology]/concepts/</h4>
+<p><strong>METHOD:</strong> GET</p>
+<p><strong>Description:</strong> Get all <code>concept</code>s (see above)</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+</ul>
+<p><strong>ARGS:</strong></p>
+<ul>
+<li><em>query</em> (string, optional) - query to filter concepts @TODO NOT IMPLEMENTED</li>
+</ul>
+<p><strong>RETURNS:</strong> a list of <code>concept</code>s</p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/concepts/"</span>, <span class="hljs-string">"GET"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Concept GET ALL"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  concepts.getConcepts(res, store, params.ontology);
+});</pre></div>
+        
+      
+        
+        <p><strong>METHOD:</strong> POST</p>
+<p><strong>Description:</strong> Create a <code>concept</code></p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+</ul>
+<p><strong>JSONDATA:</strong>  A JSON representation of non-calculated <code>concept</code> properties.</p>
+<ul>
+<li><em>name</em> (string) - the new <code>concept</code>‘s name</li>
+<li><em>parentId</em> (int) - the id of the parent <code>concept</code></li>
+<li><em>stemmer</em> (string, optional) - “none”, “porter” see /languageoptions/</li>
+<li><em>stopwords</em> (string, optional): see /languageoptions/</li>
+<li><em>docs</em> (array) - an array of document ids that will be in the <code>concept</code></li>
+</ul>
+<p><strong>EXAMPLE REQUEST:</strong></p>
+<pre><code>
+ curl -H "Content-Type: application/json" -d \
+ '{"name":"testc", "parentId":0, "docs":[0,1,3]}' \
+ http://localhost:8080/elyciteapi/ontologies/textmining/concepts/
+</code></pre>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/concepts/"</span>, <span class="hljs-string">"POST"</span>, 
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Concept POST"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> data = restf.requireJSON(req, res, <span class="hljs-string">"name"</span>, <span class="hljs-string">"parentId"</span>);
+  <span class="hljs-keyword">if</span>(data === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  concepts.createConcept(res, data, store, params.ontology);
+});</pre></div>
+        
+      
+        
+        <h4 id="-ontologies-ontology-concepts-cid-">/ontologies/[ontology]/concepts/[cid]/</h4>
+<p><strong>METHOD:</strong> GET</p>
+<p><strong>Description:</strong> Get a single <code>concept</code></p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><em>cid</em> - the record id of the <code>concept</code> to get</li>
+</ul>
+<p><strong>RETURNS:</strong> the <code>concept</code></p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/concepts/&lt;cid&gt;/"</span>, <span class="hljs-string">"GET"</span>,
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Concept GET"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>, <span class="hljs-string">"cid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> conceptId = restf.requireInt(res, <span class="hljs-string">"cid"</span>, params.cid);
+  <span class="hljs-keyword">if</span>(conceptId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> concept = stores.requireRecord(res, store, <span class="hljs-string">"concept"</span>, conceptId);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  concepts.getConcept(res, store, concept);
+});</pre></div>
+        
+      
+        
+        <p><strong>METHOD:</strong> PUT</p>
+<p><strong>Description:</strong> Edit a <code>concept</code></p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><p><em>cid</em> - the record id of the concept do edit</p>
+<p><strong>JSONDATA:</strong></p>
+</li>
+<li><p><em>name</em> (string, optional) - the <code>concept</code>‘s name</p>
+</li>
+<li><em>parentId</em> (int, optional) - the id of the parent <code>concept</code></li>
+<li><em>stemmer</em> (string, optional) - “none”, “porter” see /languageoptions/</li>
+<li><em>stopwords</em> (string, optional): see /languageoptions/</li>
+</ul>
+<p><strong>EXAMPLE REQUEST:</strong></p>
+<pre><code>
+ curl -X PUT -H "Content-Type: application/json" -d '{"name":"hello"}' \ 
+ http://localhost:8080/elyciteapi/ontologies/textmining/concepts/1/
+</code></pre>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/concepts/&lt;cid&gt;/"</span>, <span class="hljs-string">"PUT"</span>, 
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Concept edit PUT"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>, <span class="hljs-string">"cid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> data = restf.requireJSON(req, res);
+  <span class="hljs-keyword">if</span>(data === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> conceptId = restf.requireInt(res, <span class="hljs-string">"cid"</span>, params.cid);
+  <span class="hljs-keyword">if</span>(conceptId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> concept = stores.requireRecord(res, store, <span class="hljs-string">"concept"</span>, conceptId);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  concepts.editConcept(res, concept, data, store, params.ontology);
+});</pre></div>
+        
+      
+        
+        <p><strong>METHOD:</strong> DELETE</p>
+<p><strong>Description:</strong> Delete this <code>concept</code> including subconcepts (recursively).</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><em>cid</em> - the record id of the concept to delete</li>
+</ul>
+<p><strong>EXAMPLE REQUEST:</strong></p>
+<pre><code>
+ curl -X DELETE \
+ http://localhost:8080/elyciteapi/ontologies/textmining/concepts/1/
+</code></pre>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/concepts/&lt;cid&gt;/"</span>, <span class="hljs-string">"DELETE"</span>,
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Concept DELETE"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>, <span class="hljs-string">"cid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> conceptId = restf.requireInt(res, <span class="hljs-string">"conceptId"</span>, params.cid);
+  <span class="hljs-keyword">if</span>(conceptId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> concept = stores.requireRecord(res, store, <span class="hljs-string">"concept"</span>, conceptId);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  concepts.deleteConcept(res, concept, store);
+});</pre></div>
+        
+      
+        
+        <h4 id="-ontologies-ontology-concepts-cid-subconcepts-">/ontologies/<ontology>/concepts/[cid]/subconcepts/</h4>
+<p><strong>METHOD:</strong> GET</p>
+<p><strong>Description:</strong> get a list of <code>concept</code>s that are subsconcepts (children) 
+of this <code>concept</code></p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><em>cid</em> - the record id of this concept</li>
+</ul>
+<p><strong>RETURNS:</strong> an array containing <code>concept</code>s that are the <code>concept</code>‘s 
+subconcepts (children)</p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/concepts/&lt;cid&gt;/subconcepts/"</span>, <span class="hljs-string">"GET"</span>,
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - GET SUB CONCETPS"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>, <span class="hljs-string">"cid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> conceptId = restf.requireInt(res, <span class="hljs-string">"cid"</span>, params.cid);
+  <span class="hljs-keyword">if</span>(conceptId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> concept = stores.requireRecord(res, store, <span class="hljs-string">"concept"</span>, conceptId);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  concepts.getSubConcepts(res, concept, store, params.ontology);
+});</pre></div>
+        
+      
+        
+        <h4 id="-ontologies-ontology-concepts-cid-docs-">/ontologies/[ontology]/concepts/[cid]/docs/</h4>
+<p><strong>METHOD:</strong> GET</p>
+<p><strong>Description:</strong> Get a list of <code>document</code> record ids that are in the
+<code>concept</code></p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><em>cid</em> - the record id of the concept</li>
+</ul>
+<p><strong>RETURNS:</strong> an array of <code>document</code> record ids (ints)</p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/concepts/&lt;cid&gt;/docs/"</span>, <span class="hljs-string">"GET"</span>, 
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Concept GET docs"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>, <span class="hljs-string">"cid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> conceptId = restf.requireInt(res, <span class="hljs-string">"conceptId"</span>, params.cid);
+  <span class="hljs-keyword">if</span>(conceptId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> concept = stores.requireRecord(res, store, <span class="hljs-string">"concept"</span>, conceptId);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  concepts.getConceptDocuments(req, res, concept, store);
+});</pre></div>
+        
+      
+        
+        <p><strong>METHOD:</strong> PATCH</p>
+<p><strong>DESCRIPTION</strong>: Edit the list of <code>document</code> record ids in the <code>concept</code>
+(Select, DeSelect)</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><em>cid</em> - the record id of the concept</li>
+</ul>
+<p><strong>JSONDATA:</strong></p>
+<ul>
+<li><em>docId</em> (int) - id of a <code>document</code> to add or remove from the concept
+<em>operation</em> (string) - “add” or “del” to add or remove, respectively, the 
+<code>document</code> id from the list</li>
+</ul>
+<p><strong>RETURNS:</strong> an array with the <code>document</code> record ids in the concept</p>
+<p><strong>EXAMPLE REQUEST:</strong></p>
+<pre><code>
+ curl -X PATCH -H "Content-Type: application/json" \
+ -d '{"docId":20, "operation":"add"}' \
+ http://localhost:8080/elyciteapi/ontologies/demo/concepts/1/docs/
+</code></pre>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/concepts/&lt;cid&gt;/docs/"</span>, <span class="hljs-string">"PATCH"</span>,
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Concept Edit doc list"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>, <span class="hljs-string">"cid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> conceptId = restf.requireInt(res, <span class="hljs-string">"conceptId"</span>, params.cid);
+  <span class="hljs-keyword">if</span>(conceptId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> concept = stores.requireRecord(res, store, <span class="hljs-string">"concept"</span>, conceptId);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  concept = restf.requireNotDeleted(concept, <span class="hljs-string">"concept"</span>);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> data = restf.requireJSON(req, res, <span class="hljs-string">"operation"</span>, <span class="hljs-string">"docId"</span>);
+  <span class="hljs-keyword">if</span>(data === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> docId = restf.requireInt(res, <span class="hljs-string">"docId"</span>, data.docId);
+  <span class="hljs-keyword">if</span>(docId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  concepts.editConceptDocuments(res, docId, data.operation, concept, store);
+});</pre></div>
+        
+      
+        
+        <h4 id="-ontologies-ontology-concepts-cid-suggestkeywords-">/ontologies/[ontology]/concepts/[cid]/suggestkeywords/</h4>
+<p><strong>METHOD:</strong> GET</p>
+<p><strong>Description:</strong> Get keyword suggestions for a <code>concept</code></p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><em>cid</em> - the record id of the concept</li>
+</ul>
+<p><strong>ARGS:</strong></p>
+<ul>
+<li><em>numKeywords</em> (int, optional) - number of keywords to get</li>
+</ul>
+<p><strong>RETURNS:</strong> a JSON object with a <code>keywords</code> string property consisting of 
+the suggested keywords separated by a comma an a space. Example:</p>
+<pre><code>
+ {
+   "keywords":"services, bank, business, management, markets"
+ }
+</code></pre>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/concepts/&lt;cid&gt;/suggestkeywords/"</span>, <span class="hljs-string">"GET"</span>, 
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Concept/suggeskeywords"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>, <span class="hljs-string">"cid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> conceptId = restf.requireInt(res, <span class="hljs-string">"conceptId"</span>, params.cid);
+  <span class="hljs-keyword">if</span>(conceptId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> concept = stores.requireRecord(res, store, <span class="hljs-string">"concept"</span>, conceptId);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  concept = restf.requireNotDeleted(concept, <span class="hljs-string">"concept"</span>);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  <span class="hljs-keyword">var</span> args = restf.requireArgs(req, res, <span class="hljs-string">"fieldName"</span>);
+  <span class="hljs-keyword">var</span> fieldName = args.fieldName[<span class="hljs-number">0</span>];
+  concepts.getKeywordSuggestions(res, args, concept, fieldName);
+});</pre></div>
+        
+      
+        
+        <h4 id="-ontologies-ontology-concepts-cid-search-">/ontologies/[ontology]/concepts/[cid]/search/</h4>
+<p><strong>METHOD:</strong> GET</p>
+<p><strong>Description:</strong> Suggest a subconcept based on search</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><em>cid</em> - the record id of the concept</li>
+</ul>
+<p><strong>ARGS:</strong></p>
+<ul>
+<li><em>query</em> (string) - the query used to create the suggestion</li>
+</ul>
+<p><strong>RETURNS:</strong> a concept suggestion (<code>concept</code> without id or generated
+properties). Example:</p>
+<pre><code>
+ {
+   name: "software",
+   keywords: "services, solutions, systems, management, technology, network",
+   parentId: 0,
+   docs: [3, 5, ...]
+ }
+</code></pre>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/concepts/&lt;cid&gt;/search/"</span>, <span class="hljs-string">"GET"</span>, 
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Concept/Search"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>, <span class="hljs-string">"cid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> conceptId = restf.requireInt(res, <span class="hljs-string">"conceptId"</span>, params.cid);
+  <span class="hljs-keyword">if</span>(conceptId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> concept = stores.requireRecord(res, store, <span class="hljs-string">"concept"</span>, conceptId);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  concept = restf.requireNotDeleted(concept, <span class="hljs-string">"concept"</span>);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> args = restf.requireArgs(req, res, <span class="hljs-string">"query"</span>, <span class="hljs-string">"fieldName"</span>);
+  <span class="hljs-keyword">if</span>(args === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> fieldName = args.fieldName[<span class="hljs-number">0</span>];
+
+  concepts.getConceptSuggestionFromQuery(res, concept, store, fieldName,
+                                         args.query);
+});</pre></div>
+        
+      
+        
+        <h4 id="-ontologies-ontology-concepts-cid-suggest-">/ontologies/[ontology]/concepts/[cid]/suggest/</h4>
+<p><strong>METHOD:</strong> GET</p>
+<p><strong>Description:</strong> Suggest subconcepts (clustering based)</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><em>cid</em> - the record id of the concept</li>
+</ul>
+<p><strong>ARGS:</strong></p>
+<ul>
+<li><em>stemmer</em> (string, optional) - “none”, “porter” see /languageoptions/</li>
+<li><em>stopwords</em> (string, optional) - see /languageoptions/</li>
+<li><em>numSuggest</em> (int, optional) - number of <code>concept</code> suggestions</li>
+<li><em>numIter</em> (int, optional) - number of iterations of the clustering
+algorithm</li>
+<li><em>numKeywords</em> (int, optional) - number of keywords per concept</li>
+</ul>
+<p><strong>RETURNS:</strong> an array of concept suggestions (<code>concept</code>s without id or 
+generated properties). See the return of /search/ above.</p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/concepts/&lt;cid&gt;/suggest/"</span>, <span class="hljs-string">"GET"</span>,
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Concept GET suggestions"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>, <span class="hljs-string">"cid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> conceptId = restf.requireInt(res, <span class="hljs-string">"conceptId"</span>, params.cid);
+  <span class="hljs-keyword">if</span>(conceptId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> concept = stores.requireRecord(res, store, <span class="hljs-string">"concept"</span>, conceptId);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  concept = restf.requireNotDeleted(concept, <span class="hljs-string">"concept"</span>);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> args  = restf.requireArgs(req, res, <span class="hljs-string">"fieldName"</span>);
+  <span class="hljs-keyword">if</span>(args === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  concepts.getConceptSuggestionsByClustering(req, res, concept, store);
+});</pre></div>
+        
+      
+        
+        <h2 id="active-learning">Active Learning</h2>
+
+        
+      
+        
+        <p>While there is no actual “active learner document”, there is a <code>question</code>
+document where the <code>id</code> attribute refers to the AL and the questionId is the 
+id of the data associated with the question:</p>
+<p><pre><code>
+ {
+   “questionId”:128,
+   “id”:”medical_1936769238”,
+   “links”:{
+     “self”:”/elyciteapi/ontologies/undefined/concepts/0/al/medical_1936769238/“
+   },
+   “text”:”Develops and manages medical facilities…”,
+   “mode”:false
+ }
+</pre></code>
+ If mode is true, the <code>question</code> also includes all necessary information to
+ create a new concept</p>
+<p><pre><code>
+ {
+   …
+   “mode”:true,
+   “count”:518,
+   “docs”:[75,…],
+   “name”: “medical, services, products”,
+   “keywords”:, “medical, …”
+ }
+</pre></code></p>
+
+        
+      
+        
+        <h4 id="-ontologies-ontology-concepts-cid-al-">/ontologies/[ontology]/concepts/[cid]/al/</h4>
+<p><strong>METHOD:</strong> POST</p>
+<p><strong>Description:</strong> Create Active Learner for a given query</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><em>cid</em> - the record id of the concept</li>
+</ul>
+<p><strong>JSONDATA:</strong></p>
+<ul>
+<li><em>query</em> (string) - query to search for documents (seed positive
+concepts).</li>
+</ul>
+<p><strong>RETURNS:</strong> An initial <code>question</code>.</p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/concepts/&lt;cid&gt;/al/"</span>, <span class="hljs-string">"POST"</span>,
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - AL Create - POST"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>, <span class="hljs-string">"cid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> conceptId = restf.requireInt(res, <span class="hljs-string">"conceptId"</span>, params.cid);
+  <span class="hljs-keyword">if</span>(conceptId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> concept = stores.requireRecord(res, store, <span class="hljs-string">"concept"</span>, conceptId);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  concept = restf.requireNotDeleted(concept, <span class="hljs-string">"concept"</span>);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> data = restf.requireJSON(req, res, <span class="hljs-string">"query"</span>, <span class="hljs-string">"fieldName"</span>);
+  <span class="hljs-keyword">var</span> query = data.query;
+  <span class="hljs-keyword">var</span> fieldName = data.fieldName;
+
+  al.create(res, data, concept, store, query, fieldName);
+});</pre></div>
+        
+      
+        
+        <h4 id="-ontologies-ontology-concepts-cid-al-alid-">/ontologies/[ontology]/concepts/[cid]/al/[alid]/</h4>
+<p><strong>METHOD:</strong> GET</p>
+<p><strong>Description:</strong> Get a question from an active learner.</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><em>cid</em> - the record id of the concept</li>
+<li><em>alid</em> - the active learner id</li>
+</ul>
+<p><strong>RETURNS:</strong> A <code>question</code>.</p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/concepts/&lt;cid&gt;/al/&lt;alid&gt;/"</span>, <span class="hljs-string">"GET"</span>,
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - AL/name/ GET"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>, <span class="hljs-string">"cid"</span>, <span class="hljs-string">"alid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> conceptId = restf.requireInt(res, <span class="hljs-string">"conceptId"</span>, params.cid);
+  <span class="hljs-keyword">if</span>(conceptId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> concept = stores.requireRecord(res, store, <span class="hljs-string">"concept"</span>, conceptId);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  concept = restf.requireNotDeleted(concept, <span class="hljs-string">"concept"</span>);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  <span class="hljs-keyword">var</span> name = params.alid;
+
+  al.getQuestion(res, name, concept, params.ontology);
+});</pre></div>
+        
+      
+        
+        <p><strong>METHOD:</strong> PATCH</p>
+<p><strong>Description:</strong> Answer a question from an active learner.</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><em>cid</em> - the record id of the concept</li>
+<li><em>alid</em> - the active learner id</li>
+</ul>
+<p><strong>JSONDATA:</strong></p>
+<ul>
+<li><em>did</em> - the questionId of the question being answered</li>
+<li><em>answer</em> - 0 or 1 (integer) = no or yes, respectively</li>
+</ul>
+<p><strong>RETURNS:</strong> The next <code>question</code>.</p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/concepts/&lt;cid&gt;/al/&lt;alid&gt;/"</span>, <span class="hljs-string">"PATCH"</span>,
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - AL/name/ PATCH"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>, <span class="hljs-string">"cid"</span>, <span class="hljs-string">"alid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> conceptId = restf.requireInt(res, <span class="hljs-string">"conceptId"</span>, params.cid);
+  <span class="hljs-keyword">if</span>(conceptId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> concept = stores.requireRecord(res, store, <span class="hljs-string">"concept"</span>, conceptId);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  concept = restf.requireNotDeleted(concept, <span class="hljs-string">"concept"</span>);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> data = restf.requireJSON(req, res, <span class="hljs-string">"answer"</span>, <span class="hljs-string">"did"</span>);
+  <span class="hljs-keyword">var</span> did = restf.requireInt(res, <span class="hljs-string">"did"</span>, data.did); <span class="hljs-comment">// actually did</span>
+  <span class="hljs-keyword">var</span> name = params.alid;
+
+  al.answerQuestion(res, name, concept, params.ontology, did, data.answer);
+});</pre></div>
+        
+      
+        
+        <p><strong>METHOD:</strong> DELETE</p>
+<p><strong>Description:</strong> Cancel (DELETE) active learner.</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><em>cid</em> - the record id of the concept</li>
+<li><em>alid</em> - the active learner id</li>
+</ul>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/concepts/&lt;cid&gt;/al/&lt;alid&gt;/"</span>, <span class="hljs-string">"DELETE"</span>,
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - AL/name/ DELETE"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>, <span class="hljs-string">"cid"</span>, <span class="hljs-string">"alid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> conceptId = restf.requireInt(res, <span class="hljs-string">"conceptId"</span>, params.cid);
+  <span class="hljs-keyword">if</span>(conceptId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> concept = stores.requireRecord(res, store, <span class="hljs-string">"concept"</span>, conceptId);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  concept = restf.requireNotDeleted(concept, <span class="hljs-string">"concept"</span>);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  <span class="hljs-keyword">var</span> name = params.alid;
+  al.cancel(res, name);
+});</pre></div>
+        
+      
+        
+        <p><strong>METHOD:</strong> POST</p>
+<p><strong>Description:</strong> Get Concept: finish active learning and create the concept</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><em>cid</em> - the record id of the concept</li>
+<li><em>alid</em> - the active learner id</li>
+</ul>
+<p><strong>RETURNS:</strong> The <code>concept</code> created.</p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/concepts/&lt;cid&gt;/al/&lt;alid&gt;/"</span>, 
+               <span class="hljs-string">"POST"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - AL/name/ POST"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>, <span class="hljs-string">"cid"</span>, <span class="hljs-string">"alid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> conceptId = restf.requireInt(res, <span class="hljs-string">"conceptId"</span>, params.cid);
+  <span class="hljs-keyword">if</span>(conceptId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> concept = stores.requireRecord(res, store, <span class="hljs-string">"concept"</span>, conceptId);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  concept = restf.requireNotDeleted(concept, <span class="hljs-string">"concept"</span>);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> name = params.alid;
+ 
+  al.finish(res, name, concept);
+});</pre></div>
+        
+      
+        
+        <h2 id="classifiers-svm-">Classifiers (SVM)</h2>
+
+        
+      
+        
+        <p><pre><code>
+ {
+   “id”:”classifier_name”,
+   “links”:{
+     “self”:”/elyciteapi/ontologies/blahblah/classifiers/classifier_name/“,
+     “ontology”:”/elyciteapi/ontologies/blahblah/“
+   }
+ }
+</pre></code></p>
+<h4 id="-ontologies-ontology-classifiers-">/ontologies/[ontology]/classifiers/</h4>
+<p><strong>METHOD:</strong> POST</p>
+<p><strong>Description:</strong> List existing classifiers (models).</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+</ul>
+<p><strong>RETURNS:</strong> A list of <code>classifier</code>s.</p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/classifiers/"</span>, <span class="hljs-string">"GET"</span>,
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Classifiers  Get"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  cls.list(res, store);
+});</pre></div>
+        
+      
+        
+        <p><strong>METHOD:</strong> POST</p>
+<p><strong>Description:</strong> Create classifier for a Concept.</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+</ul>
+<p><strong>JSONDATA:</strong></p>
+<ul>
+<li><em>cid</em> - the record id of the concept</li>
+<li><em>name</em> - name for the classifier (mid)</li>
+</ul>
+<p><strong>RETURNS:</strong> The <code>classifier</code> created.</p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/classifiers/"</span>, <span class="hljs-string">"POST"</span>, 
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Concept Classifier - POST"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> data = restf.requireJSON(req, res, <span class="hljs-string">"name"</span>, <span class="hljs-string">"cid"</span>, <span class="hljs-string">"fieldName"</span>);
+  <span class="hljs-keyword">var</span> conceptId = restf.requireInt(res, <span class="hljs-string">"conceptId"</span>, data.cid);
+  <span class="hljs-keyword">if</span>(conceptId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> concept = stores.requireRecord(res, store, <span class="hljs-string">"concept"</span>, conceptId);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  concept = restf.requireNotDeleted(concept, <span class="hljs-string">"concept"</span>);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+
+  cls.create(res, data, concept, store, params.ontology);
+});</pre></div>
+        
+      
+        
+        <h4 id="-ontologies-ontology-classifiers-mid-">/ontologies/[ontology]/classifiers/[mid]/</h4>
+<p><strong>METHOD:</strong> POST</p>
+<p><strong>Description:</strong> Classify array of documents.</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><em>mid</em> - the classifier name (model id)</li>
+</ul>
+<p><strong>RETURNS:</strong> An array of decision functions (negative or positive numbers).</p>
+<p>Example:</p>
+<p><pre><code>
+ curl -X POST -H “Content-Type: application/json” \
+ -d ‘[“this is about networks”, “this is dog”]’ \
+ <a href="http://localhost:8080/elyciteapi/ontologies/worktest/classifiers/worktest_network/">http://localhost:8080/elyciteapi/ontologies/worktest/classifiers/worktest_network/</a>
+</pre></code></p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/classifiers/&lt;mid&gt;/"</span>, <span class="hljs-string">"POST"</span>, 
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Classify with model POST"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>, <span class="hljs-string">"mid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> data = restf.requireJSON(req, res);
+
+  cls.classify(res, params.mid, data, store);
+});</pre></div>
+        
+      
+        
+        <p><strong>METHOD:</strong> DELETE</p>
+<p><strong>Description:</strong> Delete a classifier (with ontology parameter).</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><em>mid</em> - the classifier name (model id)</li>
+</ul>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/classifiers/&lt;mid&gt;/"</span>, <span class="hljs-string">"DELETE"</span>,
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - DELETE Classifier"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"mid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> mid = params.mid;
+  cls.deleteClassifier(mid);
+  res.send();
+});</pre></div>
+        
+      
+        
+        <h4 id="-ontologies-ontology-classifiers-mid-">/ontologies/[ontology]/classifiers/[mid]/</h4>
+<p><strong>METHOD:</strong> POST</p>
+<p><strong>Description:</strong> Get (binary) subsconcepts from classifier.</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>ontology</em> - the ontology name</li>
+<li><em>cid</em> - the id of the concept from which the subconcepts will be created </li>
+<li><em>mid</em> - the classifier name (model id)</li>
+</ul>
+<p><strong>RETURNS:</strong> Array with positive and negative sub<code>concept</code>s. </p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"ontologies/&lt;ontology&gt;/concepts/&lt;cid&gt;/classify/&lt;mid&gt;/"</span>, <span class="hljs-string">"GET"</span>, 
+               <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - GET SUB CONCETPS FROM CLASSIFIER"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"ontology"</span>, <span class="hljs-string">"cid"</span>, <span class="hljs-string">"mid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> store = stores.requireExists(res, params.ontology);
+  <span class="hljs-keyword">if</span>(store === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> conceptId = restf.requireInt(res, <span class="hljs-string">"conceptId"</span>, params.cid);
+  <span class="hljs-keyword">if</span>(conceptId === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> concept = stores.requireRecord(res, store, <span class="hljs-string">"concept"</span>, conceptId);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  concept = restf.requireNotDeleted(concept, <span class="hljs-string">"concept"</span>);
+  <span class="hljs-keyword">if</span>(concept === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> args = req.args || {};
+  <span class="hljs-keyword">var</span> threshold = restf.optionalFloat(args, <span class="hljs-string">"thresh"</span>, <span class="hljs-number">0</span>);
+  <span class="hljs-keyword">var</span> mid = params.mid;
+
+  cls.subConcepts(res, mid, threshold, concept, store);
+});</pre></div>
+        
+      
+        
+        <h4 id="-classifiers-">/classifiers/</h4>
+<p><strong>METHOD:</strong> GET</p>
+<p><strong>Description:</strong> List existing classifiers (models) for ALL ontologies</p>
+<p><strong>RETURNS:</strong> A list of <code>classifier</code>s. </p>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"classifiers/"</span>, <span class="hljs-string">"GET"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - Classifiers  Get ALL"</span>);
+  cls.listAll(res);
+});</pre></div>
+        
+      
+        
+        <h4 id="-classifiers-mid-">/classifiers/[mid]/</h4>
+<p><strong>METHOD:</strong> DELETE</p>
+<p><strong>Description:</strong> Delete a classifier (without ontology parameter)</p>
+<p><strong>PARAMS:</strong></p>
+<ul>
+<li><em>mid</em> - the classifier name (model id)</li>
+</ul>
+
+        
+          <div class='highlight'><pre>http.onRequest(<span class="hljs-string">"classifiers/&lt;mid&gt;/"</span>, <span class="hljs-string">"DELETE"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(req, res)</span> {</span>
+  console.say(<span class="hljs-string">"elycite API - DELETE Classifier"</span>);
+  <span class="hljs-keyword">var</span> params = restf.requireParams(req, res, <span class="hljs-string">"mid"</span>);
+  <span class="hljs-keyword">if</span>(params === <span class="hljs-literal">null</span>) { <span class="hljs-keyword">return</span>; }
+  <span class="hljs-keyword">var</span> mid = params.mid;
+  cls.deleteClassifier(mid);
+  res.send();
+});</pre></div>
+        
+      
+      <div class="fleur">h</div>
+    </div>
+  </div>
+</body>
+</html>

@@ -18,45 +18,44 @@
         </select>
       </div>
     </div>
-    <div class="form-group">
-      <label class="col-sm-4  control-label" for="fieldPicker">Field</label>
-      <div class="col-sm-8">
-        <select class="selectpicker" id="fieldPicker">
-          {{#each fields}}
-          <option>{{this.fieldName}}</option>
-          {{/each}}
-        </select>
+
+    <!-- Defaults Panel -->
+    <div class="panel panel-default col-sm-6 col-sm-offset-2">
+      <div class="panel-heading">
+        <h3 class="panel-title">Default Options</h3>
       </div>
-    </div>
-    <div class="form-group">
-      <label class="col-sm-4 control-label" for="stemmerPicker">Stemmer</label>
-      <div class="col-sm-8">
-        <select class="selectpicker" id="stemmerPicker">
-        {{#each this.langopts.stemmer}}
-        <option>{{this}}</option>
-        {{/each}}
-      </select>
-    </div>
-  </div>
-  <div class="form-group">
-    <label class="col-sm-4 control-label" for="stopwordsPicker">Stopwords</label>
-    <div class="col-sm-8">
-      <select class="selectpicker" id="stopwordsPicker">
-        {{#each this.langopts.stopwords}}
-        <option>{{this}}</option>
-        {{/each}}
-      </select>
-    </div>
-  </div>
-  <div class="form-group">
-    <label class="col-sm-4 control-label" for="maxngramlength">Max n-gram length</label>
-    <input class="col-sm-4" type="number" id="maxNgramLength" value="3">
-  </div>
-  <div class="form-group">
-    <label class="col-sm-4 control-label" for="minNgramFreq">Min n-gram frequency</label>
-    <input class="col-sm-4" type="number" id="minNgramFreq" value=5>
-  </div>
-</form>
- <div class="col-sm-offset-4 col-sm-8">
+      <div class="panel-body">
+        <div class="form-group">
+          <label class="col-sm-4 control-label" for="stemmerPicker">Stemmer</label>
+          <div class="col-sm-8">
+            <select class="selectpicker" id="stemmerPicker">
+              {{#each this.langopts.stemmer}}
+              <option>{{this}}</option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-sm-4 control-label" for="stopwordsPicker">Stopwords</label>
+          <div class="col-sm-8">
+            <select class="selectpicker" id="stopwordsPicker">
+              {{#each this.langopts.stopwords}}
+              <option>{{this}}</option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-sm-4 control-label" for="maxngramlength">Max n-gram length</label>
+          <input class="col-sm-2 col-sm-offset-3" type="number" id="maxNgramLength" value="3">
+        </div>
+        <div class="form-group">
+          <label class="col-sm-4 control-label" for="minNgramFreq">Min n-gram frequency</label>
+          <input class="col-sm-2 col-sm-offset-3" type="number" id="minNgramFreq" value=5>
+        </div>
+      </div> <!-- /panel body -->
+    </div> <!-- /panel -->
+  </form>
+  <div class="col-sm-offset-4 col-sm-8">
   <button class="btn btn-primary pull-right" id="ontoCreate" data-loading-text="Creating...">Create</button>
 </div>

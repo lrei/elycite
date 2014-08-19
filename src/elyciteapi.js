@@ -652,8 +652,9 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/suggestkeywords/", "GET",
   concept = restf.requireNotDeleted(concept, "concept");
   if(concept === null) { return; }
 
-  var args = req.args || {};
-  concepts.getKeywordSuggestions(res, args, concept);
+  var args = restf.requireArgs(req, res, "fieldName");
+  var fieldName = args.fieldName[0];
+  concepts.getKeywordSuggestions(res, args, concept, fieldName);
 });
 
 // #### /ontologies/[ontology]/concepts/[cid]/search/
@@ -694,10 +695,12 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/search/", "GET",
   if(concept === null) { return; }
   concept = restf.requireNotDeleted(concept, "concept");
   if(concept === null) { return; }
-  var args = restf.requireArgs(req, res, "query");
+  var args = restf.requireArgs(req, res, "query", "fieldName");
   if(args === null) { return; }
+  var fieldName = args.fieldName[0];
 
-  concepts.getConceptSuggestionFromQuery(res, concept, store, args.query);
+  concepts.getConceptSuggestionFromQuery(res, concept, store, fieldName,
+                                         args.query);
 });
 
 // #### /ontologies/[ontology]/concepts/[cid]/suggest/
@@ -735,6 +738,8 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/suggest/", "GET",
   if(concept === null) { return; }
   concept = restf.requireNotDeleted(concept, "concept");
   if(concept === null) { return; }
+  var args  = restf.requireArgs(req, res, "fieldName");
+  if(args === null) { return; }
 
   concepts.getConceptSuggestionsByClustering(req, res, concept, store);
 });
@@ -798,10 +803,11 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/", "POST",
   if(concept === null) { return; }
   concept = restf.requireNotDeleted(concept, "concept");
   if(concept === null) { return; }
-  var data = restf.requireJSON(req, res, "query");
+  var data = restf.requireJSON(req, res, "query", "fieldName");
   var query = data.query;
+  var fieldName = data.fieldName;
 
-  al.create(res, data, concept, store, query);
+  al.create(res, data, concept, store, query, fieldName);
 });
 
 // #### /ontologies/[ontology]/concepts/[cid]/al/[alid]/
@@ -981,7 +987,7 @@ http.onRequest("ontologies/<ontology>/classifiers/", "POST",
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
   if(store === null) { return; }
-  var data = restf.requireJSON(req, res, "name", "cid");
+  var data = restf.requireJSON(req, res, "name", "cid", "fieldName");
   var conceptId = restf.requireInt(res, "conceptId", data.cid);
   if(conceptId === null) { return; }
   var concept = stores.requireRecord(res, store, "concept", conceptId);
