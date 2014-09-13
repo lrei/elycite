@@ -308,6 +308,26 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
 
   return "<!-- Export Visualization Modal -->\n<div class=\"modal fade\" id=\"exportviz-modal\" data-backdrop=\"false\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"exportviz-modal-label\" aria-hidden=\"true\">\n  <div class=\"modal-dialog\">\n    <div class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">&times;</button>\n        <h4 class=\"modal-title\">Export Visualization</h4>\n      </div> <!-- /modal header -->\n      <div class=\"modal-body\">\n        <div class=\"form-group\">\n          <label for=\"input-viz-filename\">File Name: </label>\n          <input type=\"text\" class=\"form-control\" id=\"input-viz-filename\" value=\"ontology\">\n        </div>\n      </div> <!-- /modal body -->\n      <div class=\"modal-footer\">\n        <button id=\"close\" type=\"button\" class=\"btn\" data-dismiss=\"modal\">Cancel</button>\n        <button id=\"save\" type=\"button\" class=\"btn btn-primary\" data-dismiss=\"modal\">Save</button>\n      </div> <!-- /modal footer -->\n    </div><!-- /.modal-content -->\n  </div><!-- /.modal-dialog -->\n</div> <!-- /LoadView Modal -->\n";
   });
+templates['fieldpicker'] = template(function (Handlebars,depth0,helpers,partials,data) {
+  this.compilerInfo = [4,'>= 1.0.0'];
+helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
+  var buffer = "", stack1, functionType="function", escapeExpression=this.escapeExpression, self=this;
+
+function program1(depth0,data) {
+  
+  var buffer = "", stack1;
+  buffer += "\n      <option>"
+    + escapeExpression(((stack1 = depth0.fieldName),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
+    + "</option>\n      ";
+  return buffer;
+  }
+
+  buffer += "<div class=\"form-group\" id=\"field-picker-control\">\n  <label class=\"col-sm-4  control-label\" for=\"field-picker\">Document Fields</label>\n  <div class=\"col-sm-8\">\n    <select class=\"selectpicker\" id=\"field-picker\" multiple>\n      ";
+  stack1 = helpers.each.call(depth0, depth0.fields, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += "\n    </select>\n  </div>\n</div>\n\n";
+  return buffer;
+  });
 templates['filelist'] = template(function (Handlebars,depth0,helpers,partials,data) {
   this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
@@ -383,6 +403,26 @@ function program1(depth0,data) {
   buffer += " <!-- end of each field -->\n          </select>\n        </div> <!-- /from group -->\n      </div>\n      <div class=\"modal-footer\">\n        <button data-cid="
     + escapeExpression(((stack1 = ((stack1 = depth0.concept),stack1 == null || stack1 === false ? stack1 : stack1.$id)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
     + " type=\"button\" id='move-to-destination' class=\"btn btn-warning\" data-loading-text=\"Moving...\">Move</button>\n        <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\">Close</button>\n      </div>\n    </div><!-- /.modal-content -->\n  </div><!-- /.modal-dialog -->\n</div><!-- /.modal -->\n";
+  return buffer;
+  });
+templates['ontoexport'] = template(function (Handlebars,depth0,helpers,partials,data) {
+  this.compilerInfo = [4,'>= 1.0.0'];
+helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
+  var buffer = "", stack1, functionType="function", escapeExpression=this.escapeExpression, self=this;
+
+function program1(depth0,data) {
+  
+  var buffer = "", stack1;
+  buffer += "\n          <option>"
+    + escapeExpression(((stack1 = depth0.name),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
+    + "</option>\n          ";
+  return buffer;
+  }
+
+  buffer += "<div class=\"page-header\">\n  <h1>Export Ontology</h1>\n</div>\n  <form class=\"form-horizontal\" role=\"form\" id=\"ontology-export-form\">\n    <div class=\"form-group\">\n      <label class=\"col-sm-4  control-label\" for=\"ontology-picker\">Ontology</label>\n      <div class=\"col-sm-8\">\n        <select class=\"selectpicker\" id=\"ontology-picker\">\n          ";
+  stack1 = helpers.each.call(depth0, depth0.ontologies, {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += "\n        </select>\n      </div>\n    </div>\n  </form>\n  <div class=\"col-sm-offset-4 col-sm-8\">\n  <button class=\"btn btn-primary pull-right\" id=\"onto-export\" data-loading-text=\"Creating...\">Export</button>\n</div>\n";
   return buffer;
   });
 templates['ontoload'] = template(function (Handlebars,depth0,helpers,partials,data) {

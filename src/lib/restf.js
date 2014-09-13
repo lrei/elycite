@@ -246,8 +246,16 @@ exports.optional = function(obj, key, defaultval, validator) {
   // replace with property if it exists
   if(obj.hasOwnProperty(key)) {
     val = obj[key];
+    // prevent empty args list
+    if(exports.what_is(obj[key]) === '[object Array]') {
+      if(obj[key].length == 1) {
+        if(!obj[key][0]) {
+          val = defaultval;
+        }
+      }
+    }
   }
-
+  
   // optional validator function
   if(validator) {
     if(!validator(val)) {

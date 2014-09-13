@@ -152,8 +152,12 @@ exports.create = function(res, data, concept, store) {
   var ftrSpace = analytics.newFeatureSpace([{type: 'text',
                                                 source: docStore.name,
                                                 field: fieldName,
-                                                stemmer: {type: stemmer},
-                                                stopwords: stopwords}]);
+                                                tokenizer: {
+                                                  type: 'simple',
+                                                  stopwords: stopwords,
+                                                  stemmer: {type: stemmer}
+                                                }
+                                            }]);
   ftrSpace.updateRecords(docStore.recs); // neg + pos recs = all
   var recsMat = ftrSpace.ftrSpColMat(docStore.recs); //recSet feature matrix
   //recsMat.normalizeCols();

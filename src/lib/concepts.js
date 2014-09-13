@@ -61,8 +61,8 @@ var conceptFromRecord = function(rec, ontology) {
   return c;
 };
 
-// Get all concepts in an ontology
-exports.getConcepts = function(res, store) {
+// Get all concepts in an ontology store
+var getConcepts = function(store) {
   var concepts = [];
   var c;
   var ii = 0;
@@ -72,6 +72,12 @@ exports.getConcepts = function(res, store) {
       concepts.push(c);
     }
   }
+  return concepts;
+};
+
+// Get all concepts (representations) in an ontology - http response
+exports.getConcepts = function(res, store) {
+  var concepts = getConcepts(store);
   res.send(concepts);
 };
 
@@ -79,6 +85,47 @@ exports.getConcepts = function(res, store) {
 exports.getConcept = function(res, store, concept) {
   var c = conceptFromRecord(concept, store.name);
   res.send(c); 
+};
+
+// Create export version of ontology
+exports.exportConcepts = function(res, store, docFieldNames, filename) {
+  // export version of concepts
+  var concepts = [];
+  var c;
+  var ii = 0;
+
+  var filepath = og.sandbox + filename + ".json";
+  var fout = fs.openWrite(filepath);
+
+  for (ii = 0; ii < store.length; ii++) {
+    if (!store[ii].isDeleted) {
+      // get concept representation
+      c = conceptFromRecord(store[ii], store.name);
+
+      // only need part of the typical representation
+      c = {id: c.$id, name: c.name, parentId: c.parentId };
+
+      if(docFieldNames.length !== 0) {
+        // add document array
+        c.documents = [];
+        var conceptDocs = store[ii].docs;
+        for(jj = 0; jj < conceptDocs.length; jj++) {
+          var doc = conceptDocs[jj].toJSON();
+          // filter in fields
+          var rdoc = {}; // reduced version
+          for(var kk = 0; kk < docFieldNames.length; kk++) {
+            var fieldName = docFieldNames[kk];
+            rdoc[fieldName] = doc[fieldName];
+          }
+          c.documents.push(rdoc);
+        }
+      }
+      //concepts.push(c);
+      fout.writeLine(JSON.stringify(c));
+    }
+  }
+
+  res.send();
 };
 
 // Create a concept
@@ -139,10 +186,11 @@ var getAncestors = function(concept, acc) {
 exports.editConcept = function(res, concept, data, store) {
   // updates a to record are made by adding a {record: $id} obbject
   // with the properties to be changed
-  var change = {"$id": concept.$id};
   var now = new Date();
-  change.modified = now.toISOString();
-  // name
+  var modified = now.toISOString();
+
+  var change = {"$id": concept.$id, isDeleted: false, modified: modified};
+    // name
   change.name = data.name || concept.name; 
   change.keywords = data.keywords || concept.keywords;
 
@@ -403,6 +451,7 @@ exports.getConceptSuggestionsByClustering = function(req, res, concept, store) {
   var ii, jj = 0;
   var args = req.args || {};
   var lopts = analytics.getLanguageOptions();
+  var parentId = concept.$id;
 
   // field name
   var fieldName = args.fieldName[0];
@@ -429,8 +478,11 @@ exports.getConceptSuggestionsByClustering = function(req, res, concept, store) {
                         type: 'text',
                         source: docStore.name,
                         field: fieldName,
-                        stopwords: stopwords,
-                        stemmer: {type: stemmer},
+                        tokenizer: {
+                          type: 'simple',
+                          stopwords: stopwords,
+                          stemmer: {type: stemmer}
+                        },
                         normalize: true
                        };
   console.say(JSON.stringify(ftrSpaceParams));
@@ -454,15 +506,37 @@ exports.getConceptSuggestionsByClustering = function(req, res, concept, store) {
     }
     suggestions.push({keywords: keywords, docs: docids});
   }
+
+  // the trick here is we save the concept as being deleted, than when the user
+  // adds it, it is simply "undeleted" this is so we don't have to send the
+  // the concept document ids to the client
   suggestions = suggestions.map(function(s) {
     var suggestion = {};
-    docids = [];
     var skeywords = s.keywords.keywords.map(function(k) { return k.keyword; });
     suggestion.name = skeywords.slice(0,3).join(", ");
     suggestion.keywords = skeywords.slice(0, numKeywords).join(", ");
-    suggestion.parentId = concept.$id;
-    suggestion.docs = s.docs;
-    return suggestion;
+    suggestion.parent = {$id: parentId};
+    suggestion.stopwords = stopwords;
+    suggestion.stemmer = stemmer;
+    suggestion.modified = new Date().toISOString();
+    /*
+     * tricks begin here
+     */
+    suggestion.isDeleted = true;
+    var recId = store.add(suggestion);
+    var rec = store[recId];
+
+    // add the docs one at the time as there seems to be a bug
+    // when adding very large arrays via store.add
+    for (var aa = 0; aa < s.docs.length; aa++) {
+      rec.addJoin("docs", docStore[s.docs[aa]]);
+    }
+    var suggestionConcept = conceptFromRecord(rec, store.name); 
+    suggestionConcept.numDocs = s.docs.length;   // send this to the client
+    delete suggestionConcept.isDeleted;          // dont send this to the client
+    return suggestionConcept;
   });
+ 
+
   res.send(suggestions); 
 };

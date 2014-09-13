@@ -166,7 +166,7 @@ http.onRequest("stores/<store>/records/", "POST", function (req, res) {
 });
 
 
-// #### /ontologies/[store]/records/[rid]/
+// #### /stores/[store]/records/[rid]/
 //
 // **METHOD:** GET
 //
@@ -270,6 +270,36 @@ http.onRequest("ontologies/<ontology>/", "GET", function (req, res) {
   if(store === null) { return; }
 
   stores.getOntology(res, store);
+});
+
+// #### /ontologies/[ontology]/export/
+//
+// **METHOD:** GET
+//
+// **Description:** Get export version of concepts (ontology export)
+// 
+// **PARAMS:**
+//
+//  * *ontology* - the ontology name
+//
+// **ARGS:**
+//
+//  * *fields* - list of document store field names to be included
+//
+// **RETURNS:** a list of `concept`s
+http.onRequest("ontologies/<ontology>/export/", "GET", 
+    function (req, res) {
+  console.say("elycite API - Ontology - Export");
+  var params = restf.requireParams(req, res, "ontology");
+  if(params === null) { return; }
+  var store = stores.requireExists(res, params.ontology);
+  if(store === null) { return; }
+  var args = restf.requireArgs(req, res, "filename");
+  var fields = restf.optional(args, 'fields', []);
+  console.say("fields: " + JSON.stringify(fields));
+
+  concepts.exportConcepts(res, store, fields, filename);
+
 });
 
 // Documents

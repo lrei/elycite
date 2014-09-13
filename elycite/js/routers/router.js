@@ -7,6 +7,7 @@ App.Routers.Main = Backbone.Router.extend({
     'ontoview'        : 'ontoview',
     'ontonew'         : 'ontonew',
     'ontoload'        : 'ontoload',
+    'export'          : 'ontoexport',
     'export-viz'      : 'exportviz',
     'classifiers'     : 'classifiers',
     'storefromdata'   : 'storeFromData'
@@ -54,6 +55,16 @@ App.Routers.Main = Backbone.Router.extend({
     }
     this.load_view = new App.Views.OntoLoadView();
   },
+
+  ontoexport: function() {
+    console.log("Router.ontonew: Export Ontology");
+    if(typeof this.load_view !== "undefined") {
+      this.load_view.remove();
+    }
+    this.load_view = new App.Views.OntoExportView();
+  },
+
+
 
   classifiers: function() {
     console.log("Router.classifiers");

@@ -1,0 +1,11 @@
+<div class="form-group" id="field-picker-control">
+  <label class="col-sm-4  control-label" for="field-picker">Document Fields</label>
+  <div class="col-sm-8">
+    <select class="selectpicker" id="field-picker" multiple>
+      {{#each fields}}
+      <option>{{this.fieldName}}</option>
+      {{/each}}
+    </select>
+  </div>
+</div>
+

@@ -215,7 +215,6 @@ App.Views.OntologyView = Backbone.View.extend({
     var setSuggestions = function(res) {
       var lid = 0;
       res.map(function(c) {
-        c.numDocs = c.docs.length; 
         c.lid = lid++;
       });
       App.State.suggestions.reset(res);
@@ -602,13 +601,6 @@ App.Views.OntologyView = Backbone.View.extend({
     // remove the ones that were already in there
     var startPos = $('#doclist-items').children().length;
     docsjs = docsjs.slice(startPos);
-
-    // summarize (client side version)
-    var summarize = function(val) {
-      val.summary = val.text.substring(0, 30);
-      return val;
-    };
-    docsjs = docsjs.map(summarize);
 
     // set selected documents
     var setSelected = function(val) {

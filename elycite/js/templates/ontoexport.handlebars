@@ -1,0 +1,18 @@
+<div class="page-header">
+  <h1>Export Ontology</h1>
+</div>
+  <form class="form-horizontal" role="form" id="ontology-export-form">
+    <div class="form-group">
+      <label class="col-sm-4  control-label" for="ontology-picker">Ontology</label>
+      <div class="col-sm-8">
+        <select class="selectpicker" id="ontology-picker">
+          {{#each ontologies}}
+          <option>{{this.name}}</option>
+          {{/each}}
+        </select>
+      </div>
+    </div>
+  </form>
+  <div class="col-sm-offset-4 col-sm-8">
+  <button class="btn btn-primary pull-right" id="onto-export" data-loading-text="Creating...">Export</button>
+</div>
