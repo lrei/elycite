@@ -1,18 +1,28 @@
 <div class="page-header">
   <h1>Export Ontology</h1>
 </div>
-  <form class="form-horizontal" role="form" id="ontology-export-form">
-    <div class="form-group">
-      <label class="col-sm-4  control-label" for="ontology-picker">Ontology</label>
-      <div class="col-sm-8">
-        <select class="selectpicker" id="ontology-picker">
-          {{#each ontologies}}
-          <option>{{this.name}}</option>
-          {{/each}}
-        </select>
-      </div>
+<form class="form-horizontal" role="form" id="ontology-export-form">
+  <div class="form-group">
+     <label  class="col-sm-4 control-label" for="exportFileName">File name</label>
+     <div class="col-sm-4">
+      <input type="text" class="form-control" id="exportFileName" placeholder="filename.json">
     </div>
-  </form>
-  <div class="col-sm-offset-4 col-sm-8">
-  <button class="btn btn-primary pull-right" id="onto-export" data-loading-text="Creating...">Export</button>
+  </div>
+  <div class="form-group">
+    <label class="col-sm-4  control-label" for="ontology-picker">Ontology</label>
+    <div class="col-sm-8">
+      <select class="selectpicker" id="ontology-picker">
+        {{#each ontologies}}
+        <option>{{this.name}}</option>
+        {{/each}}
+      </select>
+    </div> <!--/col-sm8 -->
+  </div> <!-- /form group -->
+</form>
+<div class="col-sm-offset-4 col-sm-8">
+<button class="btn btn-primary pull-right" id="onto-export" data-loading-text="Creating...">Export</button>
+<div class="container-fluid">
+  <div class="row">
+    <p><strong>Note:</strong> The file will be created in the QMiner sandbox directory for elicyteapi.</p>
+  </div>
 </div>

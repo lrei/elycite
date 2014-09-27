@@ -186,7 +186,7 @@ exports.requireArgs = function() {
     res.send("Missing request arguments.");
     return;
   }
-  var args = req.args;
+  var args = req.args || {};
 
   for(var ii = 2; ii < arguments.length; ii++) {
     if(!args.hasOwnProperty(arguments[ii])) {
@@ -196,11 +196,11 @@ exports.requireArgs = function() {
       return null;
     } 
   }
-  return args;
+  return req.args;
 };
 
 //
-exports.requireNotDeleted = function(rec, name) {
+exports.requireNotDeleted = function(res, rec, name) {
   if(rec.isDeleted) {
     res.setStatusCode(410);
     res.send(name + " '" + rec.$id + "' has been deleted.");

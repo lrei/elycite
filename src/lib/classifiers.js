@@ -146,7 +146,7 @@ exports.create = function(res, data, concept, store) {
   var j = negRecs.length / posRecs.length;
   j = restf.optionalPosFloat(data, "j", j); 
   // SvmParam
-  var SvmParam = {c:c, j:j}; // should I add normalize:false ?
+  var SvmParam = {c:c, j:j, maxTime:1}; // should I add normalize:false ?
 
   // feature space
   var ftrSpace = analytics.newFeatureSpace([{type: 'text',
@@ -172,6 +172,7 @@ exports.create = function(res, data, concept, store) {
   }
 
   // build and store classifier
+  console.log("train classifier");
   var cls = analytics.trainSvmClassify(X, y, SvmParam);
 
   if(cls === undefined || cls === null) {

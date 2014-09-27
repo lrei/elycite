@@ -8,7 +8,7 @@ App.Models.Ontology = Backbone.Model.extend({
     return this.collection.url;
   },
 
-  export: function(selectedFields, filename, callback) {
+  export: function(selectedFields, filename, callback, callbackErr) {
     console.log('ontology.export');
     var url = this.url() + 'export/';
       $.ajax({
@@ -19,6 +19,11 @@ App.Models.Ontology = Backbone.Model.extend({
         console.log("ontology.export.done");
         if(typeof callback === 'function') {
           callback();
+        }
+      }).fail(function() {
+        console.log("ontology.export.fail");
+        if(typeof callbackErr === 'function') {
+          callbackErr();
         }
       });
   }

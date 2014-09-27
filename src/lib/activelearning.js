@@ -6,6 +6,7 @@
 var analytics = require('analytics.js');
 var restf = require('restf.js');
 var stores = require('stores.js');
+var concepts = require('concepts.js');
 var og = require('ogconfig.js');
 
 // very bad global AL table
@@ -50,17 +51,15 @@ var getQuestionObj = function(AL, name, concept, ontology) {
     question.count = positives.length;
     question.docs = positiveDocs; // assign documents to concept
     // get keywords from concept docs
-    var get_keywords = [{name: 'keywords', type: 'keywords',
-                         field: fieldName}];
 
     if (positiveDocs.length > 0) {
       var posRecs = conceptDocs;
       posRecs.filterById(positiveDocs);
-      keywords = posRecs.aggr(get_keywords[0]);
-      keywords = keywords.keywords.map(function(k) { return k.keyword; });
+      keywords = concepts.extractKeywords(posRecs, fieldName, 10, 
+                                          concept.stopwords); 
     }
-    question.name = keywords.slice(0,3).join(", ");
-    question.keywords = keywords.slice(0, 10).join(", ");
+    question.name = keywords.slice(0, 3).join(", ");
+    question.keywords = keywords.join(", ");
   }
   return question;
 };
@@ -97,18 +96,26 @@ exports.create = function(res, data, concept, store, query, fieldName) {
   // Create Feature Space
   var docStore = stores.getDocStore(store);
   var conceptDocs = concept.docs;
-  var ftrSpace = analytics.newFeatureSpace([{type: 'text',
-                                            source: docStore.name,
-                                            field: fieldName,
-                                            stemmer: {type: stemmer},
-                                            stopwords: stopwords}]);
+  var ftrSpaceParams = {
+                        type: 'text',
+                        source: docStore.name,
+                        field: fieldName,
+                        tokenizer: {
+                          type: 'simple',
+                          stopwords: stopwords,
+                          stemmer: {type: stemmer}
+                        },
+                        normalize: true
+                       };
+  var ftrSpace = analytics.newFeatureSpace([ftrSpaceParams]);
   ftrSpace.updateRecords(conceptDocs);
 
   // Transform Query
   //var queryObj = {}; queryObj[fieldName] = query;
   //var transformedQuery = ftrSpace.extractStrings(queryObj)[0];
-  var AL = new analytics.activeLearner(ftrSpace, fieldName, conceptDocs,
-                                       2, 2, query, 1.0, 4.0);
+  var settings = {textField: fieldName, c: 1.0, j: 2.0};
+  var AL = new analytics.activeLearner(query, conceptDocs, conceptDocs, 
+                                       ftrSpace, settings);
   if(AL === undefined) { // this can't currently happen, i think
     res.setStatusCode(500);
     res.send("Unable to create active learner");
@@ -200,21 +207,19 @@ exports.finish = function(res, name, concept) {
     suggestion.docs.push(conceptDocs[positives[ii]].$id);
   }
 
-  var get_keywords = [{name: 'keywords', type: 'keywords', 
-                       field: fieldName}];
   var keywords;
   if (suggestion.docs.length > 0) {
     var posRecs = conceptDocs;
     posRecs.filterById(suggestion.docs);
-    keywords = posRecs.aggr(get_keywords[0]);
-    keywords = keywords.keywords.map(function(k) { return k.keyword; });
+    keywords = concepts.extractKeywords(posRecs, fieldName, 10, 
+                                          concept.stopwords); 
   }
   else {
     // This should not happen: get Words from AL
     keywords = AL.getQuestion(0).keywords.split(", ");
   }
-  suggestion.name = keywords.slice(0,3).join(", ");
-  suggestion.keywords = keywords.slice(0, 10).join(", ");
+  suggestion.name = keywords.slice(0, 3).join(", ");
+  suggestion.keywords = keywords.join(", ");
   suggestion.parentId = concept.$id;
   
   res.send(suggestion);

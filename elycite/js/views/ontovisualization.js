@@ -3,12 +3,13 @@ App.Views.OntoViz = Backbone.View.extend({
 
   defaultHeight: function() {
     var height = 600;
-    var freeVerticalSpace = $(window).height() - $('#main-navbar').height();
-    freeVerticalSpace -= $('#actiobar').height();
-    //console.log("freeVerticalSpace: " + freeVerticalSpace);
+    var elemHeight = $('#main-navbar').height() + $('#actiobar').height() + 40;
+    var freeVerticalSpace = $(window).height() - elemHeight;
+    console.log("freeVerticalSpace: " + freeVerticalSpace);
     if (height < freeVerticalSpace) {
       height = freeVerticalSpace;
     }
+    return height;
   },
 
   initialize: function(attrs) {
@@ -16,10 +17,11 @@ App.Views.OntoViz = Backbone.View.extend({
     App.State.openids = App.State.openids || [];
 
     if(typeof App.State.VizOpts === "undefined") {
-      var width  = $(this.el).width();
+      var width  = $(window).width() - 10;
       var height = this.defaultHeight();
       var vo = {
         "height":   height,
+        "width":    width,
         "name":     App.Config.VisualizationEnum[0],
       };
       App.State.VizOpts = new App.Models.VisualizationOptions(vo);
@@ -57,7 +59,8 @@ App.Views.OntoViz = Backbone.View.extend({
 
     // transform concepts into a set of nodes
     options.nodes = App.State.concepts.map(function(m) {
-      var node = {id: m.get("$id"), label: m.get("name"), reflexive: false};
+      var label = m.get("name") + " (" + m.get("numDocs") + ")";
+      var node = {id: m.get("$id"), label: label, reflexive: false};
       return node;
     });
     // last node id
@@ -142,8 +145,8 @@ App.Views.OntoViz = Backbone.View.extend({
       .attr("rx", 4)
       .attr("ry", 4)
       .attr("height", self.nodeHeight)
-      .attr("width", function(d){ if(d.label) { return d.label.length*8; } return self.nodeWidth;})
-      .attr("x",function(d){if(d.label) { return -d.label.length*4; } return -(self.nodeWidth/2);})
+      .attr("width", function(d){ if(d.label) { return d.label.length*6; } return self.nodeWidth;})
+      .attr("x",function(d){if(d.label) { return -d.label.length*3; } return -(self.nodeWidth/2);})
       .attr("y", -self.nodeHeight/2)
       .style('fill', '#FFF')
       .style('stroke', '#000')
@@ -292,7 +295,7 @@ App.Views.OntoViz = Backbone.View.extend({
           .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
           .attr("dy", ".35em")
           .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
-          .text(function(d) { return d.name; })
+          .text(function(d) { return d.name + " (" + d.numDocs + ")"; })
           .style("fill-opacity", 1e-6);
 
       // Transition nodes to their new position.

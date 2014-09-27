@@ -14,6 +14,8 @@ App.Routers.Main = Backbone.Router.extend({
   },
 
   removeMainViews: function() {
+    // main views are full page views, not modals, they need to be removed
+    // before a new main view can be created.
     if(typeof this.ontology_view !== "undefined") {
       this.ontology_view.remove(); // for use with !==
     }
@@ -28,6 +30,9 @@ App.Routers.Main = Backbone.Router.extend({
         this.new_view.remove();
     }
 
+    if(typeof this.export_view !== "undefined") {
+        this.export_view.remove();
+    }
   },
  
   index: function() {
@@ -58,13 +63,12 @@ App.Routers.Main = Backbone.Router.extend({
 
   ontoexport: function() {
     console.log("Router.ontonew: Export Ontology");
-    if(typeof this.load_view !== "undefined") {
-      this.load_view.remove();
+    this.removeMainViews();
+    if(typeof this.export_view !== "undefined") {
+      this.export.remove();
     }
-    this.load_view = new App.Views.OntoExportView();
+    this.export_view = new App.Views.OntoExportView();
   },
-
-
 
   classifiers: function() {
     console.log("Router.classifiers");

@@ -27,6 +27,7 @@ App.Views.OntologyView = Backbone.View.extend({
      "click #move-to-destination": "moveConcept",
      "click #delete-concept": "showDeleteConcept",
      "click #delete-all": "deleteConcept",
+     "click #delete-sub": "deleteSubConcepts",
      "click #delete-move": "deleteMoveConcept",
      "click #vis-decrease": "decreaseVisualizationSize",
      "click #vis-increase": "increaseVisualizationSize",
@@ -35,6 +36,7 @@ App.Views.OntologyView = Backbone.View.extend({
      "click #suggest-concepts": "showSuggestConcepts",
      "click #suggest": "suggestConcepts",
      "click button.add-suggested": "addSuggested",
+     "click button#add-suggested-all": "addSuggestedAll",
 
      "click button.query-concept": "showQueryModal",
      "click #make-query": "makeQuery",
@@ -175,7 +177,7 @@ App.Views.OntologyView = Backbone.View.extend({
     // show modal
     $('#modal-suggest').on('shown.bs.modal', function (e) {
       // when modal is shown, render the selectpicker
-      $('#fieldPicker').selectpicker('render');
+      $('.selectpicker').selectpicker('render');
     });
     $('#modal-suggest').modal('show');
     $('#modal-suggest').on('hidden.bs.modal', function (e) {
@@ -200,12 +202,17 @@ App.Views.OntologyView = Backbone.View.extend({
 
     // advanced options
     var stopwords = $('#cls-stopwordsPicker').val();
+    stopwords = stopwords || App.State.LanguageOptions.stopwords[0];
     var stemmer =  $('#cls-stemmerPicker').val();
+    stemmer = stemmer || App.State.LanguageOptions.stemmer[0];
+
     var numIter = $("#numIter").val();
+    var numKeywords = $("#numKeywords").val();
     var advanced_opts = {
                           numIter: numIter, 
                           stemmer: stemmer, 
-                          stopwords: stopwords
+                          stopwords: stopwords,
+                          numKeywords: numKeywords
     };
 
     // set loading
@@ -231,11 +238,28 @@ App.Views.OntologyView = Backbone.View.extend({
   addSuggested: function(ev) {
     console.log("App.Views.OntoView.addSuggested");
     var lid = parseInt($(ev.currentTarget).attr("data-lid"));
-    $(ev.currentTarget).button('loading');
+    $(ev.currentTarget).button('adding');
     console.log(App.State.suggestions.findWhere({lid: lid}));
     App.State.concepts.create(App.State.suggestions.findWhere({lid: lid}).toJSON());
     App.State.suggestions.remove(App.State.suggestions.findWhere({lid: lid}));
   },
+
+  addSuggestedAll: function(ev) {
+    console.log("App.Views.OntoView.addSuggestedAll");
+    $(ev.currentTarget).button('adding');
+
+    while(App.State.suggestions.length) {
+      var suggestion = App.State.suggestions.pop().toJSON();
+      if(App.State.suggestions.length === 0) {
+        // last suggestion, trigger refreshes
+        App.State.concepts.create(suggestion, {wait: true});
+      }
+      else {
+        App.State.concepts.create(suggestion, {silent: true, wait: true});
+      }
+    }
+  },
+
 
   showDeleteConcept: function() {
     console.log("App.Views.OntoView.showDeleteModal");
@@ -272,8 +296,30 @@ App.Views.OntologyView = Backbone.View.extend({
     $(ev.currentTarget).button('loading');
     console.log("delete cid: " + cid);
     App.Helpers.setSelectedConceptRoot();
-    App.State.concepts.findWhere({$id: cid}).destroy({silent:true});
-    App.State.concepts.fetch();
+    App.State.concepts.findWhere({$id: cid}).destroy({wait: true});
+    //App.State.concepts.findWhere({$id: cid}).destroy({silent:true});
+    //App.State.concepts.fetch();
+    $('#modal-delete').modal('hide');
+    $('#modal-delete').on('hidden.bs.modal', function (e) {
+      $('#modal-delete').remove();
+    });
+  },
+
+  deleteSubConcepts: function(ev) {
+    console.log("App.Views.OntoView.deleteSubConcepts");
+    var cid = $(ev.currentTarget).data("cid");
+    var did = $("#picker-destination").find("option:selected").data("did");
+    var concept = App.State.concepts.findWhere({$id: cid});
+    var sub = App.State.concepts.where({parentId: concept.get("$id")});
+    // delete all in for loop, trigger on last
+    for(var ii = 0; ii < sub.length; ii++) {
+      if(ii != sub.length - 1) {
+        sub[ii].destroy({silent:true, wait: true});
+      }
+      else {
+        sub[ii].destroy({wait: true});
+      }
+    }
     $('#modal-delete').modal('hide');
     $('#modal-delete').on('hidden.bs.modal', function (e) {
       $('#modal-delete').remove();
@@ -293,7 +339,7 @@ App.Views.OntologyView = Backbone.View.extend({
       c.set("parentId", did, {silent:true}).save({silent:true});
     });
     // delete
-    concept.destroy({silent:true});
+    concept.destroy({silent:true, wait:true});
     // set root as new selected concept
     App.Helpers.setSelectedConceptRoot({silent:true});
     // refresh from server

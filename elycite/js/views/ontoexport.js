@@ -84,10 +84,28 @@ App.Views.OntoExportView = Backbone.View.extend({
 
   exportOntology: function() {
     console.log("Views.OntoExportView.exportOntology");
-    var selectedFields = $('#field-picker').val();
 
+    var selectedFields = $('#field-picker').val();
+    var filename = $('#exportFileName').val();
+    $('#onto-export').button('loading');
     console.log(this.ontology);
-    this.ontology.export(selectedFields, filename, function() { console.log('done'); });
+
+    if($('.alert').length > 0) {
+        $('.alert').remove();
+    }
+    $('#main').prepend(this.errorTemplate());
+
+    this.ontology.export(selectedFields, filename, function() {
+      console.log("Views.OntoExportView.exportOntology.callback");
+
+      $('#onto-export').button('reset');
+      $('#exportFileCreated').show();
+    }, function() {
+      console.log("Views.OntoExportView.exportOntology.callbackFail");
+
+      $('#onto-export').button('reset');
+      $('#exportFileFailed').show();
+    });
   }
 
 });

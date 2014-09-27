@@ -294,11 +294,11 @@ http.onRequest("ontologies/<ontology>/export/", "GET",
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
   if(store === null) { return; }
-  var args = restf.requireArgs(req, res, "filename");
-  var fields = restf.optional(args, 'fields', []);
-  console.say("fields: " + JSON.stringify(fields));
+  var args = restf.requireArgs(req, res, "filename", "fields[]");
+  if(args === null) { return; }
+  //var fields = restf.optional(args, 'fields', []);
 
-  concepts.exportConcepts(res, store, fields, filename);
+  concepts.exportConcepts(res, store, args["fields[]"], args.filename);
 
 });
 
@@ -636,7 +636,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "PATCH",
   if(conceptId === null) { return; }
   var concept = stores.requireRecord(res, store, "concept", conceptId);
   if(concept === null) { return; }
-  concept = restf.requireNotDeleted(concept, "concept");
+  concept = restf.requireNotDeleted(res, concept, "concept");
   if(concept === null) { return; }
   var data = restf.requireJSON(req, res, "operation", "docId");
   if(data === null) { return; }
@@ -679,7 +679,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/suggestkeywords/", "GET",
   if(conceptId === null) { return; }
   var concept = stores.requireRecord(res, store, "concept", conceptId);
   if(concept === null) { return; }
-  concept = restf.requireNotDeleted(concept, "concept");
+  concept = restf.requireNotDeleted(res, concept, "concept");
   if(concept === null) { return; }
 
   var args = restf.requireArgs(req, res, "fieldName");
@@ -723,7 +723,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/search/", "GET",
   if(conceptId === null) { return; }
   var concept = stores.requireRecord(res, store, "concept", conceptId);
   if(concept === null) { return; }
-  concept = restf.requireNotDeleted(concept, "concept");
+  concept = restf.requireNotDeleted(res, concept, "concept");
   if(concept === null) { return; }
   var args = restf.requireArgs(req, res, "query", "fieldName");
   if(args === null) { return; }
@@ -766,7 +766,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/suggest/", "GET",
   if(conceptId === null) { return; }
   var concept = stores.requireRecord(res, store, "concept", conceptId);
   if(concept === null) { return; }
-  concept = restf.requireNotDeleted(concept, "concept");
+  concept = restf.requireNotDeleted(res, concept, "concept");
   if(concept === null) { return; }
   var args  = restf.requireArgs(req, res, "fieldName");
   if(args === null) { return; }
@@ -831,7 +831,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/", "POST",
   if(conceptId === null) { return; }
   var concept = stores.requireRecord(res, store, "concept", conceptId);
   if(concept === null) { return; }
-  concept = restf.requireNotDeleted(concept, "concept");
+  concept = restf.requireNotDeleted(res, concept, "concept");
   if(concept === null) { return; }
   var data = restf.requireJSON(req, res, "query", "fieldName");
   var query = data.query;
@@ -864,7 +864,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "GET",
   if(conceptId === null) { return; }
   var concept = stores.requireRecord(res, store, "concept", conceptId);
   if(concept === null) { return; }
-  concept = restf.requireNotDeleted(concept, "concept");
+  concept = restf.requireNotDeleted(res, concept, "concept");
   if(concept === null) { return; }
 
   var name = params.alid;
@@ -899,7 +899,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "PATCH",
   if(conceptId === null) { return; }
   var concept = stores.requireRecord(res, store, "concept", conceptId);
   if(concept === null) { return; }
-  concept = restf.requireNotDeleted(concept, "concept");
+  concept = restf.requireNotDeleted(res, concept, "concept");
   if(concept === null) { return; }
   var data = restf.requireJSON(req, res, "answer", "did");
   var did = restf.requireInt(res, "did", data.did); // actually did
@@ -928,7 +928,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/", "DELETE",
   if(conceptId === null) { return; }
   var concept = stores.requireRecord(res, store, "concept", conceptId);
   if(concept === null) { return; }
-  concept = restf.requireNotDeleted(concept, "concept");
+  concept = restf.requireNotDeleted(res, concept, "concept");
   if(concept === null) { return; }
 
   var name = params.alid;
@@ -957,7 +957,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/al/<alid>/",
   if(conceptId === null) { return; }
   var concept = stores.requireRecord(res, store, "concept", conceptId);
   if(concept === null) { return; }
-  concept = restf.requireNotDeleted(concept, "concept");
+  concept = restf.requireNotDeleted(res, concept, "concept");
   if(concept === null) { return; }
   var name = params.alid;
  
@@ -1022,7 +1022,7 @@ http.onRequest("ontologies/<ontology>/classifiers/", "POST",
   if(conceptId === null) { return; }
   var concept = stores.requireRecord(res, store, "concept", conceptId);
   if(concept === null) { return; }
-  concept = restf.requireNotDeleted(concept, "concept");
+  concept = restf.requireNotDeleted(res, concept, "concept");
   if(concept === null) { return; }
 
   cls.create(res, data, concept, store, params.ontology);
@@ -1102,7 +1102,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/classify/<mid>/", "GET",
   if(conceptId === null) { return; }
   var concept = stores.requireRecord(res, store, "concept", conceptId);
   if(concept === null) { return; }
-  concept = restf.requireNotDeleted(concept, "concept");
+  concept = restf.requireNotDeleted(res, concept, "concept");
   if(concept === null) { return; }
   var args = req.args || {};
   var threshold = restf.optionalFloat(args, "thresh", 0);
