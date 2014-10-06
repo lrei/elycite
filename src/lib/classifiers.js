@@ -109,6 +109,7 @@ exports.create = function(res, data, concept, store) {
   var X = la.newSpMat();
   var y = la.newVec();
   var posIds = [];
+  var negIds = [];
   // language preprocessing options
   var lopts = analytics.getLanguageOptions();
   // name
@@ -139,6 +140,9 @@ exports.create = function(res, data, concept, store) {
     res.send("No negative examples found (i.e. all documents are in concept).");
     return;
   }
+  for(ii = 0; ii < negRecs.length; ii++) {
+    negIds.push(negRecs[ii].$id);
+  }
 
   // get svm c parameter, default is 1.0
   var c = restf.optionalPosFloat(data, "c", 1.0);
@@ -146,9 +150,14 @@ exports.create = function(res, data, concept, store) {
   var j = negRecs.length / posRecs.length;
   j = restf.optionalPosFloat(data, "j", j); 
   // SvmParam
-  var SvmParam = {c:c, j:j, maxTime:1}; // should I add normalize:false ?
+  var SvmParam = {
+                   c:c, j:j, 
+                   maxTime:1, batchSize: 100, 
+                   minDiff: 1e-6, maxIterations: 100000
+                  }; // should I add normalize:false ?
 
   // feature space
+  console.log("create feature space");
   var ftrSpace = analytics.newFeatureSpace([{type: 'text',
                                                 source: docStore.name,
                                                 field: fieldName,
@@ -161,20 +170,21 @@ exports.create = function(res, data, concept, store) {
   ftrSpace.updateRecords(docStore.recs); // neg + pos recs = all
   var recsMat = ftrSpace.ftrSpColMat(docStore.recs); //recSet feature matrix
   //recsMat.normalizeCols();
-  for (ii = 0; ii < docStore.recs.length; ii++) {
-    X.push(recsMat[ii]);
-    if(posIds.indexOf(docStore.recs[ii].$id) >= 0) {
-      y.push(1.0);
-    }
-    else {
-      y.push(-1.0);
-    }
+  
+  console.log("build train matrix");
+  for (ii = 0; ii < posIds.length; ii++) {
+    X.push(recsMat[posIds[ii]]);
+    y.push(1.0);
   }
-
+  for (ii = 0; ii < negIds.length; ii++) {
+      X.push(recsMat[negIds[ii]]);
+      y.push(-1.0);
+  }
+  
   // build and store classifier
   console.log("train classifier");
   var cls = analytics.trainSvmClassify(X, y, SvmParam);
-
+  console.log("trained");
   if(cls === undefined || cls === null) {
     res.setStatusCode(500);
     res.send("Unable to build this classifer.");
@@ -296,7 +306,7 @@ exports.subConcepts = function(res, mid, threshold, concept, store) {
     negResults.push(negRecs[ii].$id);
   }
   var get_keywords = [{name: 'keywords', type: 'keywords',
-                      field: og.docsFieldName}];
+                      field: classifier.fieldName}];
 
   if (posRecs.length > 0) {
     // Get keywords for positive concept
