@@ -587,7 +587,7 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/subconcepts/", "GET",
 // **RETURNS:** an array of `document` record ids (ints)
 http.onRequest("ontologies/<ontology>/concepts/<cid>/docs/", "GET", 
                function (req, res) {
-  console.say("elycite API - Concept GET docs");
+  console.say("elycite API - Concept GET docs?");
   var params = restf.requireParams(req, res, "ontology", "cid");
   if(params === null) { return; }
   var store = stores.requireExists(res, params.ontology);
@@ -732,6 +732,44 @@ http.onRequest("ontologies/<ontology>/concepts/<cid>/search/", "GET",
   concepts.getConceptSuggestionFromQuery(res, concept, store, fieldName,
                                          args.query);
 });
+
+// #### /ontologies/[ontology]/concepts/[cid]/query/
+//
+// **METHOD:** GET
+//
+// **Description:** Get all the documents from a concept 
+//       that contain the query
+//
+// **PARAMS:**
+//
+//  * *ontology* - the ontology name
+//  * *cid* - the record id of the concept
+//
+// **ARGS:**
+//
+//  * *query* (string) - the query that all the documents must contain
+//
+// **RETURNS:** a list of documents that contain the query.
+http.onRequest("ontologies/<ontology>/concepts/<cid>/query/", "GET", 
+               function (req, res) {
+  console.say("elycite API - Concept/Query");
+  var params = restf.requireParams(req, res, "ontology", "cid");
+  if(params === null) { return; }
+  var store = stores.requireExists(res, params.ontology);
+  if(store === null) { return; }
+  var conceptId = restf.requireInt(res, "conceptId", params.cid);
+  if(conceptId === null) { return; }
+  var concept = stores.requireRecord(res, store, "concept", conceptId);
+  if(concept === null) { return; }
+  concept = restf.requireNotDeleted(res, concept, "concept");
+  if(concept === null) { return; }
+  var args = restf.requireArgs(req, res, "docIds");
+  if(args === null) { return; }
+
+  //concepts.getConceptDocsFromSearch(res, concept, store, args.docIds, params); 
+  documents.getSpecificDocuments(res, store, params.ontology, args.docIds)
+});
+
 
 // #### /ontologies/[ontology]/concepts/[cid]/suggest/
 //
