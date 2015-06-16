@@ -9,7 +9,8 @@ App.Views.StoreFromDataView = Backbone.View.extend({
 
    events: {
      "click #storeCreate" : "createStore",
-     "change #files"      : "filesSelected"
+     "change #files"      : "filesSelected",
+	 "change #filesUrl"    : "fileFromUrl"
   },
 
   initialize: function() {
@@ -27,6 +28,7 @@ App.Views.StoreFromDataView = Backbone.View.extend({
   },
 
   filesSelected: function(evt) {
+    this.URL = false;
     var files = evt.target.files; // FileList object
 
     // files is a FileList of File objects. List some properties.
@@ -49,7 +51,61 @@ App.Views.StoreFromDataView = Backbone.View.extend({
     this.files = files;
   },
 
+
+  fileFromUrl: function(evt) {
+    this.URL = true;
+    console.log("Views.StoreFromDataView.select");
+    var storeName = $("#inputStoreName").val().trim();
+    if (storeName.length === 0) {
+      $("#nameAlert").show();
+      return;
+    }
+    this.storeName = storeName;
+	$('#storeCreate').button('loading');
+	
+	url = $("#filesUrl").val().trim();
+	if (url.length < 1) {
+	  this.urlError();
+	  return;
+	}
+	
+	var self = this;
+	$.ajax({
+	  url: url,
+	  success: function(data) {
+	    $('#storeCreate').button('Create');
+		console.log("URL has valid dataset");		
+		var fileType = $("#typePicker").val();
+		var parsedJSON;
+		if(fileType === "CSV") {
+			try {parsedJSON = $.csv.toObjects(data); }
+			catch(e) {
+			  $("#csvAlert").show();
+			  self.error = true;
+			  return;
+			}
+		}
+		else parsedJSON = JSON.parse(data);
+		self.data = parsedJSON;
+		self.loaded()
+	   },
+	   error: this.urlError
+	});
+  },  
+  
+  urlError: function() {
+	console.log("Invalid URL.");
+    $('#storeCreate').button('reset');
+	$('#urlAlert').show();
+  },
+  
   createStore: function(event) {
+  	url = $("#filesUrl").val().trim();
+	if (url.length > 0) {
+	  this.fileFromUrl();
+	  return;
+	}
+  
     console.log("Views.StoreFromDataView.select");
     var storeName = $("#inputStoreName").val().trim();
     if (storeName.length === 0) {
@@ -99,13 +155,15 @@ App.Views.StoreFromDataView = Backbone.View.extend({
 
   loaded: function() {
     //console.log(this.readCounter);
-    if(this.readCounter != this.files.length) {
+    if(this.URL === false && this.readCounter != this.files.length) {
+	  console.log("fail");
       return;
     }
     if(this.error) {
       $('#storeCreate').button('reset');
       return;
     }
+	
     // we're done loading files so lets create the store
     // split records into arrays of len 10
     // send the first small array with the create
@@ -113,7 +171,7 @@ App.Views.StoreFromDataView = Backbone.View.extend({
     // splice removes the spliced elements from the array
     // in this case we dont want data to contain the initdata when we
     // upload the rest of it
-    var initdata = this.data.splice(0, App.Constants.uploadPart);
+    var initdata = this.data.splice(0, App.Constants.uploadPart);	
     var storeOptions = {name: this.storeName, records: initdata};
     this.store = new App.Models.Store(storeOptions);
     this.listenToOnce(this.store, "sync", this.storeCreated);

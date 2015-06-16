@@ -70,6 +70,19 @@ exports.getDocument = function(res, store, ontology, docId) {
   res.send(d); 
 };
 
+exports.getSpecificDocuments = function(res, store, ontology, docIds) {
+  var docs = [];
+  var docStore = stores.getDocStore(store);
+  docIds = docIds[0].split(",");
+  
+  for (ii = 0; ii < docIds.length; ii++) {
+    var doc = stores.requireRecord(res, docStore, "document", docIds[ii]);
+    if(doc === null) { return; }  
+    docs.push(documentFromRecord(doc, ontology, true));
+  }
+  res.send(docs); 
+};
+
  // Query a document record set
 exports.query = function(rSet, queryStr, store) {
   var result = [];

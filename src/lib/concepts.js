@@ -404,14 +404,18 @@ exports.getConceptDocuments = function(req, res, concept, store) {
 
   var args = req.args || {};
   if(args.hasOwnProperty("query")) {
+	console.log("yep, has query");
     queryStr = args.query[0];
     result = documents.query(rSet, queryStr, store);
   }
   else {
     // No Query
     result = rSet;
-  }
+  } 
 
+  console.log("reeees");
+  console.log(result);
+  
   // Nothing - send empty array
   if(result.length === 0) {
     res.send([]);
@@ -424,9 +428,11 @@ exports.getConceptDocuments = function(req, res, concept, store) {
   }
   if(fullDocs) {
     var pargs = restf.paginationArguments(req);
-    docs = restf.paginatedDocuments(result, store.name,
-                                    pargs.page, pargs.per_page,
-                                    pargs.summarize); 
+    //docs = restf.paginatedDocuments(result, store.name,
+    // docs = documents.paginatedDocuments(result, store.name,
+    //                                pargs.page, pargs.per_page,
+    //                                pargs.summarize); 
+	documents.getDocuments(req, res, store)
   }
   else {
     docs = [];

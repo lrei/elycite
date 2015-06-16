@@ -75,7 +75,7 @@ App.Models.Concept = Backbone.Model.extend({
   },
 
   getKeywordsSuggestion: function(fieldName, callback) {
-  var url = this.url() + "suggestkeywords/";
+	var url = this.url() + "suggestkeywords/";
     $.ajax({
       type: "GET",
       data: {fieldName: fieldName},
@@ -89,6 +89,43 @@ App.Models.Concept = Backbone.Model.extend({
 
   containsDocument: function(docId) {
     return this.get("docList").indexOf(docId) > -1;
+  },
+
+  getDocsWithQuery: function(query, callback) {
+	//var docIds = this.get("docList");  //console.log(docIds);	// without query
+	
+	var url = this.url() + "docs/";
+	$.ajax({
+        type: "GET",
+		url: url,
+		data: {query: query}
+      }).done(function(data) {
+		if (typeof callback === 'function') {
+			callback(data);
+			}	
+      }).fail(function(data) {
+        console.log("getDocsWithQuery.fail");
+		console.log(data.responseText);
+      });  
+  },
+  
+  getDocsWithQuery2: function(docIds, callback) {
+	//var docIds = this.get("docList");  //console.log(docIds);	// without query
+	
+	var url = this.url() + "query/";
+	$.ajax({
+        type: "GET",
+		url: url,
+		data: {docIds: docIds.toString()}
+      }).done(function(data) {
+		if (typeof callback === 'function') {
+			console.log("something");
+			callback(data);
+			}	
+      }).fail(function(data) {
+        console.log("getDocsWithQuery.fail");
+		console.log(data.responseText);
+      }); 
   },
 
 });

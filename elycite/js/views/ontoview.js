@@ -53,6 +53,9 @@ App.Views.OntologyView = Backbone.View.extend({
      "click #do-build-cls": "buildClassifier",
      "click #classify-concept": "showClassify",
      "click #do-classify": "classifyConcept",
+	 
+	 "keyup #search-field": "ifEnterThensearchWordDocuments",
+	 "click #search-word": "searchWordDocuments",	 
   },
 
   initialize: function() {
@@ -89,7 +92,6 @@ App.Views.OntologyView = Backbone.View.extend({
     this.render();
   },
 
-  
   render: function() {
     console.log("Views.OtologyView.render");
     if (typeof App.State.concepts === 'undefined') {
@@ -259,7 +261,6 @@ App.Views.OntologyView = Backbone.View.extend({
       }
     }
   },
-
 
   showDeleteConcept: function() {
     console.log("App.Views.OntoView.showDeleteModal");
@@ -600,17 +601,24 @@ App.Views.OntologyView = Backbone.View.extend({
   },
 
   showDocModal: function() {
+	console.log("showDocModal");
+  
     var concept = App.Helpers.getSelectedConcept();
+	console.log(concept);
     var conceptjs = concept.toJSON();
+	console.log(conceptjs);
+	
     var self = this;
     concept.getDocs(function() {
       $(self.el).append(self.documentsTemplate({concept: conceptjs}));
       self.appendToDocList();
       $('#view-documents').button('reset');
-      $('#docs-modal').modal('show');
+      console.log("hey");
+	  $('#docs-modal').modal('show');
       
       // bind events
       self.listenTo(App.State.Documents, 'sync', self.appendToDocList);
+	  self.listenTo(App.State.Documents, 'reset', self.resetDocList);
       // bind scroll event because it does not bubble, must unbind on close
       $("#doclist").bind( "scroll", self.fetchMoreDocs);
       // unbind on hide (close)
@@ -624,7 +632,8 @@ App.Views.OntologyView = Backbone.View.extend({
   viewDocuments: function() {
     console.log("App.Views.OntoView.viewDocuments");
     var concept = App.Helpers.getSelectedConcept();
-    var docsUrl = concept.get("links").ontology + "documents/"; // @TODO
+    var docsUrl = concept.get("links").ontology + "documents/"; // @TODO  // /elyciteapi/ontologies/onto_/documents/
+	
     // remove if exists
     if($('#docs-modal').length > 0) {
         $('#docs-modal').remove();
@@ -640,9 +649,18 @@ App.Views.OntologyView = Backbone.View.extend({
     }
     this.showDocModal();
   },
+  
+  viewDocuments2: function(docsjs) {
+    console.log("App.Views.OntoView.viewDocuments2");
+    var concept = App.Helpers.getSelectedConcept();
+	var docsUrl = concept.get("links").ontology + "documents/";
+    App.State.Documents.reset(docsjs);
+  },
 
   prepareDocView: function(concept) {
+	console.log("ontoview.prepareDocView");
     var docsjs = App.State.Documents.toJSON();
+	console.log("docsjs length: " + docsjs.length);
 
     // remove the ones that were already in there
     var startPos = $('#doclist-items').children().length;
@@ -662,12 +680,17 @@ App.Views.OntologyView = Backbone.View.extend({
 
     return docsjs; // view object
   },
-
+  
   appendToDocList: function() {
     console.log("App.Views.OntologyView.appendToDocList");
     var concept = App.Helpers.getSelectedConcept();
     var docsjs = this.prepareDocView(concept);
     $('#doclist-items').append(this.doclistItemsTemplate({docs: docsjs}));
+  },
+  
+  resetDocList: function() {
+	$("#doclist-items").empty();  // clears the document list
+	this.appendToDocList();  // appends i.e. prepares doc view
   },
 
   viewDocument: function(ev) {
@@ -819,7 +842,6 @@ App.Views.OntologyView = Backbone.View.extend({
     classifiers.fetch();
   },
 
-
   classifyConcept: function() {
     console.log("App.Views.OntoView.classifyConcept");
     var cls = $("#classifierPicker").val();
@@ -837,6 +859,105 @@ App.Views.OntologyView = Backbone.View.extend({
     
     var concept = App.Helpers.getSelectedConcept();
     App.API.classifyConcept(concept, cls, setSuggestions);
-  }
+  },
+  
+  ifEnterThensearchWordDocuments: function(ev) {
+	if (ev.keyCode == 13) {
+	  this.searchWordDocuments();
+	}
+  },
+  
+  searchWordDocuments: function(ev) {
+	console.log("App.Views.OntoView.searchWordDocuments");
+	var self = this;
+	var concept = App.Helpers.getSelectedConcept();
+    var query = $('#search-field').val();
+    $('#search-word').button('loading');
+	
+	var resultDocs2 = function(data) {
+	  console.log("Fetched the documents from ids (resultDocs2)");
+	  self.viewDocuments2(data);
+	}
+	
+    var resultDocs = function(data) {
+	  $('#search-word').button('reset');
+	  console.log("resulting docs: " + data.length + data);
+	  concept.getDocsWithQuery2(data, resultDocs2);
+    };
+	
+	concept.getDocsWithQuery(query, resultDocs); //concept.getDocsWithQuery3(query, resultDocs3, false);  // fullDocs is false
+  }  
+  // don't forget to add a comma if you put a new function after this one!
 
+  /*
+  searchWordDocuments: function(ev) {
+	console.log("App.Views.OntoView.searchWordDocuments");
+
+	var self = this;
+	
+	var concept = App.Helpers.getSelectedConcept();
+    var query = $('#search-field').val();
+    $('#search-word').button('loading');
+	
+	var resultDocs2 = function(data) {
+	  console.log("resultDocs2");
+	  console.log(data);
+	  
+	  self.viewDocuments2(data);
+	      //this.showDocModal();
+	}
+	
+    var resultDocs = function(data) {
+	  $('#search-word').button('reset');
+	  console.log("resulting docs: " + data.length + data);
+
+	  //var url ="/elyciteapi/ontologies/onto_/documents/"
+	  // var url = App.Helpers.getSelectedConcept().toJSON().links.ontology + "documents/";
+	  concept.getDocsWithQuery2(data, resultDocs2);
+    };
+	
+    var resultDocs3 = function(data) {
+	  console.log("resultDocs3");
+	  console.log(data);
+	  self.viewDocuments2(data);
+	      //this.showDocModal();
+	}
+	
+	
+	//concept.getDocsWithQuery3(query, resultDocs3, true);
+	concept.getDocsWithQuery(query, resultDocs);
+	
+  }   // don't forget to add a comma if you put a new function after this one!
+  */
+  
+  /*
+  searchWordDocuments: function(ev) {
+	console.log("App.Views.OntoView.searchWordDocuments");
+
+	var self = this;
+	
+	var concept = App.Helpers.getSelectedConcept();
+    var query = $('#search-field').val();
+    $('#search-word').button('loading');
+	
+	var resultDocs2 = function(data) {
+	  console.log("resultDocs2");
+	  console.log(data);
+	  
+	  self.viewDocuments2(data);
+	      //this.showDocModal();
+	}
+	
+    var resultDocs = function(data) {
+	  $('#search-word').button('reset');
+	  console.log("resulting docs: " + data.length + data);
+
+	  //var url ="/elyciteapi/ontologies/onto_/documents/"
+	  // var url = App.Helpers.getSelectedConcept().toJSON().links.ontology + "documents/";
+	  concept.getDocsWithQuery2(data, resultDocs2);
+    };
+	
+	concept.getDocsWithQuery(query, resultDocs);
+  }   // don't forget to add a comma if you put a new function after this one!
+  */
 });
