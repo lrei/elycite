@@ -1,13 +1,15 @@
 <div class="page-header">
   <h1>Create Store From Dataset</h1>
 </div>
+
 <form class="form-horizontal" role="form">
    <div class="form-group">
-     <label  class="col-sm-4 control-label" for="inputStoreName">Store name</label>
+     <label  class="col-sm-4 control-label" for="inputStoreName">Store Name</label>
      <div class="col-sm-4">
       <input type="text" class="form-control" id="inputStoreName">
     </div>
   </div>
+  
   <div class="form-group">
     <label class="col-sm-4 control-label" for="typePicker">File Type</label>
     <div class="col-sm-8">
@@ -17,21 +19,43 @@
       </select>
     </div>
   </div>
+
   <div class="form-group">
-    <label class="col-sm-4  control-label" for="files"></label>
+    <label class="col-sm-4 control-label" for="sourcePicker">Source Type</label>
     <div class="col-sm-8">
-      <input type="file" id="files" name="files[]" multiple />
+		<input type='radio' name='sourcePicker' id='sourceFile' value='File' checked="checked">File</input>
+		<input type='radio' name='sourcePicker' id='sourceURL' value='URL'>URL</input>
+		<input type='radio' name='sourcePicker' id='sourceDefault' value='Default'>Default</input>
     </div>
   </div>
   
   <div class="form-group">
-    <label class="col-sm-4  control-label" for="filesURL">Or enter an URL</label>
+    <label class="col-sm-4 control-label" for="files">File</label>
     <div class="col-sm-8">
-	  <input type="text" id="filesUrl" class="form-control" placeholder="URL">	
+      <input type="file" id="files" name="files[]" multiple />
     </div>
-  </div>    
+  </div>
 
+  <div class="form-group">
+    <label class="col-sm-4 control-label" for="filesUrl">URL</label>
+    <div class="col-sm-4">
+	  <input type="text" id="filesUrl" class="form-control" placeholder="http://www.website.com/data.json" disabled>	
+    </div>
+  </div>   
+  
+  <div class="form-group">
+    <label class="col-sm-4 control-label" for="defaultPicker">Default</label>
+    <div class="col-sm-8">
+      <select class="selectpicker" id="defaultPicker">
+	    <option>--Select Dataset--</option>
+        <option>Yahoo Finance</option>
+        <option>News Sample</option>
+      </select>
+    </div>
+  </div>  
+  
 </form>
+
 <output id="list"></output>
 <div class="col-sm-offset-4 col-sm-8">
 <button class="btn btn-primary pull-right" id="storeCreate" data-loading-text="Creating...">Create</button>
