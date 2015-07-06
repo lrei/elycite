@@ -10,9 +10,29 @@ App.Views.StoreFromDataView = Backbone.View.extend({
    events: {
      "click #storeCreate" : "createStore",
      "change #files"      : "filesSelected",
-	 "change #filesUrl"    : "fileFromUrl"
+	 "change #filesUrl"    : "fileFromUrl",
+	 "change input[name='sourcePicker']" : "enableOptions"
   },
 
+  
+  enableOptions: function() {
+	console.log("Views.StoreFromDataView.enableDisable");
+	
+	$("#files").attr("disabled","disabled");
+	$("#filesUrl").attr("disabled","disabled");
+	$("#defaultPicker").attr("disabled",true);
+	
+	if($('#sourceFile').is(':checked')) { $("#files").attr("disabled",false); }
+	if($('#sourceURL').is(':checked')) { $("#filesUrl").attr("disabled",false); }
+	if($('#sourceDefault').is(':checked')) { $("#defaultPicker").attr("disabled",false); }
+	
+	console.log($("#files").attr("disabled"));
+	console.log($("#filesURL").attr("disabled"));
+	console.log($("#defaultPicker").attr("disabled"));
+  },
+  
+
+  
   initialize: function() {
     console.log("Views.OntoNew.init");
     this.files = [];
@@ -51,10 +71,21 @@ App.Views.StoreFromDataView = Backbone.View.extend({
     this.files = files;
   },
 
+  getUrl: function(evt) {
+	if ($('#sourceURL').is(':checked')) { return $("#filesUrl").val().trim(); }
+	if ($('#sourceDefault').is(':checked')) {
+		var dataset = $('#defaultPicker').val();
+		
+		if (dataset === '--Select Dataset--') { this.defaultError(); return; }
+		if (dataset === 'Yahoo Finance') { return 'https://dl.dropboxusercontent.com/s/2wivobvd6k3darn/YahooFinanceLoad.csv'; }
+		if (dataset === 'News Sample') { return 'https://dl.dropboxusercontent.com/s/0lg9sf4gxzlu8bv/news.sample.json?dl=0'; }
+
+	  }
+  },
 
   fileFromUrl: function(evt) {
     this.URL = true;
-    console.log("Views.StoreFromDataView.select");
+    console.log("Views.StoreFromDataView.select.fileFromUrl");
     var storeName = $("#inputStoreName").val().trim();
     if (storeName.length === 0) {
       $("#nameAlert").show();
@@ -63,7 +94,8 @@ App.Views.StoreFromDataView = Backbone.View.extend({
     this.storeName = storeName;
 	$('#storeCreate').button('loading');
 	
-	url = $("#filesUrl").val().trim();
+	url = this.getUrl();
+	//url = $("#filesUrl").val().trim();
 	if (url.length < 1) {
 	  this.urlError();
 	  return;
@@ -99,58 +131,71 @@ App.Views.StoreFromDataView = Backbone.View.extend({
 	$('#urlAlert').show();
   },
   
+  defaultError: function() {
+	console.log("No default dataset selected.");
+    $('#storeCreate').button('reset');
+	$('#datasetAlert').show();
+  },
+  
+  
   createStore: function(event) {
-  	url = $("#filesUrl").val().trim();
-	if (url.length > 0) {
-	  this.fileFromUrl();
-	  return;
-	}
+	
+	//if($('#sourceFile').is(':checked')) { alert("file checked"); }
+	//if($('#sourceURL').is(':checked')) { alert("url checked"); }
+	//if($('#sourceDefault').is(':checked')) { alert("default checked"); }
   
     console.log("Views.StoreFromDataView.select");
-    var storeName = $("#inputStoreName").val().trim();
-    if (storeName.length === 0) {
-      $("#nameAlert").show();
-      return;
-    }
-    this.storeName = storeName;
-    if (this.files.length === 0) {
-      $("#fileAlert").show();
-      return;
-    }
-    $('#storeCreate').button('loading');
+	
+	if($('#sourceFile').is(':checked')) {
+		
+		var storeName = $("#inputStoreName").val().trim();
+		if (storeName.length === 0) {
+		  $("#nameAlert").show();
+		  return;
+		}
+		this.storeName = storeName;
+		if (this.files.length === 0) {
+		  $("#fileAlert").show();
+		  return;
+		}
+		$('#storeCreate').button('loading');
 
-    // callback for when files are done being read
-    this.readCounter = 0;
-    this.data = [];
-    this.error = false;
-    var fileType = $("#typePicker").val();
-    var self = this;
-    var doneReading = function(e) {
-      var text = e.target.result;
-      var parsedJSON;
-      if(fileType === "CSV") {
-        try {
-          parsedJSON = $.csv.toObjects(text);
-        }
-        catch(e) {
-          $("#csvAlert").show();
-          self.error = true;
-          return;
-        }
-      }
-      else { // ASSUME JSON
-        parsedJSON = JSON.parse(text);
-      }
-      self.data = self.data.concat(parsedJSON);
-      self.readCounter++;
-      self.loaded();
-    };
+		// callback for when files are done being read
+		this.readCounter = 0;
+		this.data = [];
+		this.error = false;
+		var fileType = $("#typePicker").val();
+		var self = this;
+		var doneReading = function(e) {
+		  var text = e.target.result;
+		  var parsedJSON;
+		  if(fileType === "CSV") {
+			try {
+			  parsedJSON = $.csv.toObjects(text);
+			}
+			catch(e) {
+			  $("#csvAlert").show();
+			  self.error = true;
+			  return;
+			}
+		  }
+		  else { // ASSUME JSON
+			parsedJSON = JSON.parse(text);
+		  }
+		  self.data = self.data.concat(parsedJSON);
+		  self.readCounter++;
+		  self.loaded();
+		};
 
-    for(var ii = 0; ii < this.files.length; ii++) {
-      var reader = new FileReader();
-      reader.onload = doneReading;
-      reader.readAsText(this.files[ii]);
-    }
+		for(var ii = 0; ii < this.files.length; ii++) {
+		  var reader = new FileReader();
+		  reader.onload = doneReading;
+		  reader.readAsText(this.files[ii]);
+		}
+	} else {
+		this.fileFromUrl();
+		return;
+	}
   },
 
   loaded: function() {
